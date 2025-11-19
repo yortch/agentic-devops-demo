@@ -111,37 +111,7 @@ jobs:
           npm install
           npx playwright install --with-deps
 
-      - name: Start backend
-        run: |
-          cd backend
-          mvn spring-boot:run &
-          echo $! > backend.pid
-          
-          # Wait for backend to be ready
-          for i in {1..30}; do
-            if curl -s http://localhost:8080/actuator/health > /dev/null; then
-              echo "Backend is ready"
-              break
-            fi
-            echo "Waiting for backend... ($i/30)"
-            sleep 2
-          done
 
-      - name: Start frontend
-        run: |
-          cd frontend
-          npm run dev &
-          echo $! > frontend.pid
-          
-          # Wait for frontend to be ready
-          for i in {1..30}; do
-            if curl -s http://localhost:5173 > /dev/null; then
-              echo "Frontend is ready"
-              break
-            fi
-            echo "Waiting for frontend... ($i/30)"
-            sleep 2
-          done
 
       - name: Run Playwright tests
         run: |
