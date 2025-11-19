@@ -6,6 +6,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 6 : undefined,
+  timeout: 10000,
   reporter: [
     ['html'],
     ['junit', { outputFile: 'test-results/junit.xml' }],
@@ -16,6 +17,7 @@ export default defineConfig({
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
+    actionTimeout: 5000,
   },
 
   projects: [
