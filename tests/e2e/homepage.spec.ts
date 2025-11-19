@@ -7,13 +7,13 @@ test.describe('Home Page', () => {
 
   test('should display hero section', async ({ page }) => {
     // Check hero title
-    await expect(page.locator('text=Business Credit Cards')).toBeVisible();
+    await expect(page.locator('text=Business Credit Cards').first()).toBeVisible();
     
     // Check hero description
-    await expect(page.locator('text=Earn rewards')).toBeVisible();
+    await expect(page.locator('text=Earn rewards').first()).toBeVisible();
     
     // Check CTA button
-    await expect(page.locator('button:has-text("Compare")')).toBeVisible();
+    await expect(page.locator('button:has-text("Compare")').first()).toBeVisible();
   });
 
   test('should display featured cards', async ({ page }) => {
@@ -22,6 +22,9 @@ test.describe('Home Page', () => {
     
     // Check section title
     await expect(page.locator('text=Featured Business Credit Cards')).toBeVisible();
+    
+    // Wait for at least one card to be visible
+    await expect(page.locator('button:has-text("View Details")').first()).toBeVisible({ timeout: 10000 });
     
     // Check that at least 3 cards are displayed
     const viewDetailsButtons = page.locator('button:has-text("View Details")');
@@ -76,12 +79,21 @@ test.describe('Home Page', () => {
   test('should have working header navigation', async ({ page }) => {
     await page.waitForLoadState('networkidle');
     
-    // Check header is visible
-    await expect(page.locator('text=Three Rivers Bank').first()).toBeVisible();
+    // Check if we're on mobile/tablet (where nav is in hamburger menu)
+    const viewportSize = page.viewportSize();
+    const isMobileOrTablet = viewportSize && viewportSize.width < 900;
     
-    // Check navigation links
-    await expect(page.locator('text=Home')).toBeVisible();
-    await expect(page.locator('text=Compare Cards')).toBeVisible();
+    if (isMobileOrTablet) {
+      // On mobile/tablet, check for hamburger menu icon or mobile header
+      // The header toolbar should be visible even if brand text is hidden
+      await expect(page.locator('header')).toBeVisible();
+      await expect(page.locator('button:has-text("Contact Us")')).toBeVisible();
+    } else {
+      // On desktop, check normal navigation
+      await expect(page.locator('text=Three Rivers Bank').first()).toBeVisible();
+      await expect(page.locator('text=Home')).toBeVisible();
+      await expect(page.locator('text=Compare Cards')).toBeVisible();
+    }
   });
 
   test('should have footer with contact information', async ({ page }) => {

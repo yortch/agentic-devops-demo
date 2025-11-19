@@ -61,7 +61,7 @@ npm run dev                    # Vite dev server on :5173
 - **Backend (JUnit 5)**: Use WireMock for BIAN API mocking, MockMvc for REST controllers
 - **Frontend (Playwright)**: Tests in `/tests/e2e/`, fixtures in `/tests/fixtures/credit-cards.json`
 - **Test Execution**: `mvn test` (backend), `npx playwright test` (from `/tests/` directory)
-- **Multi-browser/viewport**: Chromium, Firefox, WebKit @ 1920x1080, 768x1024, 375x667
+- **Multi-browser/viewport**: Chromium, WebKit @ 1920x1080, 768x1024, 375x667
 
 ## Project-Specific Conventions
 

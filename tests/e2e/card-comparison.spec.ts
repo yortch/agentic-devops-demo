@@ -7,45 +7,48 @@ test.describe('Card Comparison Page', () => {
   });
 
   test('should display all credit cards', async ({ page }) => {
-    await expect(page.locator('h1, h3')).toContainText('Compare Business Credit Cards');
+    await page.waitForLoadState('networkidle');
     
-    // Wait for cards to load
-    await page.waitForSelector('[role="region"]', { state: 'visible', timeout: 10000 });
+    await expect(page.locator('h1').first()).toContainText('Compare Business Credit Cards');
     
-    // Check that we have 5 cards displayed
-    const cardCount = await page.locator('text=Business').count();
-    expect(cardCount).toBeGreaterThanOrEqual(5);
+    // Wait for cards to load - check for card names instead of role
+    await expect(page.locator('text=Business Cash Rewards')).toBeVisible({ timeout: 10000 });
+    
+    // Check that we have all 5 cards displayed
+    const cardNames = ['Business Cash Rewards', 'Business Travel Rewards', 'Business Platinum', 'Business Premium', 'Business Flex'];
+    for (const name of cardNames) {
+      await expect(page.locator(`text=${name}`).first()).toBeVisible();
+    }
   });
 
   test('should filter cards by type', async ({ page }) => {
     // Wait for page to load
     await page.waitForLoadState('networkidle');
     
-    // Click on Card Type filter
-    await page.click('text=Card Type');
+    // Click on Card Type dropdown (use combobox role for MUI Select)
+    await page.locator('[role="combobox"]').first().click();
     
-    // Select "Cash Back" type
-    await page.click('text=Cash Back');
+    // Wait for dropdown menu and select "Cash Back" type
+    await page.locator('[role="option"]', { hasText: 'Cash Back' }).click();
     
     // Verify filtered results
-    const cashBackCard = await page.locator('text=Business Cash Rewards');
-    await expect(cashBackCard).toBeVisible();
+    await expect(page.locator('text=Business Cash Rewards')).toBeVisible();
   });
 
   test('should filter cards by annual fee', async ({ page }) => {
     // Wait for page to load
     await page.waitForLoadState('networkidle');
     
-    // Click on Annual Fee filter
-    await page.click('text=Annual Fee');
+    // Click on Annual Fee dropdown (second combobox)
+    await page.locator('[role="combobox"]').nth(1).click();
     
-    // Select "No Annual Fee"
-    await page.click('text=No Annual Fee');
+    // Wait for dropdown menu and select "No Annual Fee"
+    await page.locator('[role="option"]', { hasText: 'No Annual Fee' }).click();
     
     // Verify only cards with $0 annual fee are shown
     const freeCards = ['Business Cash Rewards', 'Business Platinum', 'Business Flex'];
     for (const cardName of freeCards) {
-      await expect(page.locator(`text=${cardName}`)).toBeVisible();
+      await expect(page.locator(`text=${cardName}`).first()).toBeVisible();
     }
   });
 
@@ -80,6 +83,6 @@ test.describe('Card Comparison Page', () => {
     await expect(page).toHaveURL(/\/cards\/\d+/);
     
     // Verify detail page loaded
-    await expect(page.locator('text=Annual Fee')).toBeVisible();
+    await expect(page.locator('text=Annual Fee').first()).toBeVisible();
   });
 });

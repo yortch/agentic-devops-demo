@@ -8,16 +8,16 @@ test.describe('Card Details Page', () => {
     await page.waitForLoadState('networkidle');
     
     // Check card name
-    await expect(page.locator('h1, h3')).toContainText('Business Cash Rewards');
+    await expect(page.locator('h1').first()).toContainText('Business Cash Rewards');
     
     // Check card type chip
-    await expect(page.locator('text=Cash Back')).toBeVisible();
+    await expect(page.locator('text=Cash Back').first()).toBeVisible();
     
     // Check annual fee
-    await expect(page.locator('text=$0')).toBeVisible();
+    await expect(page.locator('text=$0').first()).toBeVisible();
     
     // Check rewards rate
-    await expect(page.locator('text=2%')).toBeVisible();
+    await expect(page.locator('text=2%').first()).toBeVisible();
   });
 
   test('should display features accordion', async ({ page }) => {
@@ -25,14 +25,14 @@ test.describe('Card Details Page', () => {
     await page.waitForLoadState('networkidle');
     
     // Find and expand features accordion
-    const featuresAccordion = page.locator('text=Card Features');
+    const featuresAccordion = page.locator('text=Card Features').first();
     await expect(featuresAccordion).toBeVisible();
     
     // Click to expand (if not already expanded)
     await featuresAccordion.click();
     
     // Verify features are displayed
-    await expect(page.locator('text=Unlimited 2% cash back')).toBeVisible();
+    await expect(page.locator('text=Unlimited 2% cash back').first()).toBeVisible();
   });
 
   test('should display benefits accordion', async ({ page }) => {
@@ -54,13 +54,13 @@ test.describe('Card Details Page', () => {
     await page.waitForLoadState('networkidle');
     
     // Find and expand fee schedule accordion
-    const feeAccordion = page.locator('text=Fee Schedule');
+    const feeAccordion = page.locator('text=Fee Schedule').first();
     if (await feeAccordion.isVisible()) {
       await feeAccordion.click();
       
       // Verify fee table is displayed
-      await expect(page.locator('table')).toBeVisible();
-      await expect(page.locator('text=Annual Fee')).toBeVisible();
+      await expect(page.locator('table').first()).toBeVisible();
+      await expect(page.locator('text=Annual Fee').first()).toBeVisible();
     }
   });
 
@@ -68,14 +68,16 @@ test.describe('Card Details Page', () => {
     await page.goto('/cards/1');
     await page.waitForLoadState('networkidle');
     
-    // Find and expand interest rates accordion
-    const interestAccordion = page.locator('text=Interest Rates');
-    if (await interestAccordion.isVisible()) {
-      await interestAccordion.click();
-      
-      // Verify interest table is displayed
-      await expect(page.locator('table')).toBeVisible();
-    }
+    // Find and expand interest rates accordion using the button
+    const interestButton = page.locator('button:has-text("Interest Rates")').first();
+    await interestButton.click();
+    
+    // Wait for accordion animation to complete
+    await page.waitForTimeout(500);
+    
+    // Verify accordion is expanded by checking for content within the expanded region
+    // Look for rate type text in the table
+    await expect(page.locator('text=Purchase APR').first()).toBeVisible({ timeout: 10000 });
   });
 
   test('should have apply now button', async ({ page }) => {

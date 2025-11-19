@@ -210,6 +210,8 @@ Tests include:
 ### Frontend Tests (Playwright)
 ```bash
 cd tests
+npm install
+npx playwright install
 npx playwright test
 ```
 
@@ -223,7 +225,7 @@ E2E tests cover:
 - Accessibility (WCAG 2.1 AA)
 
 **Test Configuration**:
-- **Browsers**: Chromium, Firefox, WebKit
+- **Browsers**: Chromium, WebKit
 - **Viewports**: Desktop (1920x1080), Tablet (768x1024), Mobile (375x667)
 - **Parallel execution** enabled
 

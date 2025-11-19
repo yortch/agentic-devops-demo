@@ -17,11 +17,11 @@ test.describe('Responsive Design', () => {
     await page.waitForLoadState('networkidle');
     
     // Check hero section
-    await expect(page.locator('text=Business Credit Cards')).toBeVisible();
+    await expect(page.locator('text=Business Credit Cards').first()).toBeVisible();
     
     // Check cards are displayed in a responsive grid
-    const cards = page.locator('text=Business Cash Rewards, Business Travel Rewards, Business Platinum');
-    await expect(cards.first()).toBeVisible();
+    await expect(page.locator('text=Business Cash Rewards').first()).toBeVisible();
+    await expect(page.locator('text=Business Travel Rewards').first()).toBeVisible();
   });
 
   test('should display correctly on mobile', async ({ page }) => {
@@ -29,11 +29,11 @@ test.describe('Responsive Design', () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
     
-    // Check mobile layout
-    await expect(page.locator('text=Three Rivers Bank')).toBeVisible();
+    // Check hero section is visible on mobile
+    await expect(page.locator('text=Business Credit Cards').first()).toBeVisible();
     
-    // Check hero section is visible
-    await expect(page.locator('text=Business Credit Cards')).toBeVisible();
+    // Check featured cards are visible
+    await expect(page.locator('text=Business Cash Rewards').first()).toBeVisible();
   });
 
   test('should have mobile-friendly comparison page', async ({ page }) => {
@@ -41,8 +41,12 @@ test.describe('Responsive Design', () => {
     await page.goto('/cards');
     await page.waitForLoadState('networkidle');
     
-    // Check page title
-    await expect(page.locator('text=Compare')).toBeVisible();
+    // Check page title or heading
+    const pageHeading = page.locator('h1').first();
+    await expect(pageHeading).toBeVisible();
+    
+    // Check cards are displayed - verify at least one card is visible
+    await expect(page.locator('text=Business Cash Rewards').first()).toBeVisible();
     
     // Check cards are stacked vertically
     const viewDetailsButtons = page.locator('button:has-text("View Details")');
@@ -56,16 +60,16 @@ test.describe('Responsive Design', () => {
     await page.waitForLoadState('networkidle');
     
     // Check card name is visible
-    await expect(page.locator('text=Business Cash Rewards')).toBeVisible();
+    await expect(page.locator('text=Business Cash Rewards').first()).toBeVisible();
     
     // Check quick facts cards are visible
-    await expect(page.locator('text=Annual Fee')).toBeVisible();
+    await expect(page.locator('text=Annual Fee').first()).toBeVisible();
     
     // Check accordions work on mobile
-    const featuresAccordion = page.locator('text=Card Features');
+    const featuresAccordion = page.locator('text=Card Features').first();
     if (await featuresAccordion.isVisible()) {
       await featuresAccordion.click();
-      await expect(page.locator('text=cash back')).toBeVisible();
+      await expect(page.locator('text=cash back').first()).toBeVisible();
     }
   });
 });

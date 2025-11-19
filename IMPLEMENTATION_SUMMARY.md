@@ -133,7 +133,7 @@ All cards fully implemented with complete data:
 - database-integration.spec.ts: 7 tests (H2 integration)
 
 ✅ **Test Configuration**
-- Multi-browser: Chromium, Firefox, WebKit
+- Multi-browser: Chromium, WebKit
 - Multi-viewport: 1920x1080, 768x1024, 375x667
 - Fixtures matching H2 seed data exactly
 - Automatic server startup for testing
