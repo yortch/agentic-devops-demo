@@ -107,8 +107,8 @@ jobs:
 
       - name: Install Playwright
         run: |
-          cd frontend
-          npm ci
+          cd tests
+          npm install
           npx playwright install --with-deps
 
       - name: Start backend
