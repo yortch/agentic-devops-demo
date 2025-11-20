@@ -5,7 +5,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 const phoneRegex = /^\d{10}$/;
 const zipRegex = /^\d{5}(-\d{4})?$/;
 const taxIdRegex = /^\d{9}$/;
-const urlRegex = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
+const urlRegex = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w.-]*)\/?$/;
 
 export const applicationSchema = yup.object().shape({
   // Business Information
