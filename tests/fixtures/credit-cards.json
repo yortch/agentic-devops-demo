@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "name": "Business Cash Rewards",
+    "cardType": "Cash Back",
+    "annualFee": 0.00,
+    "introApr": "0% for 12 months",
+    "regularApr": "18.99% - 26.99%",
+    "rewardsRate": 2.00,
+    "signupBonus": "$300 statement credit after $3,000 in purchases within first 3 months",
+    "creditScoreNeeded": "Good to Excellent (670+)",
+    "foreignTransactionFee": 0.00
+  },
+  {
+    "id": 2,
+    "name": "Business Travel Rewards",
+    "cardType": "Travel Rewards",
+    "annualFee": 95.00,
+    "introApr": "N/A",
+    "regularApr": "19.99% - 27.99%",
+    "rewardsRate": 3.00,
+    "signupBonus": "50,000 bonus points after $4,000 in purchases within first 3 months",
+    "creditScoreNeeded": "Excellent (720+)",
+    "foreignTransactionFee": 0.00
+  },
+  {
+    "id": 3,
+    "name": "Business Platinum",
+    "cardType": "Low Interest",
+    "annualFee": 0.00,
+    "introApr": "0% for 15 months",
+    "regularApr": "20.99% - 28.99%",
+    "rewardsRate": 0.00,
+    "signupBonus": "No signup bonus",
+    "creditScoreNeeded": "Good (670+)",
+    "foreignTransactionFee": 0.00
+  },
+  {
+    "id": 4,
+    "name": "Business Premium",
+    "cardType": "Premium Rewards",
+    "annualFee": 150.00,
+    "introApr": "N/A",
+    "regularApr": "17.99% - 25.99%",
+    "rewardsRate": 1.50,
+    "signupBonus": "$500 statement credit after $5,000 in purchases within first 3 months",
+    "creditScoreNeeded": "Excellent (740+)",
+    "foreignTransactionFee": 0.00
+  },
+  {
+    "id": 5,
+    "name": "Business Flex",
+    "cardType": "Flexible Rewards",
+    "annualFee": 0.00,
+    "introApr": "N/A",
+    "regularApr": "21.99% - 29.99%",
+    "rewardsRate": 3.00,
+    "signupBonus": "$200 statement credit after $2,000 in purchases within first 3 months",
+    "creditScoreNeeded": "Fair to Good (640+)",
+    "foreignTransactionFee": 3.00
+  }
+]

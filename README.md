@@ -1,4 +1,4 @@
-# Three Rivers Bank Business Credit Card Website
+# Three Rivers Bank Business Credit Cards
 
 A modern web application showcasing business credit card products for Three Rivers Bank, built with React frontend and Spring Boot backend, integrating with BIAN API v13.0.0 standards.
 
@@ -210,6 +210,8 @@ Tests include:
 ### Frontend Tests (Playwright)
 ```bash
 cd tests
+npm install
+npx playwright install
 npx playwright test
 ```
 
@@ -223,7 +225,7 @@ E2E tests cover:
 - Accessibility (WCAG 2.1 AA)
 
 **Test Configuration**:
-- **Browsers**: Chromium, Firefox, WebKit
+- **Browsers**: Chromium, WebKit
 - **Viewports**: Desktop (1920x1080), Tablet (768x1024), Mobile (375x667)
 - **Parallel execution** enabled
 
