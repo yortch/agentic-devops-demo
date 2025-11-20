@@ -67,9 +67,8 @@ test.describe('Responsive Design', () => {
     
     // Check accordions work on mobile
     const featuresAccordion = page.locator('text=Card Features').first();
-    if (await featuresAccordion.isVisible()) {
-      await featuresAccordion.click();
-      await expect(page.locator('text=cash back').first()).toBeVisible();
-    }
+    await expect(featuresAccordion).toBeVisible();
+    await featuresAccordion.click();
+    await expect(page.locator('text=cash back').first()).toBeVisible();
   });
 });

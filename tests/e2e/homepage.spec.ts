@@ -57,12 +57,11 @@ test.describe('Home Page', () => {
     
     // Find and click "View All Cards" button
     const viewAllButton = page.locator('button:has-text("View All Cards")');
-    if (await viewAllButton.isVisible()) {
-      await viewAllButton.click();
-      
-      // Verify navigation
-      await expect(page).toHaveURL(/\/cards$/);
-    }
+    await expect(viewAllButton).toBeVisible();
+    await viewAllButton.click();
+    
+    // Verify navigation
+    await expect(page).toHaveURL(/\/cards$/);
   });
 
   test('should display benefits section', async ({ page }) => {

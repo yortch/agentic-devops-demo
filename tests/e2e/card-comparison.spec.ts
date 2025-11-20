@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import creditCards from '../fixtures/credit-cards.json';
 
 test.describe('Card Comparison Page', () => {
   test.beforeEach(async ({ page }) => {
@@ -58,18 +57,17 @@ test.describe('Card Comparison Page', () => {
     
     // Find and click table view button
     const tableViewButton = page.locator('button[value="table"]');
-    if (await tableViewButton.isVisible()) {
-      await tableViewButton.click();
-      
-      // Verify table is displayed
-      await expect(page.locator('table')).toBeVisible();
-      
-      // Switch back to grid view
-      await page.locator('button[value="grid"]').click();
-      
-      // Verify cards are displayed
-      await expect(page.locator('text=Business Cash Rewards')).toBeVisible();
-    }
+    await expect(tableViewButton).toBeVisible();
+    await tableViewButton.click();
+    
+    // Verify table is displayed
+    await expect(page.locator('table')).toBeVisible();
+    
+    // Switch back to grid view
+    await page.locator('button[value="grid"]').click();
+    
+    // Verify cards are displayed
+    await expect(page.locator('text=Business Cash Rewards')).toBeVisible();
   });
 
   test('should navigate to card details', async ({ page }) => {
