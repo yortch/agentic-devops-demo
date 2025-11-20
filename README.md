@@ -54,6 +54,16 @@ This project demonstrates a full-stack credit card comparison and information pl
 - Fee schedules
 - Interest rate information
 
+### Credit Card Application
+- **Multi-step application form**:
+  - Step 1: Business Information (name, type, industry, revenue, address)
+  - Step 2: Personal Information (owner details, income, contact info)
+  - Step 3: Review & Submit (confirmation of all entered data)
+- Real-time form validation
+- Success confirmation with application reference ID
+- Application status tracking (PENDING, APPROVED, REJECTED, UNDER_REVIEW)
+- Secure data storage in H2 database
+
 ### Business Features
 - Expense management tools
 - Employee card controls
@@ -92,7 +102,8 @@ agentic-devops-demo/
 │   │   ├── pages/                    # Page components
 │   │   │   ├── HomePage.jsx
 │   │   │   ├── CardComparisonPage.jsx
-│   │   │   └── CardDetailsPage.jsx
+│   │   │   ├── CardDetailsPage.jsx
+│   │   │   └── CardApplicationPage.jsx
 │   │   ├── services/                 # API service layer
 │   │   ├── hooks/                    # Custom React hooks
 │   │   ├── theme.js                  # MUI theme configuration
@@ -133,6 +144,9 @@ agentic-devops-demo/
 - `GET /api/cards/{id}/fees` - Get card fee schedule
 - `GET /api/cards/{id}/interest` - Get interest rate details
 - `GET /api/cards/{id}/transactions` - Get sample transactions (BIAN)
+- `POST /api/cards/{id}/applications` - Submit a credit card application
+- `GET /api/cards/{id}/applications` - Get all applications for a specific card
+- `GET /api/cards/{id}/applications/{applicationId}` - Get a specific application
 
 ### Management & Documentation
 - `GET /actuator/health` - Health check endpoint
@@ -146,6 +160,7 @@ agentic-devops-demo/
 - **CardFeature**: Individual card features and benefits
 - **FeeSchedule**: Detailed fee structure per card
 - **InterestRate**: Interest rate configurations and history
+- **CreditCardApplication**: Credit card application submissions with business and personal information
 
 ## 🔗 BIAN API Integration
 
