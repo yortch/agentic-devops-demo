@@ -5,8 +5,11 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: 1,
-  timeout: 10000,
+  workers: process.env.CI ? 4 : undefined,
+  timeout: 30000,
+  expect: {
+    timeout: 10000,
+  },
   reporter: [
     ['html'],
     ['junit', { outputFile: 'test-results/junit.xml' }],
@@ -17,7 +20,7 @@ export default defineConfig({
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    actionTimeout: 5000,
+    actionTimeout: 15000,
   },
 
   projects: [

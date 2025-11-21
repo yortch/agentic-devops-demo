@@ -119,7 +119,7 @@ jobs:
       - name: Run Playwright tests
         run: |
           cd tests
-          npx playwright test --project chromium --workers=1
+          npx playwright test
 
       - name: Upload test results
         if: always()
