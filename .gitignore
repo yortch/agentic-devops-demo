@@ -2,3 +2,14 @@ node_modules
 playwright-report
 test-results
 package-lock.json
+
+# Maven
+backend/target/
+backend/.mvn/
+backend/mvnw
+backend/mvnw.cmd
+
+# Checkstyle
+backend/.checkstyle
+backend/checkstyle-cache.xml
+backend/checkstyle-result.xml

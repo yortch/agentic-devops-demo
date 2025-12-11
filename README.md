@@ -207,6 +207,22 @@ Tests include:
 - `CreditCardRepositoryTest.java` - JPA repository validation
 - `BianApiClientTest.java` - BIAN API integration with WireMock
 
+### Code Quality (Checkstyle)
+```bash
+cd backend
+mvn checkstyle:check
+```
+
+The project uses Checkstyle for Java code linting with configuration based on Google Java Style Guide. The linter checks for:
+- Code style and formatting
+- Import organization (no wildcard imports)
+- Naming conventions
+- Whitespace and indentation
+- Line length (max 120 characters)
+- Common coding issues
+
+Checkstyle runs automatically during the build process and in CI/CD pipeline. Configuration can be found in `backend/checkstyle.xml`.
+
 ### Frontend Tests (Playwright)
 ```bash
 cd tests

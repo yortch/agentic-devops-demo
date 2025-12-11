@@ -36,6 +36,11 @@ jobs:
           cd backend
           mvn clean package -DskipTests
 
+      - name: Run Checkstyle Linter
+        run: |
+          cd backend
+          mvn checkstyle:check
+
       - name: Run tests
         run: |
           cd backend
