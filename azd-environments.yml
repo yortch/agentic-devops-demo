@@ -1,0 +1,39 @@
+# Azure Developer CLI Environment Configurations
+# This file defines environment-specific settings for different deployment targets
+
+environments:
+  dev:
+    location: eastus
+    tags:
+      Environment: Development
+      CostCenter: Engineering
+      Project: ThreeRiversBank
+    resources:
+      container_cpu: 0.25
+      container_memory: "0.5Gi"
+      min_replicas: 1
+      max_replicas: 2
+      
+  staging:
+    location: eastus2
+    tags:
+      Environment: Staging
+      CostCenter: Engineering
+      Project: ThreeRiversBank
+    resources:
+      container_cpu: 0.5
+      container_memory: "1Gi"
+      min_replicas: 1
+      max_replicas: 3
+      
+  production:
+    location: westus2
+    tags:
+      Environment: Production
+      CostCenter: BusinessOps
+      Project: ThreeRiversBank
+    resources:
+      container_cpu: 1.0
+      container_memory: "2Gi"
+      min_replicas: 2
+      max_replicas: 5

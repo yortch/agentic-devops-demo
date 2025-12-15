@@ -194,35 +194,65 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # deploy-azure:
-  #   name: Deploy to Azure Container Apps
-  #   runs-on: ubuntu-latest
-  #   needs: [docker-build]
-  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-  #   environment:
-  #     name: production
-  #     url: https://threeriversbank.azurecontainerapps.io
-  #   
-  #   steps:
-  #     - name: Azure Login
-  #       uses: azure/login@v2
-  #       with:
-  #         creds: ${{ secrets.AZURE_CREDENTIALS }}
-  #     
-  #     - name: Deploy Backend to Azure Container Apps
-  #       uses: azure/container-apps-deploy-action@v1
-  #       with:
-  #         containerAppName: threeriversbank-backend
-  #         resourceGroup: threeriversbank-rg
-  #         imageToDeploy: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:latest
-  #         environmentVariables: |
-  #           BIAN_API_URL=${{ secrets.BIAN_API_URL }}
-  #           H2_CONSOLE_ENABLED=false
-  #           LOGGING_LEVEL=INFO
-  #     
-  #     - name: Deploy Frontend to Azure Container Apps
-  #       uses: azure/container-apps-deploy-action@v1
-  #       with:
-  #         containerAppName: threeriversbank-frontend
-  #         resourceGroup: threeriversbank-rg
-  #         imageToDeploy: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:latest
+  deploy-azure:
+    name: Deploy to Azure with azd CLI
+    runs-on: ubuntu-latest
+    needs: [docker-build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: https://threeriversbank.azurecontainerapps.io
+    permissions:
+      id-token: write
+      contents: read
+   
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install azd CLI
+        uses: Azure/setup-azd@v1.0.0
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Log in to Azure with azd
+        run: |
+          azd auth login \
+            --client-id "${{ vars.AZURE_CLIENT_ID }}" \
+            --client-secret "${{ secrets.AZURE_CLIENT_SECRET }}" \
+            --tenant-id "${{ vars.AZURE_TENANT_ID }}"
+
+      - name: Setup Infrastructure Files
+        run: |
+          # Create infra directory and move Terraform files
+          mkdir -p infra
+          cp terraform-main.tf infra/main.tf
+          cp terraform-variables.tf infra/variables.tf  
+          cp terraform-outputs.tf infra/outputs.tf
+          
+          # Create .azd directory and config
+          mkdir -p .azd
+          cp azd-config.json .azd/config.json
+
+      - name: Deploy to Azure
+        run: |
+          azd up --environment production --no-prompt
+        env:
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          AZURE_LOCATION: "eastus"
+
+      - name: Get Application URLs
+        id: get-urls
+        run: |
+          BACKEND_URL=$(azd env get-values --environment production | grep BACKEND_URI | cut -d'=' -f2 | tr -d '"')
+          FRONTEND_URL=$(azd env get-values --environment production | grep FRONTEND_URI | cut -d'=' -f2 | tr -d '"')
+          echo "backend-url=$BACKEND_URL" >> $GITHUB_OUTPUT
+          echo "frontend-url=$FRONTEND_URL" >> $GITHUB_OUTPUT
+          echo "🚀 Deployment completed!"
+          echo "Backend: $BACKEND_URL"
+          echo "Frontend: $FRONTEND_URL"

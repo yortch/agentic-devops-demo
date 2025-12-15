@@ -251,26 +251,111 @@ docker run -p 80:80 threeriversbank/frontend:latest
 
 ## ☁️ Azure Deployment
 
+This project includes comprehensive Infrastructure as Code (IaC) using Azure Developer CLI (azd) with Terraform for deploying to Azure Container Apps.
+
+### Quick Start with azd CLI
+
+```bash
+# Setup Azure infrastructure files
+.\setup-azure-deployment.ps1 -InitializeAzd
+
+# Login to Azure
+az login
+azd auth login
+
+# Deploy everything to Azure
+azd up
+```
+
+### Infrastructure Components
+- **Resource Group**: Contains all Azure resources
+- **Container Registry**: Stores application Docker images
+- **Container App Environment**: Managed serverless container platform  
+- **Log Analytics Workspace**: Centralized logging and monitoring
+- **Container Apps**: Backend (Spring Boot) and Frontend (React/Nginx)
+
 ### Container Apps Configuration
-- **Backend**: 0.5 vCPU, 1GB RAM
-- **Frontend**: 0.25 vCPU, 0.5GB RAM
-- **Ingress**: HTTPS-only with custom domain support
-- **Health Checks**: `/actuator/health`
+- **Backend**: 0.5 vCPU, 1GB RAM, auto-scale 1-3 replicas
+- **Frontend**: 0.25 vCPU, 0.5GB RAM, auto-scale 1-3 replicas
+- **Ingress**: HTTPS-only with automatic SSL certificates
+- **Health Checks**: Backend `/actuator/health`, Frontend root path
 
 ### Environment Variables
 - `BIAN_API_URL`: BIAN API base URL
 - `H2_CONSOLE_ENABLED`: Enable/disable H2 console (false in prod)
 - `LOGGING_LEVEL`: Application logging level (INFO)
+- `SPRING_PROFILES_ACTIVE`: Spring profile (production)
+- `REACT_APP_API_URL`: Backend URL for frontend
 
-### CI/CD Pipeline
-GitHub Actions workflow (`.github/workflows/deploy.yml`) automatically:
-1. Builds React frontend
-2. Builds Spring Boot backend
-3. Runs JUnit tests
-4. Runs Playwright E2E tests
-5. Creates Docker images
-6. Pushes to Azure Container Registry
-7. Deploys to Azure Container Apps
+### CI/CD Pipeline Options
+
+#### Option 1: GitHub Actions with Docker Images
+Workflow: `.github/workflows/deploy.yml` (existing)
+1. Builds and tests applications
+2. Creates Docker images
+3. Pushes to GitHub Container Registry
+4. Deploys to Azure Container Apps
+
+#### Option 2: GitHub Actions with azd CLI  
+Workflow: `.github/workflows/azure-azd-deploy.yml` (new)
+1. Validates Terraform infrastructure
+2. Builds and tests applications  
+3. Provisions infrastructure with `azd provision`
+4. Deploys applications with `azd deploy`
+5. Runs smoke tests
+6. Cleanup on failure
+
+### Repository Setup for GitHub Actions
+
+1. **Create Azure Service Principal**:
+```bash
+az ad sp create-for-rbac --name "three-rivers-bank-github" \
+  --role contributor \
+  --scopes /subscriptions/{subscription-id} \
+  --sdk-auth
+```
+
+2. **Configure GitHub Secrets**:
+   - `AZURE_CLIENT_ID`: Service principal client ID
+   - `AZURE_CLIENT_SECRET`: Service principal secret
+   - `AZURE_TENANT_ID`: Azure tenant ID  
+   - `AZURE_SUBSCRIPTION_ID`: Azure subscription ID
+
+3. **Configure GitHub Variables**:
+   - `AZURE_CLIENT_ID`: Same as secret (for OIDC)
+   - `AZURE_TENANT_ID`: Same as secret (for OIDC)
+   - `AZURE_SUBSCRIPTION_ID`: Same as secret (for OIDC)
+
+### Local Development with Docker
+```bash
+# Run full application stack
+docker-compose up --build
+
+# Backend: http://localhost:8080
+# Frontend: http://localhost:3000
+```
+
+### Management Commands
+```bash
+# View deployed applications
+azd show
+
+# View application logs  
+azd logs --service backend
+azd logs --service frontend
+
+# Update application configuration
+azd env set LOGGING_LEVEL DEBUG
+azd deploy
+
+# Scale applications (Azure CLI)
+az containerapp update --name <backend-app> --resource-group <rg> --min-replicas 2 --max-replicas 10
+
+# Clean up all resources
+azd down --purge
+```
+
+For detailed deployment instructions, see [Azure Deployment Guide](README-AZURE-DEPLOYMENT.md).
 
 ## 🎨 Branding
 
