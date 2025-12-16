@@ -243,7 +243,7 @@ agentic-devops-demo/
 │   ├── frontend.Dockerfile      # Frontend container
 │   └── nginx.conf               # Nginx configuration
 ├── .github/workflows/
-│   └── deploy.yml               # CI/CD pipeline
+│   └── build-deploy.yml         # CI/CD pipeline
 └── README.md                    # Project documentation
 ```
 

@@ -114,7 +114,7 @@ agentic-devops-demo/
 │
 ├── .github/
 │   ├── workflows/
-│   │   └── deploy.yml                # CI/CD pipeline
+│   │   └── build-deploy.yml          # CI/CD pipeline
 │   └── prompts/
 │       └── plan-threeRiversBankCreditCardWebsite.prompt.md
 │
@@ -287,7 +287,7 @@ azd up
 ### CI/CD Pipeline Options
 
 #### Option 1: GitHub Actions with Docker Images
-Workflow: `.github/workflows/deploy.yml` (existing)
+Workflow: `.github/workflows/build-deploy.yml` (existing)
 1. Builds and tests applications
 2. Creates Docker images
 3. Pushes to GitHub Container Registry

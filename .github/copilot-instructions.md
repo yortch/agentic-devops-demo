@@ -100,7 +100,7 @@ npm run dev                    # Vite dev server on :5173
 - **Backend Resources**: 0.5 vCPU, 1GB RAM
 - **Frontend Resources**: 0.25 vCPU, 0.5GB RAM
 - **Environment Variables**: `BIAN_API_URL`, `H2_CONSOLE_ENABLED=false` (prod), `LOGGING_LEVEL=INFO`
-- **CI/CD**: GitHub Actions workflow at `.github/workflows/deploy.yml`
+- **CI/CD**: GitHub Actions workflow at `.github/workflows/build-deploy.yml`
 
 ## Common Pitfalls to Avoid
 

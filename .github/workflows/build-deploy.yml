@@ -6,11 +6,16 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME_BACKEND: ${{ github.repository }}/backend
-  IMAGE_NAME_FRONTEND: ${{ github.repository }}/frontend
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+        - dev
+        - staging
+        - production
 
 jobs:
   build-backend:
@@ -129,79 +134,12 @@ jobs:
           path: tests/test-results
           retention-days: 7
 
-  docker-build:
-    name: Build Docker Images
-    runs-on: ubuntu-latest
-    needs: [build-backend, build-frontend, test-e2e]
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata for backend
-        id: meta-backend
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Build and push backend image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./docker/backend.Dockerfile
-          push: true
-          tags: ${{ steps.meta-backend.outputs.tags }}
-          labels: ${{ steps.meta-backend.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Extract metadata for frontend
-        id: meta-frontend
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Build and push frontend image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./docker/frontend.Dockerfile
-          push: true
-          tags: ${{ steps.meta-frontend.outputs.tags }}
-          labels: ${{ steps.meta-frontend.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
   deploy-azure:
     name: Deploy to Azure with azd CLI
     runs-on: ubuntu-latest
-    needs: [docker-build]
+    needs: [build-backend, build-frontend, test-e2e]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    environment:
-      name: production
-      url: https://threeriversbank.azurecontainerapps.io
     permissions:
       id-token: write
       contents: read
@@ -242,14 +180,15 @@ jobs:
         run: |
           azd up --environment production --no-prompt
         env:
+          AZURE_ENV_NAME: production
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-          AZURE_LOCATION: "eastus"
+          AZURE_LOCATION: ${{ vars.AZURE_LOCATION || 'eastus2' }}
 
       - name: Get Application URLs
         id: get-urls
         run: |
-          BACKEND_URL=$(azd env get-values --environment production | grep BACKEND_URI | cut -d'=' -f2 | tr -d '"')
-          FRONTEND_URL=$(azd env get-values --environment production | grep FRONTEND_URI | cut -d'=' -f2 | tr -d '"')
+          BACKEND_URL=$(azd env get-values --environment production | grep backend_uri | cut -d'=' -f2 | tr -d '"')
+          FRONTEND_URL=$(azd env get-values --environment production | grep frontend_uri | cut -d'=' -f2 | tr -d '"')
           echo "backend-url=$BACKEND_URL" >> $GITHUB_OUTPUT
           echo "frontend-url=$FRONTEND_URL" >> $GITHUB_OUTPUT
           echo "🚀 Deployment completed!"

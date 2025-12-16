@@ -21,7 +21,7 @@ This implementation provides complete Infrastructure as Code (IaC) for deploying
 ### 🚀 CI/CD Pipeline Implementation
 
 #### GitHub Actions Workflows:
-1. **Enhanced existing workflow** (.github/workflows/deploy.yml):
+1. **Enhanced existing workflow** (.github/workflows/build-deploy.yml):
    - Added azd CLI integration to existing Docker-based pipeline
    - Maintains backward compatibility
    - Uses GitHub Container Registry + azd deployment
