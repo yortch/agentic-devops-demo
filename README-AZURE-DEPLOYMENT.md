@@ -31,20 +31,8 @@ azd init
 ```
 
 ### Setup Infrastructure Files
-Run the PowerShell setup script to create the necessary directory structure:
-```powershell
-.\setup-azure-infra.ps1
-```
-
-Then manually move the Terraform files to the correct locations:
+Terraform IaC is already located under `infra/terraform/` (the standard azd layout for Terraform). If you want azd to pick up the default environment setting, copy the azd config:
 ```bash
-# Create infra directory and move files
-mkdir -p infra
-cp terraform-main.tf infra/main.tf
-cp terraform-variables.tf infra/variables.tf
-cp terraform-outputs.tf infra/outputs.tf
-
-# Create .azd config
 mkdir -p .azd
 cp azd-config.json .azd/config.json
 ```
@@ -98,18 +86,19 @@ az ad sp create-for-rbac --name "three-rivers-bank-github" \
    - `AZURE_TENANT_ID`: Same as secret (for OIDC)  
    - `AZURE_SUBSCRIPTION_ID`: Same as secret (for OIDC)
 
-### Enable Workflow
-Copy the GitHub Actions workflow:
-```bash
-cp github-actions-azure-deploy.yml .github/workflows/azure-deploy.yml
-```
+### Active Workflow
+The repository includes [azure-azd-deploy.yml](.github/workflows/azure-azd-deploy.yml) which provides:
+- **Environment Selection**: Deploy to dev/staging/production via workflow_dispatch
+- **Path Filtering**: Only runs when relevant code changes (backend/, frontend/, docker/, infra/)
+- **Validation**: Terraform fmt and validate checks before deployment
+- **Smoke Tests**: Automated health checks after deployment
 
 ### Pipeline Stages
-1. **Build**: Compiles backend (Maven) and frontend (npm)
-2. **Test**: Runs unit tests and E2E tests with Playwright
-3. **Deploy Infrastructure**: Uses `azd provision` to deploy Terraform infrastructure
-4. **Deploy Applications**: Uses `azd deploy` to build and deploy container images
-5. **Cleanup**: Handles rollback on failure
+1. **Validate**: Terraform format check and validation
+2. **Build and Test**: Compiles backend (Maven) and frontend (npm), runs unit tests and E2E tests with Playwright
+3. **Deploy**: Uses `azd provision` and `azd deploy` for infrastructure and application deployment
+4. **Smoke Tests**: Verifies backend health and API endpoints
+5. **Cleanup**: Optional cleanup on failure for dev environment
 
 ## Infrastructure Components
 
@@ -169,7 +158,7 @@ az containerapp update --name <app-name> --resource-group <rg-name> --min-replic
 4. **Terraform state issues**:
    ```bash
    # Reset Terraform state (use cautiously)
-   cd infra
+   cd infra/terraform
    terraform init -reconfigure
    ```
 

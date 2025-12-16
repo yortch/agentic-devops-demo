@@ -40,10 +40,10 @@ resource "random_string" "resource_suffix" {
 locals {
   # Default location for all resources
   location = var.location
-  
+
   # Resource naming
   resource_token = random_string.resource_suffix.result
-  
+
   # Tags applied to all resources
   tags = merge(var.tags, {
     "azd-env-name" = var.environment_name
@@ -125,7 +125,7 @@ resource "azurerm_container_app" "backend" {
   container_app_environment_id = azurerm_container_app_environment.main.id
   resource_group_name          = azurerm_resource_group.main.name
   revision_mode                = "Single"
-  tags                         = local.tags
+  tags                         = merge(local.tags, { "azd-service-name" = "backend" })
 
   template {
     min_replicas = 1
@@ -133,9 +133,14 @@ resource "azurerm_container_app" "backend" {
 
     container {
       name   = "backend"
-      image  = "${azurerm_container_registry.main.login_server}/backend:latest"
+      image  = "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
       cpu    = 0.5
       memory = "1Gi"
+
+      env {
+        name  = "CORS_ALLOWED_ORIGINS"
+        value = "https://${azurecaf_name.frontend_app.result}.${azurerm_container_app_environment.main.default_domain},http://localhost:5173,http://localhost:3000"
+      }
 
       env {
         name  = "BIAN_API_URL"
@@ -194,7 +199,7 @@ resource "azurerm_container_app" "frontend" {
   container_app_environment_id = azurerm_container_app_environment.main.id
   resource_group_name          = azurerm_resource_group.main.name
   revision_mode                = "Single"
-  tags                         = local.tags
+  tags                         = merge(local.tags, { "azd-service-name" = "frontend" })
 
   template {
     min_replicas = 1
@@ -202,13 +207,13 @@ resource "azurerm_container_app" "frontend" {
 
     container {
       name   = "frontend"
-      image  = "${azurerm_container_registry.main.login_server}/frontend:latest"
+      image  = "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
       cpu    = 0.25
       memory = "0.5Gi"
 
       env {
-        name  = "REACT_APP_API_URL"
-        value = "https://${azurerm_container_app.backend.latest_revision_fqdn}"
+        name  = "VITE_API_BASE_URL"
+        value = "https://${azurerm_container_app.backend.ingress[0].fqdn}/api"
       }
     }
   }

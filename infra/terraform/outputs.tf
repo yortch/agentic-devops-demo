@@ -13,12 +13,6 @@ output "azure_container_registry_endpoint" {
   description = "The endpoint for the container registry"
 }
 
-output "azure_container_registry_managed_identity_id" {
-  value       = azurerm_container_registry.main.identity[0].principal_id
-  description = "The managed identity ID for the container registry"
-  depends_on  = [azurerm_container_registry.main]
-}
-
 output "backend_uri" {
   value       = "https://${azurerm_container_app.backend.latest_revision_fqdn}"
   description = "The URI for the backend service"

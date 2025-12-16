@@ -256,9 +256,6 @@ This project includes comprehensive Infrastructure as Code (IaC) using Azure Dev
 ### Quick Start with azd CLI
 
 ```bash
-# Setup Azure infrastructure files
-.\setup-azure-deployment.ps1 -InitializeAzd
-
 # Login to Azure
 az login
 azd auth login

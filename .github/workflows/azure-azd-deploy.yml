@@ -42,10 +42,9 @@ jobs:
 
       - name: Setup Infrastructure Files
         run: |
-          mkdir -p infra
-          cp terraform-main.tf infra/main.tf
-          cp terraform-variables.tf infra/variables.tf
-          cp terraform-outputs.tf infra/outputs.tf
+          test -f infra/terraform/main.tf
+          test -f infra/terraform/variables.tf
+          test -f infra/terraform/outputs.tf
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -54,12 +53,12 @@ jobs:
 
       - name: Terraform Format Check
         run: |
-          cd infra
+          cd infra/terraform
           terraform fmt -check
 
       - name: Terraform Validate
         run: |
-          cd infra
+          cd infra/terraform
           terraform init -backend=false
           terraform validate
 
@@ -145,10 +144,9 @@ jobs:
 
       - name: Setup Infrastructure Files
         run: |
-          mkdir -p infra
-          cp terraform-main.tf infra/main.tf
-          cp terraform-variables.tf infra/variables.tf
-          cp terraform-outputs.tf infra/outputs.tf
+          test -f infra/terraform/main.tf
+          test -f infra/terraform/variables.tf
+          test -f infra/terraform/outputs.tf
           
           mkdir -p .azd
           cp azd-config.json .azd/config.json
@@ -235,10 +233,9 @@ jobs:
 
       - name: Setup Infrastructure Files
         run: |
-          mkdir -p infra
-          cp terraform-main.tf infra/main.tf
-          cp terraform-variables.tf infra/variables.tf
-          cp terraform-outputs.tf infra/outputs.tf
+          test -f infra/terraform/main.tf
+          test -f infra/terraform/variables.tf
+          test -f infra/terraform/outputs.tf
           
           mkdir -p .azd
           cp azd-config.json .azd/config.json

@@ -29,7 +29,7 @@ variable "backend_image_name" {
 
 variable "frontend_image_name" {
   type        = string
-  description = "The name of the frontend container image" 
+  description = "The name of the frontend container image"
   default     = "frontend:latest"
 }
 

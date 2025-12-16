@@ -7,15 +7,15 @@ This implementation provides complete Infrastructure as Code (IaC) for deploying
 ### 🏗️ Infrastructure Files Created
 
 1. **azure.yaml** - Main azd configuration defining services and hooks
-2. **terraform-main.tf** - Complete Terraform infrastructure with Azure resources:
+2. **infra/terraform/main.tf** - Complete Terraform infrastructure with Azure resources:
    - Resource Group with proper naming conventions
    - Azure Container Registry for Docker images
    - Log Analytics Workspace for monitoring
    - Container App Environment for serverless containers
    - Backend Container App (Spring Boot) with environment variables
    - Frontend Container App (React/Nginx) with backend integration
-3. **terraform-variables.tf** - Configurable parameters for different environments
-4. **terraform-outputs.tf** - Output values for application URLs and resource info
+3. **infra/terraform/variables.tf** - Configurable parameters for different environments
+4. **infra/terraform/outputs.tf** - Output values for application URLs and resource info
 5. **azd-config.json** - Default azd CLI configuration
 
 ### 🚀 CI/CD Pipeline Implementation
@@ -36,20 +36,7 @@ This implementation provides complete Infrastructure as Code (IaC) for deploying
 
 ### 🛠️ Developer Tools
 
-1. **setup-azure-deployment.ps1** - Interactive PowerShell script:
-   - Prerequisites validation (Azure CLI, azd, Terraform, Docker)
-   - Automatic directory structure creation
-   - Multi-environment configuration
-   - Step-by-step setup guidance
-
-2. **verify-azure-setup.ps1** - Verification script:
-   - Validates all required files exist
-   - Checks tool installations
-   - Verifies Azure CLI login status
-   - Confirms Docker daemon status
-   - Provides next-step recommendations
-
-3. **docker-compose.yml** - Local development environment:
+1. **docker-compose.yml** - Local development environment:
    - Full application stack with networking
    - Health checks for both services
    - Environment variable configuration
@@ -82,9 +69,6 @@ This implementation provides complete Infrastructure as Code (IaC) for deploying
 
 #### Local Development
 ```bash
-# Quick setup
-.\setup-azure-deployment.ps1 -InitializeAzd
-
 # Deploy to Azure
 azd up
 

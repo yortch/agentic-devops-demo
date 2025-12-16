@@ -229,12 +229,11 @@ jobs:
 
       - name: Setup Infrastructure Files
         run: |
-          # Create infra directory and move Terraform files
-          mkdir -p infra
-          cp terraform-main.tf infra/main.tf
-          cp terraform-variables.tf infra/variables.tf  
-          cp terraform-outputs.tf infra/outputs.tf
-          
+          # Validate expected azd Terraform layout
+          test -f infra/terraform/main.tf
+          test -f infra/terraform/variables.tf
+          test -f infra/terraform/outputs.tf
+
           # Create .azd directory and config
           mkdir -p .azd
           cp azd-config.json .azd/config.json

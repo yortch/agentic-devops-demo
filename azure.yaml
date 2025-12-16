@@ -9,9 +9,6 @@ services:
     project: ./backend
     language: java
     host: containerapp
-    docker:
-      path: ./docker/backend.Dockerfile
-      context: .
     env:
       BIAN_API_URL: "https://virtserver.swaggerhub.com/B154/BIAN/CreditCard/13.0.0"
       H2_CONSOLE_ENABLED: "false"
@@ -22,26 +19,7 @@ services:
     project: ./frontend
     language: js
     host: containerapp
-    docker:
-      path: ./docker/frontend.Dockerfile
-      context: .
-
-hooks:
-  preprovision:
-    windows:
-      - pwsh: |
-          Write-Host "Validating Azure CLI login..."
-          az account show
-          if ($LASTEXITCODE -ne 0) { 
-            Write-Error "Please login to Azure CLI first: az login"
-            exit 1
-          }
-    posix:
-      - shell: sh
-        run: |
-          echo "Validating Azure CLI login..."
-          az account show || (echo "Please login to Azure CLI first: az login" && exit 1)
 
 infra:
   provider: terraform
-  path: ./infra
+  path: ./infra/terraform
