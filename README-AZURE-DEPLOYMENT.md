@@ -1,19 +1,43 @@
 # Azure Deployment Guide for Three Rivers Bank
 
-This guide covers deploying the Three Rivers Bank Credit Card application to Azure using Azure Developer CLI (azd) with Terraform.
+This guide covers deploying the Three Rivers Bank Credit Card application to Azure using Azure Developer CLI (azd) with either **Terraform** or **Bicep** as the infrastructure provider.
 
 ## Prerequisites
 
 ### Required Tools
 - [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
 - [Azure Developer CLI (azd)](https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/install-azd)
-- [Terraform](https://www.terraform.io/downloads.html) (>= 1.0)
 - [Docker](https://www.docker.com/get-started)
+
+**For Terraform deployments:**
+- [Terraform](https://www.terraform.io/downloads.html) (>= 1.0)
+
+**For Bicep deployments:**
+- [Azure CLI with Bicep](https://docs.microsoft.com/en-us/azure/azure-resource-manager/bicep/install) (built into Azure CLI)
 
 ### Azure Setup
 1. **Azure Subscription**: Ensure you have an active Azure subscription
 2. **Service Principal**: Create a service principal for GitHub Actions
 3. **Resource Permissions**: Ensure permissions to create resources in your subscription
+
+## Infrastructure Options
+
+This project supports two IaC providers that deploy identical infrastructure:
+
+| Provider | Location | Configuration File | Requirements |
+|----------|----------|-------------------|--------------|
+| Terraform | `infra/terraform/` | `azure.yaml` (default) | Terraform CLI >= 1.0 |
+| Bicep | `infra/bicep/` | `azure.bicep.yaml` | Azure CLI with Bicep |
+
+### Switching Between Providers
+
+```bash
+# Use Bicep
+cp azure.bicep.yaml azure.yaml
+
+# Revert to Terraform
+git checkout azure.yaml
+```
 
 ## Local Development Deployment
 
@@ -31,8 +55,20 @@ azd init
 ```
 
 ### Setup Infrastructure Files
+
+**For Terraform (default):**
 Terraform IaC is already located under `infra/terraform/` (the standard azd layout for Terraform). If you want azd to pick up the default environment setting, copy the azd config:
 ```bash
+mkdir -p .azd
+cp azd-config.json .azd/config.json
+```
+
+**For Bicep:**
+```bash
+# Switch to Bicep configuration
+cp azure.bicep.yaml azure.yaml
+
+# Setup azd config
 mkdir -p .azd
 cp azd-config.json .azd/config.json
 ```
@@ -222,3 +258,4 @@ az group delete --name <resource-group-name> --yes --no-wait
 - **Azure Developer CLI**: [Documentation](https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/)
 - **Azure Container Apps**: [Documentation](https://learn.microsoft.com/en-us/azure/container-apps/)
 - **Terraform Azure Provider**: [Documentation](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs)
+- **Azure Bicep**: [Documentation](https://learn.microsoft.com/en-us/azure/azure-resource-manager/bicep/)
