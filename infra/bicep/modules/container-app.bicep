@@ -28,7 +28,7 @@ param imageName string
 @description('The target port for ingress')
 param targetPort int
 
-@description('The CPU allocation for the container')
+@description('The CPU allocation for the container (in cores, e.g., 0.25, 0.5, 1)')
 param cpu string
 
 @description('The memory allocation for the container')
@@ -47,8 +47,13 @@ param maxReplicas int = 3
 @description('Environment variables for the container')
 param env array = []
 
+@description('The name of the container inside the container app')
+param containerName string = ''
+
 // Use a placeholder image until the actual image is deployed by azd
 var defaultImage = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
+// Derive container name from the app name's last segment if not explicitly provided
+var derivedContainerName = !empty(containerName) ? containerName : last(split(name, '-'))
 
 resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
   name: name
@@ -86,7 +91,7 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
     template: {
       containers: [
         {
-          name: split(name, '-')[length(split(name, '-')) - 1]
+          name: derivedContainerName
           image: defaultImage
           resources: {
             cpu: json(cpu)

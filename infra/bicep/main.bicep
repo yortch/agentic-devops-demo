@@ -71,7 +71,8 @@ module containerAppsEnvironment 'modules/container-apps-environment.bicep' = {
     name: 'cae-${environmentName}'
     location: location
     tags: allTags
-    logAnalyticsWorkspaceId: logAnalytics.outputs.id
+    logAnalyticsCustomerId: logAnalytics.outputs.customerId
+    logAnalyticsSharedKey: logAnalytics.outputs.primarySharedKey
   }
 }
 
@@ -90,6 +91,7 @@ module backendApp 'modules/container-app.bicep' = {
     containerRegistryUsername: containerRegistry.outputs.adminUsername
     containerRegistryPassword: containerRegistry.outputs.adminPassword
     imageName: backendImageName
+    containerName: 'backend'
     targetPort: 8080
     cpu: '0.5'
     memory: '1Gi'
@@ -135,6 +137,7 @@ module frontendApp 'modules/container-app.bicep' = {
     containerRegistryUsername: containerRegistry.outputs.adminUsername
     containerRegistryPassword: containerRegistry.outputs.adminPassword
     imageName: frontendImageName
+    containerName: 'frontend'
     targetPort: 80
     cpu: '0.25'
     memory: '0.5Gi'
