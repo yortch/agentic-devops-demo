@@ -10,3 +10,7 @@ package-lock.json
 **/.terraform/
 **/terraform.tfstate*
 **/crash.log
+
+# Bicep compiled output (generated from .bicep files)
+infra/bicep/*.json
+!infra/bicep/main.parameters.json

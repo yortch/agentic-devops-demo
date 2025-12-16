@@ -100,6 +100,22 @@ agentic-devops-demo/
 │   ├── package.json                  # npm dependencies
 │   └── vite.config.js                # Vite configuration
 │
+├── infra/                            # Infrastructure as Code
+│   ├── terraform/                    # Terraform IaC (default)
+│   │   ├── main.tf                   # Main Terraform configuration
+│   │   ├── variables.tf              # Input variables
+│   │   ├── outputs.tf                # Output values
+│   │   └── main.tfvars.json          # Variable defaults for azd
+│   │
+│   └── bicep/                        # Bicep IaC (alternative)
+│       ├── main.bicep                # Main Bicep template
+│       ├── main.parameters.json      # Parameters for azd
+│       └── modules/                  # Reusable Bicep modules
+│           ├── container-registry.bicep
+│           ├── log-analytics.bicep
+│           ├── container-apps-environment.bicep
+│           └── container-app.bicep
+│
 ├── tests/
 │   ├── e2e/                          # Playwright E2E tests
 │   │   ├── card-comparison.spec.ts
@@ -122,6 +138,8 @@ agentic-devops-demo/
 │   ├── backend.Dockerfile
 │   └── frontend.Dockerfile
 │
+├── azure.yaml                        # azd config (Terraform)
+├── azure.bicep.yaml                  # azd config (Bicep)
 └── README.md
 ```
 
@@ -251,7 +269,7 @@ docker run -p 80:80 threeriversbank/frontend:latest
 
 ## ☁️ Azure Deployment
 
-This project includes comprehensive Infrastructure as Code (IaC) using Azure Developer CLI (azd) with Terraform for deploying to Azure Container Apps.
+This project includes comprehensive Infrastructure as Code (IaC) using Azure Developer CLI (azd) with **two provider options**: Terraform and Bicep. Both options deploy identical infrastructure to Azure Container Apps.
 
 ### Quick Start with azd CLI
 
@@ -260,8 +278,33 @@ This project includes comprehensive Infrastructure as Code (IaC) using Azure Dev
 az login
 azd auth login
 
-# Deploy everything to Azure
+# Deploy with Terraform (default)
 azd up
+
+# Or deploy with Bicep
+cp azure.bicep.yaml azure.yaml
+azd up
+```
+
+### Infrastructure Providers
+
+#### Terraform (Default)
+- Location: `infra/terraform/`
+- Files: `main.tf`, `variables.tf`, `outputs.tf`
+- Configuration: `azure.yaml` (default)
+
+#### Bicep (Alternative)
+- Location: `infra/bicep/`
+- Files: `main.bicep`, `main.parameters.json`, `modules/`
+- Configuration: `azure.bicep.yaml`
+
+To switch between providers, use the corresponding `azure.yaml` file:
+```bash
+# Use Bicep
+cp azure.bicep.yaml azure.yaml
+
+# Or revert to Terraform
+git checkout azure.yaml
 ```
 
 ### Infrastructure Components
