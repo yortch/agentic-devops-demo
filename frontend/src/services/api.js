@@ -41,4 +41,16 @@ export const creditCardService = {
   },
 };
 
+export const cardApplicationService = {
+  submitApplication: async (cardId, applicationData) => {
+    const response = await api.post(`/cards/${cardId}/apply`, applicationData);
+    return response.data;
+  },
+
+  getApplicationStatus: async (applicationId) => {
+    const response = await api.get(`/cards/applications/${applicationId}`);
+    return response.data;
+  },
+};
+
 export default api;

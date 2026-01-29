@@ -1,6 +1,7 @@
 package com.threeriversbank.controller;
 
 import com.threeriversbank.model.dto.CreditCardDto;
+import com.threeriversbank.service.CardApplicationService;
 import com.threeriversbank.service.CreditCardService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,9 @@ class CreditCardControllerTest {
 
     @MockBean
     private CreditCardService creditCardService;
+    
+    @MockBean
+    private CardApplicationService cardApplicationService;
 
     @Test
     void getAllCards_ShouldReturnListOfCards() throws Exception {
