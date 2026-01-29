@@ -124,7 +124,7 @@ const CardComparisonPage = () => {
       ) : viewMode === 'grid' ? (
         <Grid container spacing={3}>
           {filteredCards?.map((card) => (
-            <Grid item xs={12} sm={6} md={4} key={card.id}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={card.id}>
               <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <CardContent sx={{ flexGrow: 1 }}>
                   <Typography variant="h5" component="h2" gutterBottom fontWeight={600}>
