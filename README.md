@@ -133,6 +133,8 @@ agentic-devops-demo/
 - `GET /api/cards/{id}/fees` - Get card fee schedule
 - `GET /api/cards/{id}/interest` - Get interest rate details
 - `GET /api/cards/{id}/transactions` - Get sample transactions (BIAN)
+- `POST /api/cards/{id}/apply` - Submit a credit card application
+- `GET /api/cards/applications/{id}` - Get application status by application ID
 
 ### Management & Documentation
 - `GET /actuator/health` - Health check endpoint
@@ -146,6 +148,7 @@ agentic-devops-demo/
 - **CardFeature**: Individual card features and benefits
 - **FeeSchedule**: Detailed fee structure per card
 - **InterestRate**: Interest rate configurations and history
+- **CardApplication**: Credit card application submissions (name, email, business info, status)
 
 ## 🔗 BIAN API Integration
 
