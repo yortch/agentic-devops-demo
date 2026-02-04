@@ -1,12 +1,12 @@
 ---
 name: 'Feature Builder'
 description: 'End-to-end feature implementation with specialized sub-agents'
-tools: ['search', 'readFile', 'editFile', 'runInTerminal']
+tools: ['execute', 'read', 'edit', 'search', 'github/*', 'azure-mcp/search', 'agent', 'todo']
 model: 'Claude Sonnet 4.5'
 handoffs:
   - label: 'Security Review'
-    agent: 'SE: Security'
-    prompt: 'Review the implemented code for security vulnerabilities.'
+    agent: 'security-reviewer'
+    prompt: 'Review the implemented code for security vulnerabilities'
   - label: 'Write Tests'
     agent: 'test-writer'
     prompt: 'Write comprehensive tests for the new feature code.'

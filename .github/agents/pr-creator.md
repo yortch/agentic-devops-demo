@@ -1,8 +1,8 @@
 ---
-name: 'PR Creator'
+name: 'pr-creator'
 description: 'Create GitHub Pull Request from feature implementation with comprehensive description'
 model: Claude Sonnet 4.5
-tools: ['search', 'readFile', 'runInTerminal', 'github']
+tools: ['execute', 'read', 'edit', 'search', 'github/*', 'agent', 'todo']
 ---
 
 # PR Creator

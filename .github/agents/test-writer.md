@@ -1,8 +1,8 @@
 ---
-name: 'Test Writer'
+name: 'test-writer'
 description: 'Comprehensive testing specialist for Playwright E2E, JUnit backend, and React Testing Library'
 model: Claude Sonnet 4.5
-tools: ['search', 'readFile', 'editFile', 'runInTerminal', 'playwright']
+tools: ['web', 'github/*', 'edit', 'agent', 'search', 'todo', 'execute','search', 'playwright/*']
 ---
 
 # Test Writer
