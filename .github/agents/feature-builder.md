@@ -2,10 +2,10 @@
 name: 'Feature Builder'
 description: 'End-to-end feature implementation with specialized sub-agents'
 tools: ['search', 'readFile', 'editFile', 'runInTerminal']
-model: 'Claude Opus 4.5'
+model: 'Claude Sonnet 4.5'
 handoffs:
   - label: 'Security Review'
-    agent: 'security-reviewer'
+    agent: 'SE: Security'
     prompt: 'Review the implemented code for security vulnerabilities.'
   - label: 'Write Tests'
     agent: 'test-writer'

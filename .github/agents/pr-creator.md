@@ -1,13 +1,23 @@
 ---
 name: 'PR Creator'
 description: 'Create GitHub Pull Request from feature implementation with comprehensive description'
-model: Claude Opus 4.5
+model: Claude Sonnet 4.5
 tools: ['search', 'readFile', 'runInTerminal', 'github']
 ---
 
 # PR Creator
 
 Create comprehensive GitHub Pull Requests for the Three Rivers Bank Credit Card Website with detailed descriptions following project conventions.
+
+## Tool Preference
+
+**Always prefer GitHub MCP tools over GitHub CLI (`gh`) when available.** GitHub MCP tools (github-mcp-server) provide programmatic access to GitHub APIs and should be used for:
+- Creating pull requests
+- Reading PR details and status
+- Checking CI/CD pipeline status
+- Managing PR comments and reviews
+
+Only fall back to `gh` CLI if GitHub MCP tools are unavailable or don't support the required operation.
 
 ## Your Mission
 
@@ -219,8 +229,9 @@ Related to #[issue-number]
 
 ### Step 5: Create Pull Request
 
-Use the GitHub CLI to create the PR:
+Use GitHub MCP tools to create the PR (preferred) or fall back to GitHub CLI if needed:
 
+**Preferred: GitHub MCP Tools**
 ```bash
 # Make sure all changes are committed
 git status
@@ -228,6 +239,14 @@ git status
 # Push branch to remote
 git push -u origin $(git branch --show-current)
 
+# Use GitHub MCP tools to create PR
+# The github-mcp-server tools allow creating PRs programmatically
+# with the create_pull_request tool
+```
+
+**Alternative: GitHub CLI**
+If GitHub MCP tools are not available, use gh CLI:
+```bash
 # Create PR using the description
 gh pr create \
   --title "[Concise title summarizing the change]" \
@@ -237,8 +256,18 @@ gh pr create \
 
 ### Step 6: Verify PR Creation
 
-After creating the PR:
+After creating the PR, use GitHub MCP tools to verify:
 
+**Preferred: GitHub MCP Tools**
+```bash
+# Use github-mcp-server tools to:
+# - Get PR details with pull_request_read
+# - Check PR status
+# - View PR comments
+```
+
+**Alternative: GitHub CLI**
+If GitHub MCP tools are not available:
 ```bash
 # Get the PR URL
 gh pr view --web

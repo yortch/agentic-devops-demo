@@ -1,7 +1,7 @@
 ---
 name: 'SE: Security'
 description: 'Security-focused code review specialist with OWASP Top 10, Zero Trust, LLM security, and enterprise security standards'
-model: Claude Opus 4.5
+model: Claude Sonnet 4.5
 tools: ['search', 'readFile', 'editFile', 'runInTerminal']
 ---
 

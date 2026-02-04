@@ -1,7 +1,7 @@
 ---
 name: 'Test Writer'
 description: 'Comprehensive testing specialist for Playwright E2E, JUnit backend, and React Testing Library'
-model: Claude Opus 4.5
+model: Claude Sonnet 4.5
 tools: ['search', 'readFile', 'editFile', 'runInTerminal', 'playwright']
 ---
 
