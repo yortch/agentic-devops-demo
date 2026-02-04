@@ -41,4 +41,11 @@ export const creditCardService = {
   },
 };
 
+export const applicationService = {
+  submitApplication: async (applicationData) => {
+    const response = await api.post('/applications', applicationData);
+    return response.data;
+  },
+};
+
 export default api;
