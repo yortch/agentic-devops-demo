@@ -1,7 +1,11 @@
 # Three Rivers Bank Credit Card Website - AI Coding Agent Instructions
 
+> **📖 Complete Documentation:** For comprehensive guidelines, see [Always-On Instructions](../docs/part-2-1-always-on-instructions.md)
+
 ## Project Overview
 Full-stack credit card comparison platform: React (Vite) frontend + Spring Boot backend, integrating BIAN API v13.0.0 for banking standards. **READ-ONLY APIs, no authentication required.**
+
+This file provides quick reference instructions for GitHub Copilot. For detailed architecture, workflows, and troubleshooting, refer to the complete documentation in `docs/part-2-1-always-on-instructions.md`.
 
 ## Architecture & Data Flow
 
