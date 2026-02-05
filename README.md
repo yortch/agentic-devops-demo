@@ -127,12 +127,18 @@ agentic-devops-demo/
 
 ## 🔌 API Endpoints
 
-### REST API
+### Credit Card REST API
 - `GET /api/cards` - List all credit cards with filtering/sorting
 - `GET /api/cards/{id}` - Get detailed card information
 - `GET /api/cards/{id}/fees` - Get card fee schedule
 - `GET /api/cards/{id}/interest` - Get interest rate details
 - `GET /api/cards/{id}/transactions` - Get sample transactions (BIAN)
+
+### Azure DevOps Integration API
+- `GET /api/workitems/user-stories` - List all user stories from Azure DevOps
+- `GET /api/workitems` - List all work items from Azure DevOps
+- `GET /api/workitems/{id}` - Get detailed work item information
+- `GET /api/projects/{projectName}/backlog` - Get backlog items for a specific project
 
 ### Management & Documentation
 - `GET /actuator/health` - Health check endpoint
@@ -147,7 +153,9 @@ agentic-devops-demo/
 - **FeeSchedule**: Detailed fee structure per card
 - **InterestRate**: Interest rate configurations and history
 
-## 🔗 BIAN API Integration
+## 🔗 API Integrations
+
+### BIAN API Integration
 
 Integrates with BIAN Credit Card API v13.0.0 via Swagger Hub mock server:
 - **Base URL**: `https://virtserver.swaggerhub.com/B154/BIAN/CreditCard/13.0.0`
@@ -156,11 +164,21 @@ Integrates with BIAN Credit Card API v13.0.0 via Swagger Hub mock server:
   - `/CreditCard/{id}/CardTransaction/{txid}/Retrieve`
   - `/CreditCard/{id}/Billing/{billingid}/Retrieve`
 
+### Azure DevOps API Integration
+
+Integrates with Azure DevOps REST API for work item management:
+- **Base URL**: `https://dev.azure.com/{organization}/{project}/_apis`
+- **Authentication**: Basic Auth with Personal Access Token (PAT)
+- **Endpoints Used**:
+  - `/wit/wiql` - Query work items using WIQL
+  - `/wit/workitems/{id}` - Get work item details
+  - `/wit/workitems?ids={ids}` - Batch get work items
+
 ### Resilience Features
-- Circuit breaker pattern (Resilience4j)
+- Circuit breaker pattern (Resilience4j) for both APIs
 - Retry logic: 3 attempts, 5s timeout
-- Fallback to H2 data on BIAN API failure
-- Response caching: 5min (transactions), 1hr (billing)
+- Fallback to sample data on API failure
+- Response caching: 5min (transactions), 1hr (billing), 5min (work items)
 
 ## 🚀 Getting Started
 
