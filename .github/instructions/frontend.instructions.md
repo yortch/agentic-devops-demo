@@ -41,7 +41,7 @@ This React frontend implements a credit card comparison interface with:
 
 - Import static assets directly in components:
   ```jsx
-  import logo from './assets/logo.svg'
+  import logo from './assets/logo.svg';
   ```
 - Assets in `public/` directory are served at root URL
 - Use `import.meta.env.VITE_API_URL` for environment variables

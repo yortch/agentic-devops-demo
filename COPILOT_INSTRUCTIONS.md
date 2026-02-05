@@ -175,7 +175,7 @@ To update or add instructions:
 - **GitHub Copilot Documentation:** https://docs.github.com/en/copilot
 - **File-Based Instructions Guide:** https://github.com/Norman-Norman-Norman/customize-your-repo/blob/main/docs/part-2-2-file-based-instructions.md
 - **Awesome Copilot Repository:** https://github.com/github/awesome-copilot
-- **Issue #24:** https://github.com/yortch/agentic-devops-demo/issues/24
+- [**Issue #24**](../../issues/24)
 
 ## Questions or Issues?
 

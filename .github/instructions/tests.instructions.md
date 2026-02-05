@@ -46,10 +46,6 @@ test.describe('Feature Name', () => {
     
     // Assert: Verify expected outcomes
   });
-  
-  test.afterEach(async ({ page }) => {
-    // Cleanup if needed
-  });
 });
 ```
 
