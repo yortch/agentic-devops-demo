@@ -25,10 +25,7 @@ spring:
       mode: always
   
   cache:
-    type: simple
-    cache-names:
-      - transactions
-      - billing
+    type: caffeine
 
 server:
   port: 8080
