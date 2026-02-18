@@ -9,6 +9,17 @@ const api = axios.create({
   },
 });
 
+const handleApiError = (error, fallbackMessage) => {
+  const message = error.response?.data?.message
+    || error.response?.data?.error
+    || error.message
+    || fallbackMessage;
+  const apiError = new Error(message);
+  apiError.status = error.response?.status;
+  apiError.data = error.response?.data;
+  throw apiError;
+};
+
 export const creditCardService = {
   getAllCards: async (params = {}) => {
     const response = await api.get('/cards', { params });
@@ -38,6 +49,26 @@ export const creditCardService = {
   getCardBilling: async (id) => {
     const response = await api.get(`/cards/${id}/billing`);
     return response.data;
+  },
+};
+
+export const applicationService = {
+  submitApplication: async (applicationData) => {
+    try {
+      const response = await api.post('/applications', applicationData);
+      return response.data;
+    } catch (error) {
+      handleApiError(error, 'Failed to submit credit card application.');
+    }
+  },
+
+  getApplicationStatus: async (trackingId) => {
+    try {
+      const response = await api.get(`/applications/track/${trackingId}`);
+      return response.data;
+    } catch (error) {
+      handleApiError(error, 'Failed to fetch application status.');
+    }
   },
 };
 

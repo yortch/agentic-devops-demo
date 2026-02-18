@@ -6,6 +6,7 @@ import com.threeriversbank.model.entity.*;
 import com.threeriversbank.repository.*;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
@@ -42,7 +43,7 @@ public class CreditCardService {
     public CreditCardDto getCreditCardById(Long id) {
         log.info("Fetching credit card with id: {} from H2 database", id);
         CreditCard card = creditCardRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Credit card not found with id: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Credit card not found with id: " + id));
         return convertToDtoWithDetails(card);
     }
     

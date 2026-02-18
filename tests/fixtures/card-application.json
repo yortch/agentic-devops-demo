@@ -1,0 +1,40 @@
+{
+  "cardId": 1,
+  "personal": {
+    "firstName": "Jordan",
+    "lastName": "Miles",
+    "email": "jordan.miles@example.com",
+    "phone": "4125550199",
+    "dateOfBirth": "1990-04-20",
+    "homeAddress": {
+      "street": "123 Liberty Ave",
+      "city": "Pittsburgh",
+      "state": "PA",
+      "zipCode": "15222"
+    }
+  },
+  "business": {
+    "businessLegalName": "Miles Consulting LLC",
+    "businessType": "LLC",
+    "yearsInBusiness": "6",
+    "taxIdLast4": "1234",
+    "businessAddress": {
+      "street": "456 Penn Ave",
+      "city": "Pittsburgh",
+      "state": "PA",
+      "zipCode": "15219"
+    }
+  },
+  "incomeEmployment": {
+    "annualPersonalIncome": "120000",
+    "annualBusinessRevenue": "350000",
+    "employmentStatus": "Employed",
+    "employerName": "Three Rivers Consulting",
+    "jobTitle": "Managing Partner",
+    "yearsEmployed": "5"
+  },
+  "invalid": {
+    "email": "not-an-email",
+    "phone": "123"
+  }
+}

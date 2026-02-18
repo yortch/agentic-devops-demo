@@ -11,6 +11,8 @@ import Footer from './components/layout/Footer';
 import HomePage from './pages/HomePage';
 import CardComparisonPage from './pages/CardComparisonPage';
 import CardDetailsPage from './pages/CardDetailsPage';
+import CardApplicationPage from './pages/CardApplicationPage';
+import ApplicationConfirmationPage from './pages/ApplicationConfirmationPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,6 +37,8 @@ function App() {
                 <Route path="/" element={<HomePage />} />
                 <Route path="/cards" element={<CardComparisonPage />} />
                 <Route path="/cards/:id" element={<CardDetailsPage />} />
+                <Route path="/cards/:id/apply" element={<CardApplicationPage />} />
+                <Route path="/applications/:trackingId/submitted" element={<ApplicationConfirmationPage />} />
               </Routes>
             </Box>
             <Footer />
