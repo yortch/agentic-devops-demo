@@ -32,6 +32,7 @@ applyTo: '**/*.java'
 
 ## Best practices
 
+- **Imports**: **MUST never use Java wildcard imports** (e.g., `import java.util.*`). Always use explicit imports for each class (e.g., `import java.util.List`). This improves readability, avoids naming conflicts, and makes dependencies explicit.
 - **Records**: For classes primarily intended to store data (e.g., DTOs, immutable data structures), **Java Records should be used instead of traditional classes**.
 - **Pattern Matching**: Utilize pattern matching for `instanceof` and `switch` expression to simplify conditional logic and type casting.
 - **Type Inference**: Use `var` for local variable declarations to improve readability, but only when the type is explicitly clear from the right-hand side of the expression.
