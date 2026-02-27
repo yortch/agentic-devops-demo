@@ -1,7 +1,7 @@
 ---
 name: 'Code Reviewer'
 description: 'Full-stack code review specialist for Spring Boot backend and React frontend with security, performance, and coding standards focus'
-model: GPT-4.1
+model: Claude Opus 4.6 (copilot)
 tools: ['codebase', 'search', 'problems']
 ---
 
