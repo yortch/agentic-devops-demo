@@ -1,10 +1,6 @@
 package com.threeriversbank.controller;
 
-import com.threeriversbank.model.dto.BillingDto;
-import com.threeriversbank.model.dto.CardTransactionDto;
-import com.threeriversbank.model.dto.CreditCardDto;
-import com.threeriversbank.model.dto.FeeScheduleDto;
-import com.threeriversbank.model.dto.InterestRateDto;
+import com.threeriversbank.model.dto.*;
 import com.threeriversbank.service.CreditCardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
