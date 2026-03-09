@@ -14,8 +14,15 @@ RUN mvn clean package -DskipTests
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
+# Create non-root user
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
 # Copy the built artifact from build stage
 COPY --from=build /app/target/credit-card-backend-1.0.0.jar app.jar
+
+# Set ownership and switch to non-root user
+RUN chown appuser:appgroup app.jar
+USER appuser
 
 # Expose port
 EXPOSE 8080

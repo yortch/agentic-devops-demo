@@ -2,3 +2,23 @@ node_modules
 playwright-report
 test-results
 package-lock.json
+
+# Java build artifacts
+target/
+*.class
+*.jar
+*.war
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.swp
+
+# Environment files
+.env
+!frontend/.env.example
+
+# OS artifacts
+.DS_Store
+Thumbs.db
