@@ -2,7 +2,7 @@ name: Build and Deploy Three Rivers Bank
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, iac]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -139,7 +139,7 @@ jobs:
     name: Deploy to Azure with azd CLI
     runs-on: ubuntu-latest
     needs: [build-backend, build-frontend, test-e2e]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/iac')
     permissions:
       id-token: write
       contents: read
