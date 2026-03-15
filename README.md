@@ -251,18 +251,7 @@ docker run -p 80:80 threeriversbank/frontend:latest
 
 ## ☁️ Azure Deployment
 
-This project includes comprehensive Infrastructure as Code (IaC) using Azure Developer CLI (azd) with Terraform for deploying to Azure Container Apps.
-
-### Quick Start with azd CLI
-
-```bash
-# Login to Azure
-az login
-azd auth login
-
-# Deploy everything to Azure
-azd up
-```
+This project uses **Azure Developer CLI (azd)** with **Terraform** for deploying to Azure Container Apps. CI/CD is handled by two separate GitHub Actions workflows.
 
 ### Infrastructure Components
 - **Resource Group**: Contains all Azure resources
@@ -277,51 +266,96 @@ azd up
 - **Ingress**: HTTPS-only with automatic SSL certificates
 - **Health Checks**: Backend `/actuator/health`, Frontend root path
 
+### Quick Start with azd CLI (Local)
+
+```bash
+# Login to Azure
+az login
+azd auth login
+
+# Deploy everything to Azure
+azd up
+```
+
+### CI/CD Pipeline
+
+The pipeline is split into two workflows:
+
+- **CI** (`.github/workflows/ci.yml`): Builds backend/frontend, runs unit and E2E tests on every push and PR.
+- **CD** (`.github/workflows/cd.yml`): Deploys to Azure with `azd up` automatically after a successful CI run on `main` or `iac` branches. Can also be triggered manually via `workflow_dispatch`.
+
+### Setting Up the Service Principal for GitHub Actions (OIDC)
+
+This project uses **federated credentials (OIDC)** for secure, secretless authentication between GitHub Actions and Azure.
+
+#### 1. Create an App Registration
+
+```bash
+# Create the app registration
+az ad app create --display-name "agentic-devops-demo-cicd"
+
+# Note the appId and id (objectId) from the output
+# Example:
+#   appId:    xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+#   objectId: yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
+```
+
+#### 2. Create the Service Principal
+
+```bash
+az ad sp create --id <appId>
+```
+
+#### 3. Assign the Contributor Role
+
+```bash
+az role assignment create \
+  --assignee <appId> \
+  --role "Contributor" \
+  --scope "/subscriptions/<subscription-id>"
+```
+
+#### 4. Create Federated Credentials for GitHub OIDC
+
+Create a credential for each branch that the CD workflow deploys from:
+
+```bash
+# For main branch
+az ad app federated-credential create --id <objectId> --parameters '{
+  "name": "github-main",
+  "issuer": "https://token.actions.githubusercontent.com",
+  "subject": "repo:<owner>/<repo>:ref:refs/heads/main",
+  "audiences": ["api://AzureADTokenExchange"]
+}'
+
+# For iac branch (or any other deploy branch)
+az ad app federated-credential create --id <objectId> --parameters '{
+  "name": "github-iac",
+  "issuer": "https://token.actions.githubusercontent.com",
+  "subject": "repo:<owner>/<repo>:ref:refs/heads/iac",
+  "audiences": ["api://AzureADTokenExchange"]
+}'
+```
+
+#### 5. Configure GitHub Repository Variables
+
+Set these as **repository variables** (not secrets — OIDC doesn't need secrets):
+
+```bash
+gh variable set AZURE_CLIENT_ID     --body "<appId>"
+gh variable set AZURE_TENANT_ID     --body "<tenantId>"
+gh variable set AZURE_SUBSCRIPTION_ID --body "<subscriptionId>"
+gh variable set AZURE_LOCATION      --body "eastus2"
+```
+
+> **Note**: No `AZURE_CLIENT_SECRET` is needed with OIDC. The GitHub Actions workflow exchanges a short-lived token with Azure using the federated credential.
+
 ### Environment Variables
 - `BIAN_API_URL`: BIAN API base URL
 - `H2_CONSOLE_ENABLED`: Enable/disable H2 console (false in prod)
 - `LOGGING_LEVEL`: Application logging level (INFO)
 - `SPRING_PROFILES_ACTIVE`: Spring profile (production)
-- `REACT_APP_API_URL`: Backend URL for frontend
-
-### CI/CD Pipeline Options
-
-#### Option 1: GitHub Actions with Docker Images
-Workflow: `.github/workflows/build-deploy.yml` (existing)
-1. Builds and tests applications
-2. Creates Docker images
-3. Pushes to GitHub Container Registry
-4. Deploys to Azure Container Apps
-
-#### Option 2: GitHub Actions with azd CLI  
-Workflow: `.github/workflows/azure-azd-deploy.yml` (new)
-1. Validates Terraform infrastructure
-2. Builds and tests applications  
-3. Provisions infrastructure with `azd provision`
-4. Deploys applications with `azd deploy`
-5. Runs smoke tests
-6. Cleanup on failure
-
-### Repository Setup for GitHub Actions
-
-1. **Create Azure Service Principal**:
-```bash
-az ad sp create-for-rbac --name "three-rivers-bank-github" \
-  --role contributor \
-  --scopes /subscriptions/{subscription-id} \
-  --sdk-auth
-```
-
-2. **Configure GitHub Secrets**:
-   - `AZURE_CLIENT_ID`: Service principal client ID
-   - `AZURE_CLIENT_SECRET`: Service principal secret
-   - `AZURE_TENANT_ID`: Azure tenant ID  
-   - `AZURE_SUBSCRIPTION_ID`: Azure subscription ID
-
-3. **Configure GitHub Variables**:
-   - `AZURE_CLIENT_ID`: Same as secret (for OIDC)
-   - `AZURE_TENANT_ID`: Same as secret (for OIDC)
-   - `AZURE_SUBSCRIPTION_ID`: Same as secret (for OIDC)
+- `VITE_API_BASE_URL`: Backend API URL for frontend (injected at runtime)
 
 ### Local Development with Docker
 ```bash
