@@ -15,6 +15,11 @@ terraform {
       version = "~>3.4.0"
     }
   }
+
+  # Remote state in Azure Storage — bootstrapped by CD pipeline via Azure CLI.
+  # Config values are set via `azd env set` and substituted into provider.conf.json.
+  # Auth uses ARM_ACCESS_KEY (local: setup-tfstate.sh, CI: cd.yml).
+  backend "azurerm" {}
 }
 
 # Configure the Azure Provider

@@ -183,6 +183,7 @@ Integrates with BIAN Credit Card API v13.0.0 via Swagger Hub mock server:
 - **Backend**: Java 17+, Maven 3.8+
 - **Frontend**: Node.js 18+, npm 9+
 - **Testing**: Playwright (installed via npm)
+- **Azure Deployment**: Azure CLI (`az`), Azure Developer CLI (`azd`), Terraform 1.1+
 
 ### Local Development
 
@@ -283,14 +284,27 @@ This project uses **Azure Developer CLI (azd)** with **Terraform** for deploying
 
 ### Quick Start with azd CLI (Local)
 
+#### Prerequisites
+
+Before running `azd up` locally, you must bootstrap the Terraform remote state backend.
+This creates an Azure Storage Account used to persist Terraform state across runs:
+
 ```bash
 # Login to Azure
 az login
 azd auth login
 
+# Bootstrap the Terraform state backend (one-time setup, idempotent)
+source ./setup-tfstate.sh
+
 # Deploy everything to Azure
 azd up
 ```
+
+> **Note:** The `source` command exports `RS_STORAGE_ACCOUNT`, `RS_CONTAINER_NAME`, and
+> `RS_RESOURCE_GROUP` environment variables into your shell. These tell `azd` where to
+> store Terraform state. You must re-run `source ./setup-tfstate.sh` in each new terminal
+> session before running `azd up` or `azd provision`.
 
 ### CI/CD Pipeline
 

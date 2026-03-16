@@ -55,6 +55,57 @@ jobs:
             --federated-credential-provider "github" \
             --tenant-id "${{ vars.AZURE_TENANT_ID }}"
 
+      - name: Bootstrap Terraform State Backend
+        id: tfstate
+        run: |
+          # Derive a globally unique storage account name from the subscription ID
+          SUB_CLEAN=$(echo "${{ vars.AZURE_SUBSCRIPTION_ID }}" | tr -d '-' | cut -c1-12)
+          TFSTATE_RG="rg-tfstate"
+          TFSTATE_SA="sttf${SUB_CLEAN}"
+          TFSTATE_CONTAINER="tfstate"
+          LOCATION="${{ vars.AZURE_LOCATION }}"
+          ENV_NAME="${{ inputs.environment || 'dev' }}"
+
+          echo "Resource group:    $TFSTATE_RG"
+          echo "Storage account:   $TFSTATE_SA"
+          echo "Container:         $TFSTATE_CONTAINER"
+
+          # Create resource group (idempotent)
+          az group create \
+            --name "$TFSTATE_RG" \
+            --location "$LOCATION" \
+            --output none
+
+          # Create storage account (idempotent)
+          az storage account create \
+            --name "$TFSTATE_SA" \
+            --resource-group "$TFSTATE_RG" \
+            --location "$LOCATION" \
+            --sku Standard_LRS \
+            --allow-blob-public-access false \
+            --output none
+
+          # Create blob container (idempotent)
+          az storage container create \
+            --name "$TFSTATE_CONTAINER" \
+            --account-name "$TFSTATE_SA" \
+            --auth-mode login \
+            --output none
+
+          # Store values in azd environment for provider.conf.json substitution
+          azd env new "$ENV_NAME" --no-prompt 2>/dev/null || true
+          azd env set RS_STORAGE_ACCOUNT "$TFSTATE_SA" --environment "$ENV_NAME"
+          azd env set RS_CONTAINER_NAME "$TFSTATE_CONTAINER" --environment "$ENV_NAME"
+          azd env set RS_RESOURCE_GROUP "$TFSTATE_RG" --environment "$ENV_NAME"
+
+          # Get storage account key for Terraform backend auth
+          ACCOUNT_KEY=$(az storage account keys list \
+            --account-name "$TFSTATE_SA" \
+            --resource-group "$TFSTATE_RG" \
+            --query '[0].value' -o tsv)
+          echo "::add-mask::$ACCOUNT_KEY"
+          echo "access_key=$ACCOUNT_KEY" >> "$GITHUB_OUTPUT"
+
       - name: Provision and Deploy
         run: |
           azd up --environment ${{ inputs.environment || 'dev' }} --no-prompt
@@ -66,6 +117,7 @@ jobs:
           ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
           ARM_USE_OIDC: "true"
+          ARM_ACCESS_KEY: ${{ steps.tfstate.outputs.access_key }}
 
       - name: Get Application URLs
         id: get-urls
