@@ -59,8 +59,5 @@ if [ -n "$CURRENT_USER_ID" ]; then
     --output none 2>/dev/null || true
 fi
 
-# Use Azure AD auth for Terraform backend (works with az login and OIDC)
-azd env set ARM_USE_AZUREAD true 2>/dev/null || true
-export ARM_USE_AZUREAD=true
-
+# Use Azure AD auth for Terraform backend (configured in provider.conf.json)
 echo "==> Environment configured. You can now run: azd up"

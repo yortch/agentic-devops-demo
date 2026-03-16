@@ -97,7 +97,6 @@ jobs:
           azd env set RS_STORAGE_ACCOUNT "$TFSTATE_SA" --environment "$ENV_NAME"
           azd env set RS_CONTAINER_NAME "$TFSTATE_CONTAINER" --environment "$ENV_NAME"
           azd env set RS_RESOURCE_GROUP "$TFSTATE_RG" --environment "$ENV_NAME"
-          azd env set ARM_USE_AZUREAD true --environment "$ENV_NAME"
 
           # Assign Storage Blob Data Contributor to the CI service principal
           SP_ID=$(az ad sp show --id "${{ vars.AZURE_CLIENT_ID }}" --query id -o tsv)
@@ -122,7 +121,6 @@ jobs:
           ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
           ARM_USE_OIDC: "true"
-          ARM_USE_AZUREAD: "true"
 
       - name: Get Application URLs
         id: get-urls
