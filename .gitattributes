@@ -5,3 +5,4 @@ docker-entrypoint.sh text eol=lf
 # Dockerfiles
 Dockerfile text eol=lf
 *.Dockerfile text eol=lf
+.github/workflows/*.lock.yml linguist-generated=true merge=ours
