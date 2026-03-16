@@ -332,16 +332,40 @@ az ad app create --display-name "agentic-devops-demo-cicd"
 az ad sp create --id <appId>
 ```
 
-#### 3. Assign the Contributor Role
+#### 3. Assign Roles
 
 ```bash
+# Contributor role for resource management
 az role assignment create \
   --assignee <appId> \
   --role "Contributor" \
   --scope "/subscriptions/<subscription-id>"
 ```
 
-#### 4. Create Federated Credentials for GitHub OIDC
+#### 4. Bootstrap Terraform State Storage and Assign Storage Role
+
+The Terraform remote state backend uses an Azure Storage account with Azure AD auth.
+Run `setup-tfstate.sh` once locally to create the storage resources, then assign the
+**Storage Blob Data Contributor** role to the CI service principal:
+
+```bash
+# Create the state storage account (idempotent)
+source ./setup-tfstate.sh
+
+# Assign Storage Blob Data Contributor to the CI service principal
+SP_OBJECT_ID=$(az ad sp show --id <appId> --query id -o tsv)
+az role assignment create \
+  --assignee-object-id "$SP_OBJECT_ID" \
+  --assignee-principal-type ServicePrincipal \
+  --role "Storage Blob Data Contributor" \
+  --scope "$(az storage account show --name "sttf$(echo '<subscription-id>' | tr -d '-' | cut -c1-12)" --resource-group rg-tfstate --query id -o tsv)"
+```
+
+> **Note**: The CI service principal has Contributor role which cannot self-assign
+> RBAC roles. This one-time step must be done by a user with Owner or User Access
+> Administrator permissions.
+
+#### 5. Create Federated Credentials for GitHub OIDC
 
 Create a credential for each branch that the CD workflow deploys from:
 
@@ -363,7 +387,7 @@ az ad app federated-credential create --id <objectId> --parameters '{
 }'
 ```
 
-#### 5. Configure GitHub Repository Variables
+#### 6. Configure GitHub Repository Variables
 
 Set these as **repository variables** (not secrets — OIDC doesn't need secrets):
 

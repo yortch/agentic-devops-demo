@@ -51,32 +51,21 @@ STORAGE_ACCOUNT_ID=$(az storage account show \
   --resource-group "$TFSTATE_RG" \
   --query id -o tsv)
 
-# Detect identity: user (local) vs service principal (CI)
-PRINCIPAL_ID=""
-PRINCIPAL_TYPE=""
-if [ -n "${ARM_CLIENT_ID:-}" ]; then
-  # CI: ARM_CLIENT_ID is set — look up the service principal object ID
-  PRINCIPAL_ID=$(az ad sp show --id "$ARM_CLIENT_ID" --query id -o tsv 2>/dev/null || true)
-  PRINCIPAL_TYPE="ServicePrincipal"
-fi
-if [ -z "$PRINCIPAL_ID" ]; then
-  # Local: fall back to signed-in user
+# Only assign role when running locally (CI SP can't self-assign roles;
+# CI role must be pre-assigned — see README prerequisites)
+if [ -z "${ARM_CLIENT_ID:-}" ]; then
   PRINCIPAL_ID=$(az ad signed-in-user show --query id -o tsv 2>/dev/null || true)
-  PRINCIPAL_TYPE="User"
-fi
-
-if [ -n "$PRINCIPAL_ID" ]; then
-  echo "    Assigning Storage Blob Data Contributor to $PRINCIPAL_TYPE $PRINCIPAL_ID..."
-  az role assignment create \
-    --assignee-object-id "$PRINCIPAL_ID" \
-    --assignee-principal-type "$PRINCIPAL_TYPE" \
-    --role "Storage Blob Data Contributor" \
-    --scope "$STORAGE_ACCOUNT_ID" \
-    --output none 2>/dev/null || true
-  echo "    Waiting 30s for role assignment propagation..."
-  sleep 30
-else
-  echo "    WARNING: Could not determine current identity for role assignment."
+  if [ -n "$PRINCIPAL_ID" ]; then
+    echo "    Assigning Storage Blob Data Contributor to user $PRINCIPAL_ID..."
+    az role assignment create \
+      --assignee-object-id "$PRINCIPAL_ID" \
+      --assignee-principal-type User \
+      --role "Storage Blob Data Contributor" \
+      --scope "$STORAGE_ACCOUNT_ID" \
+      --output none 2>/dev/null || true
+    echo "    Waiting 30s for role assignment propagation..."
+    sleep 30
+  fi
 fi
 
 echo "==> Environment configured. You can now run: azd up"
