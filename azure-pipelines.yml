@@ -1,0 +1,273 @@
+# Azure DevOps Pipeline - Build and Deploy Three Rivers Bank
+# This pipeline mirrors the GitHub Actions workflow in .github/workflows/build-deploy.yml
+
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+
+pr:
+  branches:
+    include:
+      - main
+
+parameters:
+  - name: environment
+    displayName: 'Environment to deploy to'
+    type: string
+    default: 'dev'
+    values:
+      - dev
+      - staging
+      - production
+
+variables:
+  - name: JAVA_VERSION
+    value: '17'
+  - name: NODE_VERSION
+    value: '20'
+  - name: MAVEN_CACHE_FOLDER
+    value: $(Pipeline.Workspace)/.m2/repository
+  - name: NPM_CACHE_FOLDER
+    value: $(Pipeline.Workspace)/.npm
+
+stages:
+  # Stage 1: Build Backend
+  - stage: BuildBackend
+    displayName: 'Build Backend'
+    jobs:
+      - job: BuildBackendJob
+        displayName: 'Build Backend'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            displayName: 'Checkout code'
+
+          - task: JavaToolInstaller@0
+            displayName: 'Set up JDK 17'
+            inputs:
+              versionSpec: '$(JAVA_VERSION)'
+              jdkArchitectureOption: 'x64'
+              jdkSourceOption: 'PreInstalled'
+
+          - task: Cache@2
+            displayName: 'Cache Maven packages'
+            inputs:
+              key: 'maven | "$(Agent.OS)" | backend/pom.xml'
+              restoreKeys: |
+                maven | "$(Agent.OS)"
+              path: $(MAVEN_CACHE_FOLDER)
+
+          - task: Maven@4
+            displayName: 'Build with Maven'
+            inputs:
+              mavenPomFile: 'backend/pom.xml'
+              goals: 'clean package'
+              options: '-DskipTests -Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)'
+              publishJUnitResults: false
+              javaHomeOption: 'JDKVersion'
+              jdkVersionOption: '1.17'
+
+          - task: Maven@4
+            displayName: 'Run tests'
+            inputs:
+              mavenPomFile: 'backend/pom.xml'
+              goals: 'test'
+              options: '-Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)'
+              publishJUnitResults: true
+              testResultsFiles: '**/surefire-reports/TEST-*.xml'
+              javaHomeOption: 'JDKVersion'
+              jdkVersionOption: '1.17'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Upload backend artifact'
+            inputs:
+              targetPath: 'backend/target'
+              artifact: 'backend-jar'
+              publishLocation: 'pipeline'
+
+  # Stage 2: Build Frontend
+  - stage: BuildFrontend
+    displayName: 'Build Frontend'
+    dependsOn: []  # Run in parallel with BuildBackend
+    jobs:
+      - job: BuildFrontendJob
+        displayName: 'Build Frontend'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            displayName: 'Checkout code'
+
+          - task: NodeTool@0
+            displayName: 'Set up Node.js'
+            inputs:
+              versionSpec: '$(NODE_VERSION)'
+
+          - task: Cache@2
+            displayName: 'Cache npm packages'
+            inputs:
+              key: 'npm | "$(Agent.OS)" | frontend/package-lock.json'
+              restoreKeys: |
+                npm | "$(Agent.OS)"
+              path: $(NPM_CACHE_FOLDER)
+
+          - script: |
+              cd frontend
+              npm ci --cache $(NPM_CACHE_FOLDER)
+            displayName: 'Install dependencies'
+
+          - script: |
+              cd frontend
+              npm run build
+            displayName: 'Build frontend'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Upload frontend artifact'
+            inputs:
+              targetPath: 'frontend/dist'
+              artifact: 'frontend-dist'
+              publishLocation: 'pipeline'
+
+  # Stage 3: E2E Tests
+  - stage: TestE2E
+    displayName: 'E2E Tests'
+    dependsOn:
+      - BuildBackend
+      - BuildFrontend
+    jobs:
+      - job: PlaywrightTests
+        displayName: 'Playwright Tests'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            displayName: 'Checkout code'
+
+          - task: JavaToolInstaller@0
+            displayName: 'Set up JDK 17'
+            inputs:
+              versionSpec: '$(JAVA_VERSION)'
+              jdkArchitectureOption: 'x64'
+              jdkSourceOption: 'PreInstalled'
+
+          - task: NodeTool@0
+            displayName: 'Set up Node.js'
+            inputs:
+              versionSpec: '$(NODE_VERSION)'
+
+          - task: Cache@2
+            displayName: 'Cache npm packages (frontend)'
+            inputs:
+              key: 'npm | "$(Agent.OS)" | frontend/package-lock.json'
+              restoreKeys: |
+                npm | "$(Agent.OS)"
+              path: $(NPM_CACHE_FOLDER)
+
+          - script: |
+              cd frontend
+              npm ci --cache $(NPM_CACHE_FOLDER)
+            displayName: 'Install frontend dependencies'
+
+          - script: |
+              cd tests
+              npm install
+              npx playwright install --with-deps
+            displayName: 'Install Playwright'
+
+          - script: |
+              cd tests
+              npx playwright test --project chromium
+            displayName: 'Run Playwright tests'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Upload test results'
+            condition: always()
+            inputs:
+              targetPath: 'tests/test-results'
+              artifact: 'playwright-results'
+              publishLocation: 'pipeline'
+
+  # Stage 4: Deploy to Azure
+  - stage: DeployAzure
+    displayName: 'Deploy to Azure with azd CLI'
+    dependsOn:
+      - BuildBackend
+      - BuildFrontend
+      - TestE2E
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - job: DeployJob
+        displayName: 'Deploy to Azure'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            displayName: 'Checkout code'
+
+          - task: AzureCLI@2
+            displayName: 'Install azd CLI'
+            inputs:
+              azureSubscription: '$(AZURE_SERVICE_CONNECTION)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                curl -fsSL https://aka.ms/install-azd.sh | bash
+
+          - task: AzureCLI@2
+            displayName: 'Setup Infrastructure Files'
+            inputs:
+              azureSubscription: '$(AZURE_SERVICE_CONNECTION)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                # Validate expected azd Terraform layout
+                test -f infra/terraform/main.tf
+                test -f infra/terraform/variables.tf
+                test -f infra/terraform/outputs.tf
+
+                # Create .azd directory and config
+                mkdir -p .azd
+                cp azd-config.json .azd/config.json
+
+          - task: AzureCLI@2
+            displayName: 'Log in to Azure with azd'
+            inputs:
+              azureSubscription: '$(AZURE_SERVICE_CONNECTION)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                azd auth login \
+                  --client-id "$(AZURE_CLIENT_ID)" \
+                  --client-secret "$(AZURE_CLIENT_SECRET)" \
+                  --tenant-id "$(AZURE_TENANT_ID)"
+
+          - task: AzureCLI@2
+            displayName: 'Deploy to Azure'
+            inputs:
+              azureSubscription: '$(AZURE_SERVICE_CONNECTION)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                azd up --environment ${{ parameters.environment }} --no-prompt
+            env:
+              AZURE_ENV_NAME: ${{ parameters.environment }}
+              AZURE_SUBSCRIPTION_ID: $(AZURE_SUBSCRIPTION_ID)
+              AZURE_LOCATION: $(AZURE_LOCATION)
+
+          - task: AzureCLI@2
+            displayName: 'Get Application URLs'
+            inputs:
+              azureSubscription: '$(AZURE_SERVICE_CONNECTION)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                BACKEND_URL=$(azd env get-values --environment ${{ parameters.environment }} | grep backend_uri | cut -d'=' -f2 | tr -d '"')
+                FRONTEND_URL=$(azd env get-values --environment ${{ parameters.environment }} | grep frontend_uri | cut -d'=' -f2 | tr -d '"')
+                echo "##vso[task.setvariable variable=BACKEND_URL;isOutput=true]$BACKEND_URL"
+                echo "##vso[task.setvariable variable=FRONTEND_URL;isOutput=true]$FRONTEND_URL"
+                echo "🚀 Deployment completed!"
+                echo "Backend: $BACKEND_URL"
+                echo "Frontend: $FRONTEND_URL"
