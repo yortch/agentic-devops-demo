@@ -21,14 +21,14 @@ This implementation provides complete Infrastructure as Code (IaC) for deploying
 ### 🚀 CI/CD Pipeline Implementation
 
 #### GitHub Actions Workflows:
-1. **Enhanced existing workflow** (.github/workflows/build-deploy.yml):
-   - Added azd CLI integration to existing Docker-based pipeline
-   - Maintains backward compatibility
-   - Builds and tests the application, then deploys using azd (`azd up`) without directly pushing images to GitHub Container Registry
+1. **CI workflow** (.github/workflows/ci.yml):
+   - Builds and tests backend (Maven) and frontend (npm)
+   - Publishes Docker images to GitHub Container Registry
+   - Runs on push to main/develop/iac branches and pull requests
 
-2. **New azd-specific workflow** (.github/workflows/azure-azd-deploy.yml):
-   - Complete end-to-end deployment using azd CLI only
-   - Infrastructure validation with Terraform
+2. **CD workflow** (.github/workflows/cd.yml):
+   - Complete end-to-end deployment using azd CLI
+   - Infrastructure provisioning with Terraform
    - Multi-environment support (dev/staging/production)
    - Smoke testing after deployment
    - Automatic cleanup on failure
