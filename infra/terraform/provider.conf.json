@@ -3,5 +3,5 @@
   "container_name": "${RS_CONTAINER_NAME}",
   "resource_group_name": "${RS_RESOURCE_GROUP}",
   "key": "${AZURE_ENV_NAME}.tfstate",
-  "use_microsoft_entra_id": true
+  "use_azuread_auth": true
 }

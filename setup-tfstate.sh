@@ -52,8 +52,10 @@ if [ -n "$CURRENT_USER_ID" ]; then
     --name "$TFSTATE_SA" \
     --resource-group "$TFSTATE_RG" \
     --query id -o tsv)
+  echo "    Assigning Storage Blob Data Contributor to user $CURRENT_USER_ID..."
   az role assignment create \
-    --assignee "$CURRENT_USER_ID" \
+    --assignee-object-id "$CURRENT_USER_ID" \
+    --assignee-principal-type User \
     --role "Storage Blob Data Contributor" \
     --scope "$STORAGE_ACCOUNT_ID" \
     --output none 2>/dev/null || true
