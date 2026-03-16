@@ -45,11 +45,22 @@ azd env set RS_STORAGE_ACCOUNT "$TFSTATE_SA" 2>/dev/null || true
 azd env set RS_CONTAINER_NAME "$TFSTATE_CONTAINER" 2>/dev/null || true
 azd env set RS_RESOURCE_GROUP "$TFSTATE_RG" 2>/dev/null || true
 
-# Get storage account key for Terraform backend auth
-ACCOUNT_KEY=$(az storage account keys list \
-  --account-name "$TFSTATE_SA" \
-  --resource-group "$TFSTATE_RG" \
-  --query '[0].value' -o tsv)
-export ARM_ACCESS_KEY="$ACCOUNT_KEY"
+# Assign Storage Blob Data Contributor to current user for Azure AD backend auth
+CURRENT_USER_ID=$(az ad signed-in-user show --query id -o tsv 2>/dev/null || true)
+if [ -n "$CURRENT_USER_ID" ]; then
+  STORAGE_ACCOUNT_ID=$(az storage account show \
+    --name "$TFSTATE_SA" \
+    --resource-group "$TFSTATE_RG" \
+    --query id -o tsv)
+  az role assignment create \
+    --assignee "$CURRENT_USER_ID" \
+    --role "Storage Blob Data Contributor" \
+    --scope "$STORAGE_ACCOUNT_ID" \
+    --output none 2>/dev/null || true
+fi
+
+# Use Azure AD auth for Terraform backend (works with az login and OIDC)
+azd env set ARM_USE_AZUREAD true 2>/dev/null || true
+export ARM_USE_AZUREAD=true
 
 echo "==> Environment configured. You can now run: azd up"

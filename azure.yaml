@@ -23,3 +23,8 @@ services:
 infra:
   provider: terraform
   path: ./infra/terraform
+
+hooks:
+  preprovision:
+    shell: sh
+    run: ./setup-tfstate.sh

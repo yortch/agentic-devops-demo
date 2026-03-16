@@ -284,27 +284,18 @@ This project uses **Azure Developer CLI (azd)** with **Terraform** for deploying
 
 ### Quick Start with azd CLI (Local)
 
-#### Prerequisites
-
-Before running `azd up` locally, you must bootstrap the Terraform remote state backend.
-This creates an Azure Storage Account used to persist Terraform state across runs:
-
 ```bash
 # Login to Azure
 az login
 azd auth login
 
-# Bootstrap the Terraform state backend (one-time setup, idempotent)
-source ./setup-tfstate.sh
-
-# Deploy everything to Azure
+# Deploy everything to Azure (state backend is bootstrapped automatically)
 azd up
 ```
 
-> **Note:** The `source` command exports `RS_STORAGE_ACCOUNT`, `RS_CONTAINER_NAME`, and
-> `RS_RESOURCE_GROUP` environment variables into your shell. These tell `azd` where to
-> store Terraform state. You must re-run `source ./setup-tfstate.sh` in each new terminal
-> session before running `azd up` or `azd provision`.
+> **Note:** The `preprovision` hook in `azure.yaml` automatically runs `setup-tfstate.sh`
+> before each provision, creating the Terraform state storage account and configuring
+> the azd environment. No manual setup is needed.
 
 ### CI/CD Pipeline
 

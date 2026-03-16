@@ -97,14 +97,19 @@ jobs:
           azd env set RS_STORAGE_ACCOUNT "$TFSTATE_SA" --environment "$ENV_NAME"
           azd env set RS_CONTAINER_NAME "$TFSTATE_CONTAINER" --environment "$ENV_NAME"
           azd env set RS_RESOURCE_GROUP "$TFSTATE_RG" --environment "$ENV_NAME"
+          azd env set ARM_USE_AZUREAD true --environment "$ENV_NAME"
 
-          # Get storage account key for Terraform backend auth
-          ACCOUNT_KEY=$(az storage account keys list \
-            --account-name "$TFSTATE_SA" \
+          # Assign Storage Blob Data Contributor to the CI service principal
+          SP_ID=$(az ad sp show --id "${{ vars.AZURE_CLIENT_ID }}" --query id -o tsv)
+          STORAGE_ACCOUNT_ID=$(az storage account show \
+            --name "$TFSTATE_SA" \
             --resource-group "$TFSTATE_RG" \
-            --query '[0].value' -o tsv)
-          echo "::add-mask::$ACCOUNT_KEY"
-          echo "access_key=$ACCOUNT_KEY" >> "$GITHUB_OUTPUT"
+            --query id -o tsv)
+          az role assignment create \
+            --assignee "$SP_ID" \
+            --role "Storage Blob Data Contributor" \
+            --scope "$STORAGE_ACCOUNT_ID" \
+            --output none 2>/dev/null || true
 
       - name: Provision and Deploy
         run: |
@@ -117,7 +122,7 @@ jobs:
           ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
           ARM_USE_OIDC: "true"
-          ARM_ACCESS_KEY: ${{ steps.tfstate.outputs.access_key }}
+          ARM_USE_AZUREAD: "true"
 
       - name: Get Application URLs
         id: get-urls
