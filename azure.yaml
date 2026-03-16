@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: three-rivers-bank
+metadata:
+  template: three-rivers-bank-template@0.0.1-beta
+  
+services:
+  backend:
+    project: ./backend
+    language: java
+    host: containerapp
+    env:
+      BIAN_API_BASE_URL: "https://virtserver.swaggerhub.com/B154/BIAN/CreditCard/13.0.0"
+      SPRING_H2_CONSOLE_ENABLED: "false"
+      LOGGING_LEVEL_COM_THREERIVERSBANK: "INFO"
+      SPRING_PROFILES_ACTIVE: "production"
+  
+  frontend:
+    project: ./frontend
+    language: js
+    host: containerapp
+
+infra:
+  provider: terraform
+  path: ./infra/terraform

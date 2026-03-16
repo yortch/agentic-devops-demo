@@ -21,6 +21,21 @@ This project demonstrates a full-stack credit card comparison and information pl
 - **Database**: H2 In-Memory Database
 - **API Integration**: BIAN Credit Card API v13.0.0 (Swagger Hub Mock)
 - **Resilience**: Resilience4j Circuit Breaker
+
+#### Configuration & Environment Variables
+
+The application uses standard Spring Boot and Vite environment variable mappings:
+
+- **Backend (Spring Boot)**  
+  - `bian.api.base-url` &rightarrow; overridden via env var **`BIAN_API_BASE_URL`**  
+  - `spring.h2.console.enabled` &rightarrow; overridden via env var **`SPRING_H2_CONSOLE_ENABLED`**
+
+- **Frontend (Vite React)**  
+  - Build-time API base URL: **`VITE_API_BASE_URL`**  
+  - Optional runtime override: **`window.APP_CONFIG.API_BASE_URL`**
+
+Make sure to use these exact names in Azure Container Apps, Docker, and local `.env` files; variables like
+`BIAN_API_URL`, `H2_CONSOLE_ENABLED`, or `REACT_APP_API_URL` will not be picked up by this application.
 - **API Client**: Spring Cloud OpenFeign
 - **Caching**: Spring Cache Abstraction
 
@@ -114,7 +129,7 @@ agentic-devops-demo/
 │
 ├── .github/
 │   ├── workflows/
-│   │   └── deploy.yml                # CI/CD pipeline
+│   │   └── build-deploy.yml          # CI/CD pipeline
 │   └── prompts/
 │       └── plan-threeRiversBankCreditCardWebsite.prompt.md
 │
@@ -251,26 +266,148 @@ docker run -p 80:80 threeriversbank/frontend:latest
 
 ## ☁️ Azure Deployment
 
+This project uses **Azure Developer CLI (azd)** with **Terraform** for deploying to Azure Container Apps. CI/CD is handled by two separate GitHub Actions workflows.
+
+### Infrastructure Components
+- **Resource Group**: Contains all Azure resources
+- **Container Registry**: Stores application Docker images
+- **Container App Environment**: Managed serverless container platform  
+- **Log Analytics Workspace**: Centralized logging and monitoring
+- **Container Apps**: Backend (Spring Boot) and Frontend (React/Nginx)
+
 ### Container Apps Configuration
-- **Backend**: 0.5 vCPU, 1GB RAM
-- **Frontend**: 0.25 vCPU, 0.5GB RAM
-- **Ingress**: HTTPS-only with custom domain support
-- **Health Checks**: `/actuator/health`
+- **Backend**: 0.5 vCPU, 1GB RAM, auto-scale 1-3 replicas
+- **Frontend**: 0.25 vCPU, 0.5GB RAM, auto-scale 1-3 replicas
+- **Ingress**: HTTPS-only with automatic SSL certificates
+- **Health Checks**: Backend `/actuator/health`, Frontend root path
+
+### Quick Start with azd CLI (Local)
+
+```bash
+# Login to Azure
+az login
+azd auth login
+
+# Deploy everything to Azure
+azd up
+```
+
+### CI/CD Pipeline
+
+The pipeline is split into two workflows:
+
+- **CI** (`.github/workflows/ci.yml`): Builds backend/frontend, runs unit and E2E tests on every push and PR.
+- **CD** (`.github/workflows/cd.yml`): Deploys to Azure with `azd up` automatically after a successful CI run on `main` or `iac` branches. Can also be triggered manually via `workflow_dispatch`.
+
+When configuring Azure Container Apps or other deployment targets, ensure the following environment
+variables are set so they correctly override the app configuration:
+
+- Backend: `BIAN_API_BASE_URL` (for `bian.api.base-url`), `SPRING_H2_CONSOLE_ENABLED` (for `spring.h2.console.enabled`)
+- Frontend: `VITE_API_BASE_URL` (and optional `window.APP_CONFIG.API_BASE_URL` at runtime)
+
+### Setting Up the Service Principal for GitHub Actions (OIDC)
+
+This project uses **federated credentials (OIDC)** for secure, secretless authentication between GitHub Actions and Azure.
+
+#### 1. Create an App Registration
+
+```bash
+# Create the app registration
+az ad app create --display-name "agentic-devops-demo-cicd"
+
+# Note the appId and id (objectId) from the output
+# Example:
+#   appId:    xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+#   objectId: yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
+```
+
+#### 2. Create the Service Principal
+
+```bash
+az ad sp create --id <appId>
+```
+
+#### 3. Assign the Contributor Role
+
+```bash
+az role assignment create \
+  --assignee <appId> \
+  --role "Contributor" \
+  --scope "/subscriptions/<subscription-id>"
+```
+
+#### 4. Create Federated Credentials for GitHub OIDC
+
+Create a credential for each branch that the CD workflow deploys from:
+
+```bash
+# For main branch
+az ad app federated-credential create --id <objectId> --parameters '{
+  "name": "github-main",
+  "issuer": "https://token.actions.githubusercontent.com",
+  "subject": "repo:<owner>/<repo>:ref:refs/heads/main",
+  "audiences": ["api://AzureADTokenExchange"]
+}'
+
+# For iac branch (or any other deploy branch)
+az ad app federated-credential create --id <objectId> --parameters '{
+  "name": "github-iac",
+  "issuer": "https://token.actions.githubusercontent.com",
+  "subject": "repo:<owner>/<repo>:ref:refs/heads/iac",
+  "audiences": ["api://AzureADTokenExchange"]
+}'
+```
+
+#### 5. Configure GitHub Repository Variables
+
+Set these as **repository variables** (not secrets — OIDC doesn't need secrets):
+
+```bash
+gh variable set AZURE_CLIENT_ID     --body "<appId>"
+gh variable set AZURE_TENANT_ID     --body "<tenantId>"
+gh variable set AZURE_SUBSCRIPTION_ID --body "<subscriptionId>"
+gh variable set AZURE_LOCATION      --body "eastus2"
+```
+
+> **Note**: No `AZURE_CLIENT_SECRET` is needed with OIDC. The GitHub Actions workflow exchanges a short-lived token with Azure using the federated credential.
 
 ### Environment Variables
 - `BIAN_API_URL`: BIAN API base URL
 - `H2_CONSOLE_ENABLED`: Enable/disable H2 console (false in prod)
 - `LOGGING_LEVEL`: Application logging level (INFO)
+- `SPRING_PROFILES_ACTIVE`: Spring profile (production)
+- `VITE_API_BASE_URL`: Backend API URL for frontend (injected at runtime)
 
-### CI/CD Pipeline
-GitHub Actions workflow (`.github/workflows/deploy.yml`) automatically:
-1. Builds React frontend
-2. Builds Spring Boot backend
-3. Runs JUnit tests
-4. Runs Playwright E2E tests
-5. Creates Docker images
-6. Pushes to Azure Container Registry
-7. Deploys to Azure Container Apps
+### Local Development with Docker
+```bash
+# Run full application stack
+docker-compose up --build
+
+# Backend: http://localhost:8080
+# Frontend: http://localhost:3000
+```
+
+### Management Commands
+```bash
+# View deployed applications
+azd show
+
+# View application logs  
+azd logs --service backend
+azd logs --service frontend
+
+# Update application configuration
+azd env set LOGGING_LEVEL DEBUG
+azd deploy
+
+# Scale applications (Azure CLI)
+az containerapp update --name <backend-app> --resource-group <rg> --min-replicas 2 --max-replicas 10
+
+# Clean up all resources
+azd down --purge
+```
+
+For detailed deployment instructions, see [Azure Deployment Guide](README-AZURE-DEPLOYMENT.md).
 
 ## 🎨 Branding
 
