@@ -10,10 +10,10 @@ on:
       environment:
         description: 'Environment to deploy to'
         required: true
-        default: 'dev'
+        default: 'banking-demo'
         type: choice
         options:
-        - dev
+        - banking-demo
         - staging
         - production
 
@@ -57,9 +57,9 @@ jobs:
 
       - name: Provision and Deploy
         run: |
-          azd up --environment ${{ inputs.environment || 'dev' }} --no-prompt
+          azd up --environment ${{ inputs.environment || 'banking-demo' }} --no-prompt
         env:
-          AZURE_ENV_NAME: ${{ inputs.environment || 'dev' }}
+          AZURE_ENV_NAME: ${{ inputs.environment || 'banking-demo' }}
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
           AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
           ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
@@ -70,7 +70,7 @@ jobs:
       - name: Get Application URLs
         id: get-urls
         run: |
-          ENV_NAME="${{ inputs.environment || 'dev' }}"
+          ENV_NAME="${{ inputs.environment || 'banking-demo' }}"
           BACKEND_URL=$(azd env get-values --environment "$ENV_NAME" | grep backend_uri | cut -d'=' -f2 | tr -d '"')
           FRONTEND_URL=$(azd env get-values --environment "$ENV_NAME" | grep frontend_uri | cut -d'=' -f2 | tr -d '"')
           echo "backend-url=$BACKEND_URL" >> $GITHUB_OUTPUT
