@@ -79,7 +79,7 @@ resource "azurerm_container_registry" "main" {
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
   sku                 = "Basic"
-  admin_enabled       = false
+  admin_enabled       = true
   tags                = local.tags
 }
 
@@ -134,7 +134,7 @@ resource "azurerm_container_app" "backend" {
 
     container {
       name   = "backend"
-      image  = var.backend_image_name
+      image  = var.service_backend_image_name
       cpu    = var.container_cpu
       memory = var.container_memory
 
@@ -208,7 +208,7 @@ resource "azurerm_container_app" "frontend" {
 
     container {
       name   = "frontend"
-      image  = "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
+      image  = var.service_frontend_image_name
       cpu    = 0.25
       memory = "0.5Gi"
 

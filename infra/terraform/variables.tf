@@ -21,16 +21,16 @@ variable "tags" {
   default     = {}
 }
 
-variable "backend_image_name" {
+variable "service_backend_image_name" {
   type        = string
   description = "The name of the backend container image"
-  default     = "backend:latest"
+  default     = "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
 }
 
-variable "frontend_image_name" {
+variable "service_frontend_image_name" {
   type        = string
   description = "The name of the frontend container image"
-  default     = "frontend:latest"
+  default     = "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
 }
 
 variable "container_cpu" {
