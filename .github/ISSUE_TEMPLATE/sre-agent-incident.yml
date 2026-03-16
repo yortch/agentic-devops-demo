@@ -1,0 +1,103 @@
+name: "🤖 SRE Agent Incident Report"
+description: "Issue template for Azure SRE Agent to report detected incidents with root cause analysis"
+title: "[SRE Agent] "
+labels: ["sre-agent-detected", "copilot:fix-this"]
+assignees:
+  - copilot
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > This issue was created by Azure SRE Agent after detecting a production issue
+        > in the Three Rivers Bank application. It includes automated root cause analysis
+        > and a recommended fix for GitHub Copilot Coding Agent to implement.
+  - type: textarea
+    id: problem
+    attributes:
+      label: "Problem"
+      description: "Description of the production issue detected"
+      placeholder: "The backend container app is returning HTTP 503 errors..."
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: "Evidence"
+      description: "Symptoms, metrics, and log entries supporting the diagnosis"
+      placeholder: |
+        **Symptoms:**
+        - HTTP 503 errors from backend (100% failure rate)
+        - Frontend displaying "Unable to load card data"
+
+        **Metrics:**
+        - Request success rate dropped from 99.9% to 0% at 14:32 UTC
+        - Container restart count: 5 in last 10 minutes
+
+        **Logs:**
+        ```
+        [ERROR] Container failed health check on port 8081 - connection refused
+        ```
+    validations:
+      required: true
+  - type: textarea
+    id: root-cause
+    attributes:
+      label: "Root Cause Analysis"
+      description: "Detailed analysis of what went wrong"
+      placeholder: |
+        The backend container app's target port was changed from 8080 to 8081
+        in the Terraform configuration. The Spring Boot application listens on
+        port 8080 (configured in application.yml), but the Container App is
+        routing traffic to port 8081, causing all health checks and requests
+        to fail.
+    validations:
+      required: true
+  - type: textarea
+    id: affected-code
+    attributes:
+      label: "Affected Code"
+      description: "Specific files and lines involved"
+      placeholder: |
+        - **File**: `infra/terraform/main.tf`
+        - **Line**: 142
+        - **Current value**: `target_port = 8081`
+        - **Expected value**: `target_port = 8080`
+        - **Changed in**: commit abc1234 ("chore: update backend container port configuration")
+    validations:
+      required: true
+  - type: textarea
+    id: recommended-fix
+    attributes:
+      label: "Recommended Fix"
+      description: "Specific code changes needed to resolve the issue"
+      placeholder: |
+        Change `target_port` back to `8080` in `infra/terraform/main.tf`:
+        ```diff
+        - target_port = 8081
+        + target_port = 8080
+        ```
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: "Severity"
+      options:
+        - "Critical - Service completely down"
+        - "High - Major functionality broken"
+        - "Medium - Degraded performance"
+        - "Low - Minor issue"
+    validations:
+      required: true
+  - type: input
+    id: detected-at
+    attributes:
+      label: "Detected At"
+      description: "Timestamp when the issue was detected"
+      placeholder: "2026-03-16T14:32:00Z"
+  - type: input
+    id: agent-name
+    attributes:
+      label: "SRE Agent"
+      description: "Name of the SRE Agent that detected this issue"
+      placeholder: "three-rivers-bank-sre"
