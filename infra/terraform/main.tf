@@ -79,7 +79,7 @@ resource "azurerm_container_registry" "main" {
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
   sku                 = "Basic"
-  admin_enabled       = true
+  admin_enabled       = false
   tags                = local.tags
 }
 
@@ -134,9 +134,9 @@ resource "azurerm_container_app" "backend" {
 
     container {
       name   = "backend"
-      image  = "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
-      cpu    = 0.5
-      memory = "1Gi"
+      image  = var.backend_image_name
+      cpu    = var.container_cpu
+      memory = var.container_memory
 
       env {
         name  = "CORS_ALLOWED_ORIGINS"
@@ -144,17 +144,17 @@ resource "azurerm_container_app" "backend" {
       }
 
       env {
-        name  = "BIAN_API_URL"
+        name  = "BIAN_API_BASE_URL"
         value = "https://virtserver.swaggerhub.com/B154/BIAN/CreditCard/13.0.0"
       }
 
       env {
-        name  = "H2_CONSOLE_ENABLED"
+        name  = "SPRING_H2_CONSOLE_ENABLED"
         value = "false"
       }
 
       env {
-        name  = "LOGGING_LEVEL"
+        name  = "LOGGING_LEVEL_ROOT"
         value = "INFO"
       }
 

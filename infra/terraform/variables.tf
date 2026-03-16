@@ -11,7 +11,7 @@ variable "location" {
 
 variable "principal_id" {
   type        = string
-  description = "The Id of the azd service principal to add to deployed keyvault access policies"
+  description = "The Id of the azd service principal used by this deployment (this module does not configure Key Vault access policies)"
   default     = ""
 }
 

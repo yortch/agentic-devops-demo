@@ -21,6 +21,21 @@ This project demonstrates a full-stack credit card comparison and information pl
 - **Database**: H2 In-Memory Database
 - **API Integration**: BIAN Credit Card API v13.0.0 (Swagger Hub Mock)
 - **Resilience**: Resilience4j Circuit Breaker
+
+#### Configuration & Environment Variables
+
+The application uses standard Spring Boot and Vite environment variable mappings:
+
+- **Backend (Spring Boot)**  
+  - `bian.api.base-url` &rightarrow; overridden via env var **`BIAN_API_BASE_URL`**  
+  - `spring.h2.console.enabled` &rightarrow; overridden via env var **`SPRING_H2_CONSOLE_ENABLED`**
+
+- **Frontend (Vite React)**  
+  - Build-time API base URL: **`VITE_API_BASE_URL`**  
+  - Optional runtime override: **`window.APP_CONFIG.API_BASE_URL`**
+
+Make sure to use these exact names in Azure Container Apps, Docker, and local `.env` files; variables like
+`BIAN_API_URL`, `H2_CONSOLE_ENABLED`, or `REACT_APP_API_URL` will not be picked up by this application.
 - **API Client**: Spring Cloud OpenFeign
 - **Caching**: Spring Cache Abstraction
 
@@ -283,6 +298,12 @@ The pipeline is split into two workflows:
 
 - **CI** (`.github/workflows/ci.yml`): Builds backend/frontend, runs unit and E2E tests on every push and PR.
 - **CD** (`.github/workflows/cd.yml`): Deploys to Azure with `azd up` automatically after a successful CI run on `main` or `iac` branches. Can also be triggered manually via `workflow_dispatch`.
+
+When configuring Azure Container Apps or other deployment targets, ensure the following environment
+variables are set so they correctly override the app configuration:
+
+- Backend: `BIAN_API_BASE_URL` (for `bian.api.base-url`), `SPRING_H2_CONSOLE_ENABLED` (for `spring.h2.console.enabled`)
+- Frontend: `VITE_API_BASE_URL` (and optional `window.APP_CONFIG.API_BASE_URL` at runtime)
 
 ### Setting Up the Service Principal for GitHub Actions (OIDC)
 

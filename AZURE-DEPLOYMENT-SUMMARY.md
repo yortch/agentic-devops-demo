@@ -24,7 +24,7 @@ This implementation provides complete Infrastructure as Code (IaC) for deploying
 1. **Enhanced existing workflow** (.github/workflows/build-deploy.yml):
    - Added azd CLI integration to existing Docker-based pipeline
    - Maintains backward compatibility
-   - Uses GitHub Container Registry + azd deployment
+   - Builds and tests the application, then deploys using azd (`azd up`) without directly pushing images to GitHub Container Registry
 
 2. **New azd-specific workflow** (.github/workflows/azure-azd-deploy.yml):
    - Complete end-to-end deployment using azd CLI only
