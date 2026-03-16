@@ -1,16 +1,21 @@
-output "azure_location" {
+output "AZURE_LOCATION" {
   value       = azurerm_resource_group.main.location
   description = "The Azure region where resources are deployed"
 }
 
-output "azure_resource_group_name" {
+output "AZURE_RESOURCE_GROUP" {
   value       = azurerm_resource_group.main.name
   description = "The name of the resource group"
 }
 
-output "azure_container_registry_endpoint" {
+output "AZURE_CONTAINER_REGISTRY_ENDPOINT" {
   value       = azurerm_container_registry.main.login_server
   description = "The endpoint for the container registry"
+}
+
+output "AZURE_CONTAINER_ENVIRONMENT_NAME" {
+  value       = azurerm_container_app_environment.main.name
+  description = "The name of the container app environment"
 }
 
 output "backend_uri" {
@@ -21,11 +26,6 @@ output "backend_uri" {
 output "frontend_uri" {
   value       = "https://${azurerm_container_app.frontend.latest_revision_fqdn}"
   description = "The URI for the frontend service"
-}
-
-output "azure_container_environment_name" {
-  value       = azurerm_container_app_environment.main.name
-  description = "The name of the container app environment"
 }
 
 output "backend_service_name" {
