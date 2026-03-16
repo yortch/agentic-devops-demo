@@ -66,16 +66,11 @@ resource "azurerm_resource_group" "main" {
   tags     = local.tags
 }
 
-# Container Registry
-resource "azurecaf_name" "acr" {
-  name          = var.environment_name
-  resource_type = "azurerm_container_registry"
-  random_length = 5
-  clean_input   = true
-}
+# Container Registry Module
+module "container_registry" {
+  source = "./modules/container_registry"
 
-resource "azurerm_container_registry" "main" {
-  name                = azurecaf_name.acr.result
+  environment_name    = var.environment_name
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
   sku                 = "Basic"
@@ -83,15 +78,11 @@ resource "azurerm_container_registry" "main" {
   tags                = local.tags
 }
 
-# Log Analytics Workspace
-resource "azurecaf_name" "log_analytics" {
-  name          = var.environment_name
-  resource_type = "azurerm_log_analytics_workspace"
-  random_length = 0
-}
+# Monitoring Module (Log Analytics)
+module "monitoring" {
+  source = "./modules/monitoring"
 
-resource "azurerm_log_analytics_workspace" "main" {
-  name                = azurecaf_name.log_analytics.result
+  environment_name    = var.environment_name
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
   sku                 = "PerGB2018"
@@ -99,145 +90,97 @@ resource "azurerm_log_analytics_workspace" "main" {
   tags                = local.tags
 }
 
-# Container Apps Environment
-resource "azurecaf_name" "container_env" {
-  name          = var.environment_name
-  resource_type = "azurerm_container_app_environment"
-  random_length = 0
-}
+# Container Apps Environment Module
+module "container_apps_environment" {
+  source = "./modules/container_apps_environment"
 
-resource "azurerm_container_app_environment" "main" {
-  name                       = azurecaf_name.container_env.result
+  environment_name           = var.environment_name
   resource_group_name        = azurerm_resource_group.main.name
   location                   = azurerm_resource_group.main.location
-  log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
+  log_analytics_workspace_id = module.monitoring.id
   tags                       = local.tags
 }
 
-# Backend Container App
-resource "azurecaf_name" "backend_app" {
-  name          = "${var.environment_name}-backend"
-  resource_type = "azurerm_container_app"
-  random_length = 0
-}
+# Backend Container App Module
+module "backend_app" {
+  source = "./modules/container_app"
 
-resource "azurerm_container_app" "backend" {
-  name                         = azurecaf_name.backend_app.result
-  container_app_environment_id = azurerm_container_app_environment.main.id
+  app_name                     = "${var.environment_name}-backend"
   resource_group_name          = azurerm_resource_group.main.name
-  revision_mode                = "Single"
-  tags                         = merge(local.tags, { "azd-service-name" = "backend" })
+  container_app_environment_id = module.container_apps_environment.id
 
-  template {
-    min_replicas = 1
-    max_replicas = 3
+  container_name   = "backend"
+  container_image  = "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
+  container_cpu    = 0.5
+  container_memory = "1Gi"
 
-    container {
-      name   = "backend"
-      image  = "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
-      cpu    = 0.5
-      memory = "1Gi"
+  min_replicas = 1
+  max_replicas = 3
 
-      env {
-        name  = "CORS_ALLOWED_ORIGINS"
-        value = "https://${azurecaf_name.frontend_app.result}.${azurerm_container_app_environment.main.default_domain},http://localhost:5173,http://localhost:3000"
-      }
-
-      env {
-        name  = "BIAN_API_URL"
-        value = "https://virtserver.swaggerhub.com/B154/BIAN/CreditCard/13.0.0"
-      }
-
-      env {
-        name  = "H2_CONSOLE_ENABLED"
-        value = "false"
-      }
-
-      env {
-        name  = "LOGGING_LEVEL"
-        value = "INFO"
-      }
-
-      env {
-        name  = "SPRING_PROFILES_ACTIVE"
-        value = "production"
-      }
+  environment_variables = [
+    {
+      name  = "CORS_ALLOWED_ORIGINS"
+      value = "https://${var.environment_name}-frontend.${module.container_apps_environment.default_domain},http://localhost:5173,http://localhost:3000"
+    },
+    {
+      name  = "BIAN_API_URL"
+      value = "https://virtserver.swaggerhub.com/B154/BIAN/CreditCard/13.0.0"
+    },
+    {
+      name  = "H2_CONSOLE_ENABLED"
+      value = "false"
+    },
+    {
+      name  = "LOGGING_LEVEL"
+      value = "INFO"
+    },
+    {
+      name  = "SPRING_PROFILES_ACTIVE"
+      value = "production"
     }
-  }
+  ]
 
-  ingress {
-    allow_insecure_connections = false
-    external_enabled           = true
-    target_port                = 8080
+  target_port                = 8080
+  external_enabled           = true
+  allow_insecure_connections = false
 
-    traffic_weight {
-      latest_revision = true
-      percentage      = 100
-    }
-  }
+  registry_server   = module.container_registry.login_server
+  registry_username = module.container_registry.admin_username
+  registry_password = module.container_registry.admin_password
 
-  registry {
-    server               = azurerm_container_registry.main.login_server
-    username             = azurerm_container_registry.main.admin_username
-    password_secret_name = "acr-password"
-  }
-
-  secret {
-    name  = "acr-password"
-    value = azurerm_container_registry.main.admin_password
-  }
+  tags = merge(local.tags, { "azd-service-name" = "backend" })
 }
 
-# Frontend Container App
-resource "azurecaf_name" "frontend_app" {
-  name          = "${var.environment_name}-frontend"
-  resource_type = "azurerm_container_app"
-  random_length = 0
-}
+# Frontend Container App Module
+module "frontend_app" {
+  source = "./modules/container_app"
 
-resource "azurerm_container_app" "frontend" {
-  name                         = azurecaf_name.frontend_app.result
-  container_app_environment_id = azurerm_container_app_environment.main.id
+  app_name                     = "${var.environment_name}-frontend"
   resource_group_name          = azurerm_resource_group.main.name
-  revision_mode                = "Single"
-  tags                         = merge(local.tags, { "azd-service-name" = "frontend" })
+  container_app_environment_id = module.container_apps_environment.id
 
-  template {
-    min_replicas = 1
-    max_replicas = 3
+  container_name   = "frontend"
+  container_image  = "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
+  container_cpu    = 0.25
+  container_memory = "0.5Gi"
 
-    container {
-      name   = "frontend"
-      image  = "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
-      cpu    = 0.25
-      memory = "0.5Gi"
+  min_replicas = 1
+  max_replicas = 3
 
-      env {
-        name  = "VITE_API_BASE_URL"
-        value = "https://${azurerm_container_app.backend.ingress[0].fqdn}/api"
-      }
+  environment_variables = [
+    {
+      name  = "VITE_API_BASE_URL"
+      value = "https://${module.backend_app.ingress_fqdn}/api"
     }
-  }
+  ]
 
-  ingress {
-    allow_insecure_connections = false
-    external_enabled           = true
-    target_port                = 80
+  target_port                = 80
+  external_enabled           = true
+  allow_insecure_connections = false
 
-    traffic_weight {
-      latest_revision = true
-      percentage      = 100
-    }
-  }
+  registry_server   = module.container_registry.login_server
+  registry_username = module.container_registry.admin_username
+  registry_password = module.container_registry.admin_password
 
-  registry {
-    server               = azurerm_container_registry.main.login_server
-    username             = azurerm_container_registry.main.admin_username
-    password_secret_name = "acr-password"
-  }
-
-  secret {
-    name  = "acr-password"
-    value = azurerm_container_registry.main.admin_password
-  }
+  tags = merge(local.tags, { "azd-service-name" = "frontend" })
 }

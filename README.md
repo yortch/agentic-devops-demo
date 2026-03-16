@@ -29,6 +29,17 @@ This project demonstrates a full-stack credit card comparison and information pl
 - **Registry**: Azure Container Registry
 - **Deployment**: Azure Container Apps
 - **CI/CD**: GitHub Actions
+- **IaC**: Terraform with modular architecture
+
+#### Terraform Modules
+The infrastructure uses a modular Terraform design for maintainability and scalability:
+
+- **container_registry** - Manages Azure Container Registry for Docker images
+- **monitoring** - Provisions Log Analytics Workspace for telemetry
+- **container_apps_environment** - Creates the hosting environment for containers
+- **container_app** - Reusable module for deploying individual container applications
+
+See [Terraform Documentation](./infra/terraform/README.md) for details.
 
 ## 📋 Features
 
@@ -121,6 +132,18 @@ agentic-devops-demo/
 ├── docker/
 │   ├── backend.Dockerfile
 │   └── frontend.Dockerfile
+│
+├── infra/
+│   └── terraform/                      # Infrastructure as Code
+│       ├── main.tf                     # Root configuration
+│       ├── variables.tf                # Input variables
+│       ├── outputs.tf                  # Output values
+│       ├── README.md                   # Terraform documentation
+│       └── modules/                    # Reusable modules
+│           ├── container_registry/     # Azure Container Registry
+│           ├── monitoring/             # Log Analytics Workspace
+│           ├── container_apps_environment/  # Container Apps Env
+│           └── container_app/          # Individual Container Apps
 │
 └── README.md
 ```
@@ -259,6 +282,31 @@ This project uses **Azure Developer CLI (azd)** with **Terraform** for deploying
 - **Container App Environment**: Managed serverless container platform  
 - **Log Analytics Workspace**: Centralized logging and monitoring
 - **Container Apps**: Backend (Spring Boot) and Frontend (React/Nginx)
+
+### Terraform Modular Architecture
+
+The infrastructure code is organized into reusable Terraform modules for better maintainability:
+
+```
+infra/terraform/
+├── main.tf              # Root configuration calling modules
+├── modules/
+│   ├── container_registry/          # ACR module
+│   ├── monitoring/                  # Log Analytics module
+│   ├── container_apps_environment/  # Environment module
+│   └── container_app/               # Reusable app module
+```
+
+**Benefits:**
+- **Modularity**: Each Azure service is encapsulated in its own module
+- **Reusability**: The `container_app` module is used for both backend and frontend
+- **Scalability**: Add new services by instantiating modules with different parameters
+- **Maintainability**: Changes to one service don't affect others
+
+For detailed documentation, see:
+- [Terraform Root README](./infra/terraform/README.md)
+- [Modules Overview](./infra/terraform/modules/README.md)
+- Individual module READMEs in each module directory
 
 ### Container Apps Configuration
 - **Backend**: 0.5 vCPU, 1GB RAM, auto-scale 1-3 replicas
