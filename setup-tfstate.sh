@@ -45,21 +45,38 @@ azd env set RS_STORAGE_ACCOUNT "$TFSTATE_SA" 2>/dev/null || true
 azd env set RS_CONTAINER_NAME "$TFSTATE_CONTAINER" 2>/dev/null || true
 azd env set RS_RESOURCE_GROUP "$TFSTATE_RG" 2>/dev/null || true
 
-# Assign Storage Blob Data Contributor to current user for Azure AD backend auth
-CURRENT_USER_ID=$(az ad signed-in-user show --query id -o tsv 2>/dev/null || true)
-if [ -n "$CURRENT_USER_ID" ]; then
-  STORAGE_ACCOUNT_ID=$(az storage account show \
-    --name "$TFSTATE_SA" \
-    --resource-group "$TFSTATE_RG" \
-    --query id -o tsv)
-  echo "    Assigning Storage Blob Data Contributor to user $CURRENT_USER_ID..."
+# Assign Storage Blob Data Contributor for Azure AD backend auth
+STORAGE_ACCOUNT_ID=$(az storage account show \
+  --name "$TFSTATE_SA" \
+  --resource-group "$TFSTATE_RG" \
+  --query id -o tsv)
+
+# Detect identity: user (local) vs service principal (CI)
+PRINCIPAL_ID=""
+PRINCIPAL_TYPE=""
+if [ -n "${ARM_CLIENT_ID:-}" ]; then
+  # CI: ARM_CLIENT_ID is set — look up the service principal object ID
+  PRINCIPAL_ID=$(az ad sp show --id "$ARM_CLIENT_ID" --query id -o tsv 2>/dev/null || true)
+  PRINCIPAL_TYPE="ServicePrincipal"
+fi
+if [ -z "$PRINCIPAL_ID" ]; then
+  # Local: fall back to signed-in user
+  PRINCIPAL_ID=$(az ad signed-in-user show --query id -o tsv 2>/dev/null || true)
+  PRINCIPAL_TYPE="User"
+fi
+
+if [ -n "$PRINCIPAL_ID" ]; then
+  echo "    Assigning Storage Blob Data Contributor to $PRINCIPAL_TYPE $PRINCIPAL_ID..."
   az role assignment create \
-    --assignee-object-id "$CURRENT_USER_ID" \
-    --assignee-principal-type User \
+    --assignee-object-id "$PRINCIPAL_ID" \
+    --assignee-principal-type "$PRINCIPAL_TYPE" \
     --role "Storage Blob Data Contributor" \
     --scope "$STORAGE_ACCOUNT_ID" \
     --output none 2>/dev/null || true
+  echo "    Waiting 30s for role assignment propagation..."
+  sleep 30
+else
+  echo "    WARNING: Could not determine current identity for role assignment."
 fi
 
-# Use Azure AD auth for Terraform backend (configured in provider.conf.json)
 echo "==> Environment configured. You can now run: azd up"
