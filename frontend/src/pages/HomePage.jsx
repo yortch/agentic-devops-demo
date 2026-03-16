@@ -95,7 +95,7 @@ const HomePage = () => {
         ) : (
           <Grid container spacing={4}>
             {cards?.slice(0, 3).map((card) => (
-              <Grid item xs={12} md={4} key={card.id}>
+              <Grid size={{ xs: 12, md: 4 }} key={card.id}>
                 <Card
                   sx={{
                     height: '100%',
@@ -193,7 +193,7 @@ const HomePage = () => {
           </Typography>
 
           <Grid container spacing={4}>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Box sx={{ textAlign: 'center' }}>
                 <Box
                   sx={{
@@ -219,7 +219,7 @@ const HomePage = () => {
               </Box>
             </Grid>
 
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Box sx={{ textAlign: 'center' }}>
                 <Box
                   sx={{
@@ -245,7 +245,7 @@ const HomePage = () => {
               </Box>
             </Grid>
 
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Box sx={{ textAlign: 'center' }}>
                 <Box
                   sx={{
