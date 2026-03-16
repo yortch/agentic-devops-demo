@@ -99,16 +99,20 @@ jobs:
           azd env set RS_RESOURCE_GROUP "$TFSTATE_RG" --environment "$ENV_NAME"
 
           # Assign Storage Blob Data Contributor to the CI service principal
-          SP_ID=$(az ad sp show --id "${{ vars.AZURE_CLIENT_ID }}" --query id -o tsv)
+          SP_OBJECT_ID=$(az ad sp show --id "${{ vars.AZURE_CLIENT_ID }}" --query id -o tsv)
           STORAGE_ACCOUNT_ID=$(az storage account show \
             --name "$TFSTATE_SA" \
             --resource-group "$TFSTATE_RG" \
             --query id -o tsv)
+          echo "Assigning Storage Blob Data Contributor to SP $SP_OBJECT_ID..."
           az role assignment create \
-            --assignee "$SP_ID" \
+            --assignee-object-id "$SP_OBJECT_ID" \
+            --assignee-principal-type ServicePrincipal \
             --role "Storage Blob Data Contributor" \
             --scope "$STORAGE_ACCOUNT_ID" \
             --output none 2>/dev/null || true
+          echo "Waiting 30s for role assignment propagation..."
+          sleep 30
 
       - name: Provision and Deploy
         run: |
