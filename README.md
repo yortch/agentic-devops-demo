@@ -422,13 +422,60 @@ For detailed deployment instructions, see [Azure Deployment Guide](README-AZURE-
 - **Email**: business@threeriversbank.com
 - **Headquarters**: Pittsburgh, PA
 
+## 📚 Documentation
+
+This project includes comprehensive documentation to help developers and AI agents work effectively:
+
+### For Developers
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Contribution guidelines, development workflow, and best practices
+- **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - Complete implementation details and technical highlights
+- **[docs/part-2-1-always-on-instructions.md](docs/part-2-1-always-on-instructions.md)** - Authoritative guidelines for all development activities
+
+### For AI Agents (GitHub Copilot)
+- **[.github/copilot-instructions.md](.github/copilot-instructions.md)** - Quick reference for GitHub Copilot
+- **[.github/agents/feature-builder.md](.github/agents/feature-builder.md)** - Custom agent for building features
+- **[.github/skills/create-agent-skill/](.github/skills/create-agent-skill/)** - Agent skill for creating new skills
+
+### Architecture & Planning
+- **[.github/prompts/plan-threeRiversBankCreditCardWebsite.prompt.md](.github/prompts/plan-threeRiversBankCreditCardWebsite.prompt.md)** - Original architecture planning document
+
 ## 📄 License
 
 This project is for demonstration purposes.
 
 ## 🤝 Contributing
 
-This is a demonstration project. For questions or feedback, please contact the repository owner.
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on:
+- Setting up your development environment
+- Coding standards and conventions
+- Testing requirements
+- Pull request process
+- Using GitHub Copilot effectively
+
+For questions or feedback, please contact the repository owner or open an issue.
+
+## 🆘 Support
+
+### Getting Help
+- **Documentation**: Start with [Always-On Instructions](docs/part-2-1-always-on-instructions.md)
+- **Contributing**: See [CONTRIBUTING.md](CONTRIBUTING.md)
+- **Issues**: Open a GitHub issue for bugs or feature requests
+- **Contact**: business@threeriversbank.com
+
+### Useful Commands
+```bash
+# Backend
+cd backend && mvn spring-boot:run    # Run backend server
+cd backend && mvn test               # Run backend tests
+
+# Frontend
+cd frontend && npm run dev           # Run frontend dev server
+cd frontend && npm run build         # Build for production
+
+# Testing
+cd tests && npx playwright test      # Run E2E tests
+cd tests && npx playwright test --ui # Run tests with UI
+```
 
 ---
 
