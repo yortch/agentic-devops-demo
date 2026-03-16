@@ -361,36 +361,149 @@ The SRE Agent connects to Azure Monitor Alerts by default. Verify this:
 
 ### Step 6.2: Create Alert Rules
 
-In the Azure Portal, navigate to your application resource group and create these alert rules:
+Create an action group and three alert rules using the Azure CLI. The SRE Agent automatically
+picks up Azure Monitor alerts from monitored resource groups — no extra wiring is needed.
 
-#### Alert: Backend Error Rate Spike
+> **Substitute** `{SUBSCRIPTION_ID}`, `{RESOURCE_GROUP}`, `{BACKEND_APP}`, and
+> `{CONTAINER_ENV}` with your actual values (or set them as shell variables first).
 
-```
-Resource: {env}-backend Container App
-Condition: Requests where response code >= 500
-Threshold: Greater than 5 in 5 minutes
-Severity: 2 (Warning)
-Action Group: Link to SRE Agent
-```
+#### Set variables
 
-#### Alert: Container App Restart
+```bash
+# ── Customize these ──────────────────────────────────────────────
+SUB="<your-subscription-id>"
+RG="<your-resource-group>"               # e.g. rg-banking-demo
+BACKEND="<your-backend-container-app>"    # e.g. ca-banking-demo-backend
+ENV_NAME="<your-container-app-env>"       # e.g. banking-demo-cae
+# ─────────────────────────────────────────────────────────────────
 
-```
-Resource: Container App Environment
-Condition: Container restart count > 0
-Threshold: Any restart
-Severity: 1 (Error)
-Action Group: Link to SRE Agent
+BACKEND_SCOPE="/subscriptions/$SUB/resourceGroups/$RG/providers/Microsoft.App/containerapps/$BACKEND"
+ENV_SCOPE="/subscriptions/$SUB/resourceGroups/$RG/providers/Microsoft.App/managedEnvironments/$ENV_NAME"
 ```
 
-#### Alert: High Response Time
+#### Create the Action Group
+
+```bash
+az monitor action-group create \
+  --name "sre-agent-action-group" \
+  --resource-group "$RG" \
+  --subscription "$SUB" \
+  --short-name "SREAgent" \
+  --output table
+```
+
+```bash
+ACTION_GROUP=$(az monitor action-group show \
+  --name "sre-agent-action-group" \
+  --resource-group "$RG" \
+  --subscription "$SUB" \
+  --query id -o tsv)
+```
+
+> **Tip**: If you later add a webhook, email, or Logic App to this action group, the SRE
+> Agent will receive richer context automatically.
+
+#### Alert 1 — Backend 5xx Error Rate Spike
+
+Fires when the backend receives **more than 5 HTTP 5xx responses in a 5-minute window**.
+
+| Property | Value |
+|---|---|
+| **Metric** | `Requests` (total) |
+| **Dimension** | `statusCodeCategory` includes `5xx` |
+| **Threshold** | > 5 |
+| **Window** | 5 minutes |
+| **Evaluation** | Every 1 minute |
+| **Severity** | 2 (Warning) |
+
+```bash
+az monitor metrics alert create \
+  --name "backend-5xx-error-spike" \
+  --resource-group "$RG" \
+  --subscription "$SUB" \
+  --scopes "$BACKEND_SCOPE" \
+  --condition "total Requests > 5 where statusCodeCategory includes 5xx" \
+  --window-size 5m \
+  --evaluation-frequency 1m \
+  --severity 2 \
+  --description "Backend HTTP 5xx errors exceeded threshold. Investigate for bad deployments, misconfiguration, or upstream failures." \
+  --action "$ACTION_GROUP" \
+  --tags application=three-rivers-bank component=backend alert-type=error-rate
+```
+
+#### Alert 2 — Container App Restart
+
+Fires when **any replica restart** is detected in the Container App Environment (severity 1 — Error).
+
+| Property | Value |
+|---|---|
+| **Metric** | `RestartCount` |
+| **Aggregation** | Total |
+| **Threshold** | > 0 |
+| **Window** | 5 minutes |
+| **Evaluation** | Every 1 minute |
+| **Severity** | 1 (Error) |
+
+```bash
+az monitor metrics alert create \
+  --name "container-restart-detected" \
+  --resource-group "$RG" \
+  --subscription "$SUB" \
+  --scopes "$BACKEND_SCOPE" \
+  --condition "total RestartCount > 0" \
+  --window-size 5m \
+  --evaluation-frequency 1m \
+  --severity 1 \
+  --description "Container app replica restarted. Likely cause: OOM kill, crash loop, or failed health probe." \
+  --action "$ACTION_GROUP" \
+  --tags application=three-rivers-bank component=backend alert-type=restart
+```
+
+#### Alert 3 — High Response Time
+
+Fires when the **average response time exceeds 3 seconds** over a 5-minute window.
+
+| Property | Value |
+|---|---|
+| **Metric** | `ResponseTime` (Average, in milliseconds) |
+| **Threshold** | > 3000 ms |
+| **Window** | 5 minutes |
+| **Evaluation** | Every 1 minute |
+| **Severity** | 3 (Informational) |
+
+```bash
+az monitor metrics alert create \
+  --name "backend-high-response-time" \
+  --resource-group "$RG" \
+  --subscription "$SUB" \
+  --scopes "$BACKEND_SCOPE" \
+  --condition "avg ResponseTime > 3000" \
+  --window-size 5m \
+  --evaluation-frequency 1m \
+  --severity 3 \
+  --description "Backend p95 response time elevated. May indicate resource starvation, circuit breaker issues, or slow external API." \
+  --action "$ACTION_GROUP" \
+  --tags application=three-rivers-bank component=backend alert-type=latency
+```
+
+#### Verify the alerts
+
+```bash
+az monitor metrics alert list \
+  --resource-group "$RG" \
+  --subscription "$SUB" \
+  --query "[].{Name:name, Severity:severity, Enabled:enabled, Window:windowSize}" \
+  --output table
+```
+
+Expected output:
 
 ```
-Resource: {env}-backend Container App
-Condition: Average response time
-Threshold: Greater than 3 seconds over 5 minutes
-Severity: 3 (Informational)
-Action Group: Link to SRE Agent
+Name                          Severity  Enabled  Window
+----------------------------  --------  -------  ------
+backend-5xx-error-spike       2         True     PT5M
+container-restart-detected    1         True     PT5M
+backend-high-response-time    3         True     PT5M
 ```
 
 ### Step 6.3: Create Incident Response Plan
