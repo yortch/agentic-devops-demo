@@ -13,9 +13,10 @@
 5. [Set Up Scheduled Proactive Diagnostics](#5-set-up-scheduled-proactive-diagnostics)
 6. [Configure Incident Response Plan](#6-configure-incident-response-plan)
 7. [Enable Copilot Coding Agent Auto-Fix](#7-enable-copilot-coding-agent-auto-fix)
-8. [Demo Walkthrough](#8-demo-walkthrough)
-9. [Troubleshooting](#9-troubleshooting)
-10. [Reference Links](#10-reference-links)
+8. [Configure Chaos Engineering Agentic Workflow](#8-configure-chaos-engineering-agentic-workflow)
+9. [Demo Walkthrough](#9-demo-walkthrough)
+10. [Troubleshooting](#10-troubleshooting)
+11. [Reference Links](#11-reference-links)
 
 ---
 
@@ -37,6 +38,8 @@
 | **Repository Access** | Push access to `agentic-devops-demo` repository |
 | **GitHub PAT** | Personal Access Token with `repo` scope (for GitHub MCP connector) |
 | **Copilot License** | GitHub Copilot Enterprise or Business (for Copilot Coding Agent) |
+| **gh CLI + gh-aw** | GitHub CLI with `gh-aw` extension installed ([install guide](https://github.github.com/gh-aw/setup/quick-start/)) |
+| **COPILOT_GITHUB_TOKEN** | GitHub Actions secret for Copilot-powered agentic workflows (see [Section 8](#8-configure-chaos-engineering-agentic-workflow)) |
 
 ### Deployed Resources to Monitor
 
@@ -617,7 +620,118 @@ jobs:
 
 ---
 
-## 8. Demo Walkthrough
+## 8. Configure Chaos Engineering Agentic Workflow
+
+The chaos engineering workflow (`.github/workflows/chaos-engineering.md`) is a **GitHub Agentic Workflow** powered by `gh-aw`. It uses Copilot as its AI engine, which requires a `COPILOT_GITHUB_TOKEN` secret to authenticate.
+
+### Step 8.1: Install the gh-aw CLI Extension
+
+If you haven't already:
+
+```bash
+gh extension install github/gh-aw
+gh aw --version   # verify installation
+```
+
+### Step 8.2: Create a Fine-Grained PAT for Copilot
+
+1. Open the **pre-filled token creation link**:
+   [Create COPILOT_GITHUB_TOKEN PAT](https://github.com/settings/personal-access-tokens/new?name=COPILOT_GITHUB_TOKEN&description=GitHub+Agentic+Workflows+-+Copilot+engine+authentication&user_copilot_requests=read)
+
+2. Verify these settings before generating:
+   - **Resource owner**: Your **personal user account** (not an organization)
+   - **Permissions → Account permissions**: `Copilot Requests` set to **Read**
+   - No repository permissions are needed — this token only authenticates with the Copilot inference API
+
+3. Click **Generate token** and copy the value immediately.
+
+### Step 8.3: Add the Secret to Your Repository
+
+**Option A — Using the gh-aw CLI (recommended):**
+
+```bash
+gh aw secrets set COPILOT_GITHUB_TOKEN --value "<your-github-pat>"
+```
+
+You can verify secrets are configured correctly:
+
+```bash
+gh aw secrets bootstrap
+```
+
+**Option B — Using the GitHub UI:**
+
+1. Go to your repository → **Settings** → **Secrets and variables** → **Actions**
+2. Click **New repository secret**
+3. Name: `COPILOT_GITHUB_TOKEN`
+4. Value: Paste the PAT you generated
+5. Click **Add secret**
+
+**Option C — Using the standard gh CLI:**
+
+```bash
+gh secret set COPILOT_GITHUB_TOKEN --body "<your-github-pat>"
+```
+
+### Step 8.4: Compile the Workflow
+
+The `.md` file is the source of truth. The compiled `.lock.yml` is what GitHub Actions actually runs. After any edits to the `.md`, recompile:
+
+```bash
+gh aw compile .github/workflows/chaos-engineering.md
+```
+
+Verify the compiled output:
+
+```bash
+gh aw status
+```
+
+Expected output:
+
+```
+╭─────────────────────────┬─────────┬──────────╮
+│ Workflow                │ Engine  │ Compiled │
+├─────────────────────────┼─────────┼──────────┤
+│ chaos-engineering       │ copilot │ Yes      │
+╰─────────────────────────┴─────────┴──────────╯
+```
+
+> **Important**: Always commit both the `.md` source and the `.lock.yml` together. The `.lock.yml` is auto-generated — never edit it manually.
+
+### Step 8.5: Test the Workflow
+
+Trigger a test run:
+
+```bash
+# Random scenario
+gh workflow run chaos-engineering.lock.yml
+
+# Specific scenario
+gh workflow run chaos-engineering.lock.yml -f scenario=bad-api-url
+```
+
+Monitor the run:
+
+```bash
+gh run list --workflow=chaos-engineering.lock.yml --limit 1
+gh run watch
+```
+
+### Step 8.6: Troubleshooting Agentic Workflow Auth
+
+| Problem | Solution |
+|---|---|
+| Workflow fails at Copilot inference step | Verify the PAT owner has an **active Copilot license**. Test locally: `gh copilot suggest "hello"` |
+| Secret not found error | Confirm the secret name is exactly `COPILOT_GITHUB_TOKEN` (case-sensitive). Run `gh aw secrets bootstrap` to check. |
+| `gh aw compile` fails | Ensure the `.md` file is in `.github/workflows/` and has valid frontmatter. Run `gh aw status` to see registered workflows. |
+| Workflow creates empty PR | The agent may have hit a rate limit. Check the workflow logs in the Actions tab for Copilot API errors. |
+
+> **Reference**: [GitHub Agentic Workflows — Authentication](https://github.github.com/gh-aw/reference/auth/#copilot_github_token)
+
+---
+
+## 9. Demo Walkthrough
 
 ### The Full Demo Loop
 
@@ -711,7 +825,7 @@ jobs:
 
 ---
 
-## 9. Troubleshooting
+## 10. Troubleshooting
 
 ### SRE Agent Can't See My Container Apps
 
@@ -746,7 +860,7 @@ jobs:
 
 ---
 
-## 10. Reference Links
+## 11. Reference Links
 
 | Resource | URL |
 |---|---|
