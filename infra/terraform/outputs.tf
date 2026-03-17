@@ -19,12 +19,12 @@ output "AZURE_CONTAINER_ENVIRONMENT_NAME" {
 }
 
 output "backend_uri" {
-  value       = "https://${azurerm_container_app.backend.latest_revision_fqdn}"
+  value       = "https://${azurerm_container_app.backend.ingress[0].fqdn}"
   description = "The URI for the backend service"
 }
 
 output "frontend_uri" {
-  value       = "https://${azurerm_container_app.frontend.latest_revision_fqdn}"
+  value       = "https://${azurerm_container_app.frontend.ingress[0].fqdn}"
   description = "The URI for the frontend service"
 }
 
