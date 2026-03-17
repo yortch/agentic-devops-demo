@@ -65,6 +65,7 @@ jobs:
           azd env set RS_RESOURCE_GROUP "rg-tfstate" --environment "$ENV_NAME"
           azd env set AZURE_LOCATION "${{ vars.AZURE_LOCATION }}" --environment "$ENV_NAME"
           azd env set AZURE_SUBSCRIPTION_ID "${{ vars.AZURE_SUBSCRIPTION_ID }}" --environment "$ENV_NAME"
+          azd env set USE_OIDC true --environment "$ENV_NAME"
 
       - name: Provision and Deploy
         run: |

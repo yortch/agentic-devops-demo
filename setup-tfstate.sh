@@ -32,6 +32,7 @@ az storage account create \
   --location "$LOCATION" \
   --sku Standard_LRS \
   --allow-blob-public-access false \
+  --public-network-access Enabled \
   --output none 2>/dev/null || true
 
 az storage container create \
@@ -66,6 +67,13 @@ if [ -z "${ARM_CLIENT_ID:-}" ]; then
     echo "    Waiting 30s for role assignment propagation..."
     sleep 30
   fi
+fi
+
+# Set OIDC flag: CI uses OIDC tokens, local uses Azure CLI
+if [ -n "${CI:-}" ]; then
+  azd env set USE_OIDC true 2>/dev/null || true
+else
+  azd env set USE_OIDC false 2>/dev/null || true
 fi
 
 echo "==> Environment configured. You can now run: azd up"
