@@ -145,7 +145,7 @@ resource "azurerm_container_app" "backend" {
 
       env {
         name  = "CORS_ALLOWED_ORIGINS"
-        value = "https://${azurecaf_name.frontend_app.result}.${azurerm_container_app_environment.main.default_domain},http://localhost:5173,http://localhost:3000"
+        value = "https://threeriversbank-frontend.proudcoast-abc12345.eastus.azurecontainerapps.io,http://localhost:5173,http://localhost:3000"
       }
 
       env {
