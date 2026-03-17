@@ -55,6 +55,17 @@ jobs:
             --federated-credential-provider "github" \
             --tenant-id "${{ vars.AZURE_TENANT_ID }}"
 
+      - name: Configure azd environment
+        run: |
+          ENV_NAME="${{ inputs.environment || 'banking-demo' }}"
+          SUB_CLEAN=$(echo "${{ vars.AZURE_SUBSCRIPTION_ID }}" | tr -d '-' | cut -c1-12)
+          azd env new "$ENV_NAME" --no-prompt 2>/dev/null || true
+          azd env set RS_STORAGE_ACCOUNT "sttf${SUB_CLEAN}" --environment "$ENV_NAME"
+          azd env set RS_CONTAINER_NAME "tfstate" --environment "$ENV_NAME"
+          azd env set RS_RESOURCE_GROUP "rg-tfstate" --environment "$ENV_NAME"
+          azd env set AZURE_LOCATION "${{ vars.AZURE_LOCATION }}" --environment "$ENV_NAME"
+          azd env set AZURE_SUBSCRIPTION_ID "${{ vars.AZURE_SUBSCRIPTION_ID }}" --environment "$ENV_NAME"
+
       - name: Provision and Deploy
         run: |
           azd up --environment ${{ inputs.environment || 'banking-demo' }} --no-prompt
