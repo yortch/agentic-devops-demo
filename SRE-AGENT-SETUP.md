@@ -13,7 +13,7 @@
 5. [Set Up Scheduled Proactive Diagnostics](#5-set-up-scheduled-proactive-diagnostics)
 6. [Configure Incident Response Plan](#6-configure-incident-response-plan)
 7. [Enable Copilot Coding Agent Auto-Fix](#7-enable-copilot-coding-agent-auto-fix)
-8. [Configure Chaos Engineering Agentic Workflow](#8-configure-chaos-engineering-agentic-workflow)
+8. [Chaos Engineering Scenarios](#8-chaos-engineering-scenarios)
 9. [Demo Walkthrough](#9-demo-walkthrough)
 10. [Troubleshooting](#10-troubleshooting)
 11. [Reference Links](#11-reference-links)
@@ -38,8 +38,9 @@
 | **Repository Access** | Push access to `agentic-devops-demo` repository |
 | **GitHub PAT** | Personal Access Token with `repo` scope (for GitHub MCP connector) |
 | **Copilot License** | GitHub Copilot Enterprise or Business (for Copilot Coding Agent) |
-| **gh CLI + gh-aw** | GitHub CLI with `gh-aw` extension installed ([install guide](https://github.github.com/gh-aw/setup/quick-start/)) |
-| **COPILOT_GITHUB_TOKEN** | GitHub Actions secret for Copilot-powered agentic workflows (see [Section 8](#8-configure-chaos-engineering-agentic-workflow)) |
+| **az CLI** | Azure CLI installed and logged in (`az login`) |
+| **gh CLI + gh-aw** | *(Optional — for Option B)* GitHub CLI with `gh-aw` extension installed ([install guide](https://github.github.com/gh-aw/setup/quick-start/)) |
+| **COPILOT_GITHUB_TOKEN** | *(Optional — for Option B)* GitHub Actions secret for Copilot-powered agentic workflows (see [Section 8B](#option-b-agentic-workflow-code-level-chaos)) |
 
 ### Deployed Resources to Monitor
 
@@ -620,20 +621,91 @@ jobs:
 
 ---
 
-## 8. Configure Chaos Engineering Agentic Workflow
+## 8. Chaos Engineering Scenarios
 
-The chaos engineering workflow (`.github/workflows/chaos-engineering.md`) is a **GitHub Agentic Workflow** powered by `gh-aw`. It uses Copilot as its AI engine, which requires a `COPILOT_GITHUB_TOKEN` secret to authenticate.
+Two methods are available for injecting chaos. Choose the one that fits your demo:
 
-### Step 8.1: Install the gh-aw CLI Extension
+| | Option A: az CLI Script | Option B: Agentic Workflow |
+|---|---|---|
+| **How it works** | Modifies live Azure Container App config directly | Creates a PR with a code-level breaking change |
+| **Best for** | Quick infra-level faults (env vars, ports, resources) | Demonstrating SRE Agent detecting bad *code commits* |
+| **Prerequisites** | `az login` | `gh-aw` CLI + `COPILOT_GITHUB_TOKEN` secret |
+| **Rollback** | `./chaos-engineering.sh rollback <scenario>` | Revert the PR |
 
-If you haven't already:
+Both options cover the same 10 scenarios:
+
+| # | Scenario | Target | Difficulty | Symptoms |
+|---|---|---|---|---|
+| 1 | `port-mismatch` | Backend | Medium | 503 errors, health check fails |
+| 2 | `bad-api-url` | Backend | Easy | BIAN API fails, degraded data |
+| 3 | `cors-broken` | Backend | Medium | Browser CORS errors, blank pages |
+| 4 | `low-resources` | Backend | Easy | OOM kills, restarts, slow responses |
+| 5 | `health-check-disabled` | Backend | Medium | Health probes fail, restart loop |
+| 6 | `bad-image-tag` | Backend | Easy | Image pull fails, container stuck |
+| 7 | `db-corruption` | Backend | Hard | Spring Boot fails, all 500 errors |
+| 8 | `profile-wrong` | Backend | Medium | Wrong profile, behavioral drift |
+| 9 | `circuit-breaker-disabled` | Backend | Hard | Requests hang, thread exhaustion |
+| 10 | `frontend-api-broken` | Frontend | Easy | API calls fail, no card data |
+
+---
+
+### Option A: az CLI Script (Infrastructure-Level Chaos)
+
+Modifies live Azure configuration instantly — no CI/CD pipeline involved.
+
+#### A.1: Set Environment Variables
+
+The script auto-detects values from `azd env`. Alternatively, export manually:
+
+```bash
+export AZURE_RESOURCE_GROUP="<your-resource-group>"       # e.g. rg-banking-demo
+export AZURE_BACKEND_APP="<your-backend-container-app>"   # e.g. ca-banking-demo-backend
+export AZURE_FRONTEND_APP="<your-frontend-container-app>" # e.g. ca-banking-demo-frontend
+```
+
+#### A.2: Inject a Fault
+
+```bash
+./chaos-engineering.sh bad-api-url
+```
+
+#### A.3: Roll Back
+
+```bash
+./chaos-engineering.sh rollback bad-api-url
+```
+
+#### A.4: Other Commands
+
+```bash
+./chaos-engineering.sh list     # show all scenarios
+./chaos-engineering.sh status   # show current app configuration
+```
+
+#### A.5: Troubleshooting
+
+| Problem | Solution |
+|---|---|
+| `az` not found | Install Azure CLI: `brew install azure-cli` or `winget install Microsoft.AzureCLI` |
+| Permission denied on script | Run `chmod +x chaos-engineering.sh` |
+| "not logged in" error | Run `az login` first |
+| Revision fails to deploy | Check logs: `az containerapp logs show --name <app> --resource-group <rg>` |
+| Rollback doesn't fix it | Check `./chaos-engineering.sh status` and compare against expected values in Section 5 Task 3 |
+
+---
+
+### Option B: Agentic Workflow (Code-Level Chaos)
+
+Creates a PR with a realistic code-level breaking change via GitHub Agentic Workflows (`gh-aw`). This is ideal for demonstrating the SRE Agent detecting an issue introduced by a *code commit*, and having Copilot Coding Agent fix it via PR.
+
+#### B.1: Install the gh-aw CLI Extension
 
 ```bash
 gh extension install github/gh-aw
 gh aw --version   # verify installation
 ```
 
-### Step 8.2: Create a Fine-Grained PAT for Copilot
+#### B.2: Create a Fine-Grained PAT for Copilot
 
 1. Open the **pre-filled token creation link**:
    [Create COPILOT_GITHUB_TOKEN PAT](https://github.com/settings/personal-access-tokens/new?name=COPILOT_GITHUB_TOKEN&description=GitHub+Agentic+Workflows+-+Copilot+engine+authentication&user_copilot_requests=read)
@@ -641,67 +713,31 @@ gh aw --version   # verify installation
 2. Verify these settings before generating:
    - **Resource owner**: Your **personal user account** (not an organization)
    - **Permissions → Account permissions**: `Copilot Requests` set to **Read**
-   - No repository permissions are needed — this token only authenticates with the Copilot inference API
+   - No repository permissions are needed
 
 3. Click **Generate token** and copy the value immediately.
 
-### Step 8.3: Add the Secret to Your Repository
-
-**Option A — Using the gh-aw CLI (recommended):**
+#### B.3: Add the Secret to Your Repository
 
 ```bash
+# Option 1 — gh-aw CLI (recommended)
 gh aw secrets set COPILOT_GITHUB_TOKEN --value "<your-github-pat>"
-```
 
-You can verify secrets are configured correctly:
-
-```bash
-gh aw secrets bootstrap
-```
-
-**Option B — Using the GitHub UI:**
-
-1. Go to your repository → **Settings** → **Secrets and variables** → **Actions**
-2. Click **New repository secret**
-3. Name: `COPILOT_GITHUB_TOKEN`
-4. Value: Paste the PAT you generated
-5. Click **Add secret**
-
-**Option C — Using the standard gh CLI:**
-
-```bash
+# Option 2 — standard gh CLI
 gh secret set COPILOT_GITHUB_TOKEN --body "<your-github-pat>"
 ```
 
-### Step 8.4: Compile the Workflow
+#### B.4: Compile the Workflow
 
-The `.md` file is the source of truth. The compiled `.lock.yml` is what GitHub Actions actually runs. After any edits to the `.md`, recompile:
+The `.md` file is the source of truth. The compiled `.lock.yml` is what GitHub Actions runs:
 
 ```bash
 gh aw compile .github/workflows/chaos-engineering.md
 ```
 
-Verify the compiled output:
+> **Important**: Always commit both the `.md` source and the `.lock.yml` together.
 
-```bash
-gh aw status
-```
-
-Expected output:
-
-```
-╭─────────────────────────┬─────────┬──────────╮
-│ Workflow                │ Engine  │ Compiled │
-├─────────────────────────┼─────────┼──────────┤
-│ chaos-engineering       │ copilot │ Yes      │
-╰─────────────────────────┴─────────┴──────────╯
-```
-
-> **Important**: Always commit both the `.md` source and the `.lock.yml` together. The `.lock.yml` is auto-generated — never edit it manually.
-
-### Step 8.5: Test the Workflow
-
-Trigger a test run:
+#### B.5: Trigger the Workflow
 
 ```bash
 # Random scenario
@@ -718,16 +754,14 @@ gh run list --workflow=chaos-engineering.lock.yml --limit 1
 gh run watch
 ```
 
-### Step 8.6: Troubleshooting Agentic Workflow Auth
+#### B.6: Troubleshooting
 
 | Problem | Solution |
 |---|---|
-| Workflow fails at Copilot inference step | Verify the PAT owner has an **active Copilot license**. Test locally: `gh copilot suggest "hello"` |
-| Secret not found error | Confirm the secret name is exactly `COPILOT_GITHUB_TOKEN` (case-sensitive). Run `gh aw secrets bootstrap` to check. |
-| `gh aw compile` fails | Ensure the `.md` file is in `.github/workflows/` and has valid frontmatter. Run `gh aw status` to see registered workflows. |
-| Workflow creates empty PR | The agent may have hit a rate limit. Check the workflow logs in the Actions tab for Copilot API errors. |
-
-> **Reference**: [GitHub Agentic Workflows — Authentication](https://github.github.com/gh-aw/reference/auth/#copilot_github_token)
+| Workflow fails at Copilot inference step | Verify the PAT owner has an **active Copilot license** |
+| Secret not found error | Confirm secret name is exactly `COPILOT_GITHUB_TOKEN`. Run `gh aw secrets bootstrap` |
+| `gh aw compile` fails | Ensure `.md` is in `.github/workflows/` with valid frontmatter |
+| Workflow creates empty PR | Agent may have hit a rate limit — check Actions logs |
 
 ---
 
@@ -739,13 +773,15 @@ gh run watch
 ┌─────────────────────────────────────────────────────┐
 │                    DEMO FLOW                         │
 │                                                     │
-│  1. Trigger Chaos Workflow                          │
-│     └─ .github/workflows/chaos-engineering.md       │
-│        (workflow_dispatch)                           │
+│  1. Introduce Chaos (pick one)                      │
+│     ├─ Option A: ./chaos-engineering.sh <scenario>  │
+│     │  (modifies live Azure config directly)        │
+│     └─ Option B: gh workflow run chaos-engineering   │
+│        (creates PR with code-level break)           │
 │                                                     │
-│  2. Breaking Change Deployed                        │
-│     └─ CI/CD pipeline deploys broken code           │
-│        to Azure Container Apps                      │
+│  2. Breaking Change Takes Effect                    │
+│     ├─ A: Container App deploys new revision        │
+│     └─ B: CI/CD deploys broken code from PR         │
 │                                                     │
 │  3. SRE Agent Detects Issue                         │
 │     └─ Scheduled task or alert fires                │
@@ -788,13 +824,25 @@ gh run watch
 4. Show the healthy response.
 
 **Part 2: Introduce Chaos** (~1 min)
+
+*Option A — az CLI (instant infra change):*
+1. Inject a chaos scenario:
+   ```bash
+   ./chaos-engineering.sh bad-api-url
+   ```
+2. Show the revision being deployed:
+   ```bash
+   az containerapp revision list --name "$AZURE_BACKEND_APP" --resource-group "$AZURE_RESOURCE_GROUP" -o table
+   ```
+
+*Option B — Agentic Workflow (code commit via PR):*
 1. Trigger the chaos engineering workflow:
    ```bash
-   gh workflow run chaos-engineering.yml
+   gh workflow run chaos-engineering.lock.yml -f scenario=bad-api-url
    ```
 2. Show the workflow running in the GitHub Actions tab.
 3. Show the PR it creates with the breaking change.
-4. Merge the PR (or let it auto-merge if configured).
+4. Merge the PR to deploy the break via CI/CD.
 
 **Part 3: Wait for Detection** (~3-5 min)
 1. The CD pipeline deploys the broken code.

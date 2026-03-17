@@ -458,14 +458,18 @@ This repository includes a complete Azure SRE Agent demo setup for showcasing AI
 | Component | File | Purpose |
 |---|---|---|
 | **Setup Guide** | [`SRE-AGENT-SETUP.md`](SRE-AGENT-SETUP.md) | Step-by-step guide to configure Azure SRE Agent monitoring |
-| **Chaos Workflow** | [`.github/workflows/chaos-engineering.md`](.github/workflows/chaos-engineering.md) | Agentic workflow that introduces controlled breaking changes |
+| **Chaos Script** | [`chaos-engineering.sh`](chaos-engineering.sh) | az CLI script to inject infrastructure-level faults into Azure Container Apps |
+| **Chaos Workflow** | [`.github/workflows/chaos-engineering.md`](.github/workflows/chaos-engineering.md) | Agentic workflow that introduces code-level breaking changes via PR |
 | **Auto-assign** | [`.github/workflows/auto-assign-copilot.yml`](.github/workflows/auto-assign-copilot.yml) | Auto-assigns Copilot Coding Agent to SRE-detected issues |
 | **Issue Template** | [`.github/ISSUE_TEMPLATE/sre-agent-incident.yml`](.github/ISSUE_TEMPLATE/sre-agent-incident.yml) | Structured template for SRE Agent incident reports |
 
 ### Demo Flow
 ```
-Chaos Workflow → Deploys Breaking Change → SRE Agent Detects & Diagnoses
-  → Creates GitHub Issue with RCA → Copilot Coding Agent Creates Fix PR
+Option A: Chaos Script (az CLI) → Modifies Live Azure Config ─┐
+Option B: Agentic Workflow → Creates PR with Bad Code Commit ─┤
+                                                              ↓
+            SRE Agent Detects & Diagnoses → Creates GitHub Issue with RCA
+              → Copilot Coding Agent Creates Fix PR
 ```
 
 See [`SRE-AGENT-SETUP.md`](SRE-AGENT-SETUP.md) for the full walkthrough.
