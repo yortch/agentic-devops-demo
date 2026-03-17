@@ -13,6 +13,7 @@ import {
   Chip,
   CircularProgress,
 } from '@mui/material';
+import Alert from '@mui/material/Alert';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import FlightIcon from '@mui/icons-material/Flight';
@@ -21,7 +22,7 @@ import { creditCardService } from '../services/api';
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const { data: cards, isLoading } = useQuery({
+  const { data: cards, isLoading, error } = useQuery({
     queryKey: ['creditCards'],
     queryFn: creditCardService.getAllCards,
   });
@@ -92,6 +93,10 @@ const HomePage = () => {
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
             <CircularProgress />
           </Box>
+        ) : error ? (
+          <Alert severity="error" sx={{ my: 4 }}>
+            Unable to load credit cards. Please verify the backend is running and try again.
+          </Alert>
         ) : (
           <Grid container spacing={4}>
             {cards?.slice(0, 3).map((card) => (

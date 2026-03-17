@@ -8,7 +8,28 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000,
 });
+
+// Intercept responses to detect and log backend connectivity issues
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') {
+      console.error(
+        `[API] Backend unreachable at ${API_BASE_URL}:`,
+        error.message
+      );
+    } else if (error.response) {
+      console.error(
+        `[API] ${error.response.status} ${error.response.statusText} — ${error.config?.method?.toUpperCase()} ${error.config?.url}`
+      );
+    } else {
+      console.error('[API] Unexpected error:', error.message);
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const creditCardService = {
   getAllCards: async (params = {}) => {

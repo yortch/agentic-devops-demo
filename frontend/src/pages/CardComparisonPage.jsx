@@ -26,6 +26,7 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from '@mui/material';
+import Alert from '@mui/material/Alert';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import { creditCardService } from '../services/api';
@@ -36,7 +37,7 @@ const CardComparisonPage = () => {
   const [annualFeeFilter, setAnnualFeeFilter] = useState('');
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'table'
 
-  const { data: cards, isLoading } = useQuery({
+  const { data: cards, isLoading, error } = useQuery({
     queryKey: ['creditCards'],
     queryFn: creditCardService.getAllCards,
   });
@@ -115,6 +116,10 @@ const CardComparisonPage = () => {
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
           <CircularProgress />
         </Box>
+      ) : error ? (
+        <Alert severity="error" sx={{ my: 4 }}>
+          Unable to load credit cards. Please verify the backend is running and try again.
+        </Alert>
       ) : filteredCards?.length === 0 ? (
         <Box sx={{ textAlign: 'center', py: 8 }}>
           <Typography variant="h6" color="text.secondary">
