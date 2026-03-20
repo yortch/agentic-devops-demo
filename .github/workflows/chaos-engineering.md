@@ -33,13 +33,17 @@ Three Rivers Bank application to demonstrate Azure SRE Agent capabilities.
 
 ## CRITICAL FIRST STEP — Read the Requested Scenario
 
-**Before doing ANYTHING else**, you MUST determine which scenario to use by reading
-the workflow dispatch input. Do this immediately:
+**Before doing ANYTHING else**, you MUST determine which scenario to use by querying
+the GitHub API for the workflow run inputs. Do this immediately:
 
-1. Run this command to extract the scenario input:
+1. Run this command to extract the scenario input from the workflow dispatch:
    ```bash
-   cat "$GITHUB_EVENT_PATH" | jq -r '.inputs.scenario // empty'
+   curl -s -H "Authorization: token $GITHUB_TOKEN" \
+     "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+     | jq -r '.inputs.scenario // empty'
    ```
+   NOTE: Do NOT try to read `$GITHUB_EVENT_PATH` — that file is not accessible in the
+   agentic workflow container. Always use the GitHub API method above.
 2. If the output is a non-empty string matching one of the scenario names in the list
    below, you **MUST** use exactly that scenario. Do NOT pick randomly.
 3. Only if the output is empty (no scenario was specified) should you pick one at random.
