@@ -41,11 +41,21 @@ when deployed to Azure Container Apps. The change must be:
 3. **Reversible** — a simple code change can fix it
 4. **Documented** — the PR clearly describes what was broken (for demo operators)
 
-## Chaos Scenarios
+## Retrieving the Requested Scenario
 
-If the input `scenario` is provided, use that specific scenario. Otherwise, pick
-**one at random** from the list below. Vary your selection — try to pick a different
-one than you see in recent closed PRs with the "chaos-engineering" label.
+The `scenario` input from the workflow dispatch is stored in the GitHub Actions event
+payload. To retrieve it:
+
+1. Read the file at the path given by the `GITHUB_EVENT_PATH` environment variable
+   (typically `/home/runner/work/_temp/_github_workflow/event.json`).
+2. Parse the JSON and check the `inputs.scenario` field.
+3. If `inputs.scenario` is a non-empty string matching one of the scenario names below,
+   you **MUST** use exactly that scenario — do NOT pick randomly.
+4. If `inputs.scenario` is empty, missing, or null, pick **one at random** from the list
+   below. Vary your selection — try to pick a different one than you see in recent closed
+   PRs with the "chaos-engineering" label.
+
+## Chaos Scenarios
 
 ### Scenario 1: `port-mismatch`
 **Target**: `infra/terraform/main.tf`
@@ -120,7 +130,8 @@ JavaScript console errors.
 
 ## Execution Steps
 
-1. **Select a scenario**: Use the input scenario if provided, otherwise pick randomly.
+1. **Select a scenario**: Follow the "Retrieving the Requested Scenario" section above
+   to check the event payload for a specific scenario. Only pick randomly if none was provided.
 
 2. **Read the target file**: Use the GitHub tools to read the current content of the file
    that needs to be modified.

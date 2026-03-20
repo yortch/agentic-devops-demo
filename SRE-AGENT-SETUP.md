@@ -13,9 +13,10 @@
 5. [Set Up Scheduled Proactive Diagnostics](#5-set-up-scheduled-proactive-diagnostics)
 6. [Configure Incident Response Plan](#6-configure-incident-response-plan)
 7. [Enable Copilot Coding Agent Auto-Fix](#7-enable-copilot-coding-agent-auto-fix)
-8. [Demo Walkthrough](#8-demo-walkthrough)
-9. [Troubleshooting](#9-troubleshooting)
-10. [Reference Links](#10-reference-links)
+8. [Chaos Engineering Scenarios](#8-chaos-engineering-scenarios)
+9. [Demo Walkthrough](#9-demo-walkthrough)
+10. [Troubleshooting](#10-troubleshooting)
+11. [Reference Links](#11-reference-links)
 
 ---
 
@@ -37,6 +38,9 @@
 | **Repository Access** | Push access to `agentic-devops-demo` repository |
 | **GitHub PAT** | Personal Access Token with `repo` scope (for GitHub MCP connector) |
 | **Copilot License** | GitHub Copilot Enterprise or Business (for Copilot Coding Agent) |
+| **az CLI** | Azure CLI installed and logged in (`az login`) |
+| **gh CLI + gh-aw** | *(Optional — for Option B)* GitHub CLI with `gh-aw` extension installed ([install guide](https://github.github.com/gh-aw/setup/quick-start/)) |
+| **COPILOT_GITHUB_TOKEN** | *(Optional — for Option B)* GitHub Actions secret for Copilot-powered agentic workflows (see [Section 8B](#option-b-agentic-workflow-code-level-chaos)) |
 
 ### Deployed Resources to Monitor
 
@@ -361,36 +365,149 @@ The SRE Agent connects to Azure Monitor Alerts by default. Verify this:
 
 ### Step 6.2: Create Alert Rules
 
-In the Azure Portal, navigate to your application resource group and create these alert rules:
+Create an action group and three alert rules using the Azure CLI. The SRE Agent automatically
+picks up Azure Monitor alerts from monitored resource groups — no extra wiring is needed.
 
-#### Alert: Backend Error Rate Spike
+> **Substitute** `{SUBSCRIPTION_ID}`, `{RESOURCE_GROUP}`, `{BACKEND_APP}`, and
+> `{CONTAINER_ENV}` with your actual values (or set them as shell variables first).
 
-```
-Resource: {env}-backend Container App
-Condition: Requests where response code >= 500
-Threshold: Greater than 5 in 5 minutes
-Severity: 2 (Warning)
-Action Group: Link to SRE Agent
-```
+#### Set variables
 
-#### Alert: Container App Restart
+```bash
+# ── Customize these ──────────────────────────────────────────────
+SUB="<your-subscription-id>"
+RG="<your-resource-group>"               # e.g. rg-banking-demo
+BACKEND="<your-backend-container-app>"    # e.g. ca-banking-demo-backend
+ENV_NAME="<your-container-app-env>"       # e.g. banking-demo-cae
+# ─────────────────────────────────────────────────────────────────
 
-```
-Resource: Container App Environment
-Condition: Container restart count > 0
-Threshold: Any restart
-Severity: 1 (Error)
-Action Group: Link to SRE Agent
+BACKEND_SCOPE="/subscriptions/$SUB/resourceGroups/$RG/providers/Microsoft.App/containerapps/$BACKEND"
+ENV_SCOPE="/subscriptions/$SUB/resourceGroups/$RG/providers/Microsoft.App/managedEnvironments/$ENV_NAME"
 ```
 
-#### Alert: High Response Time
+#### Create the Action Group
+
+```bash
+az monitor action-group create \
+  --name "sre-agent-action-group" \
+  --resource-group "$RG" \
+  --subscription "$SUB" \
+  --short-name "SREAgent" \
+  --output table
+```
+
+```bash
+ACTION_GROUP=$(az monitor action-group show \
+  --name "sre-agent-action-group" \
+  --resource-group "$RG" \
+  --subscription "$SUB" \
+  --query id -o tsv)
+```
+
+> **Tip**: If you later add a webhook, email, or Logic App to this action group, the SRE
+> Agent will receive richer context automatically.
+
+#### Alert 1 — Backend 5xx Error Rate Spike
+
+Fires when the backend receives **more than 5 HTTP 5xx responses in a 5-minute window**.
+
+| Property | Value |
+|---|---|
+| **Metric** | `Requests` (total) |
+| **Dimension** | `statusCodeCategory` includes `5xx` |
+| **Threshold** | > 5 |
+| **Window** | 5 minutes |
+| **Evaluation** | Every 1 minute |
+| **Severity** | 2 (Warning) |
+
+```bash
+az monitor metrics alert create \
+  --name "backend-5xx-error-spike" \
+  --resource-group "$RG" \
+  --subscription "$SUB" \
+  --scopes "$BACKEND_SCOPE" \
+  --condition "total Requests > 5 where statusCodeCategory includes 5xx" \
+  --window-size 5m \
+  --evaluation-frequency 1m \
+  --severity 2 \
+  --description "Backend HTTP 5xx errors exceeded threshold. Investigate for bad deployments, misconfiguration, or upstream failures." \
+  --action "$ACTION_GROUP" \
+  --tags application=three-rivers-bank component=backend alert-type=error-rate
+```
+
+#### Alert 2 — Container App Restart
+
+Fires when **any replica restart** is detected in the Container App Environment (severity 1 — Error).
+
+| Property | Value |
+|---|---|
+| **Metric** | `RestartCount` |
+| **Aggregation** | Total |
+| **Threshold** | > 0 |
+| **Window** | 5 minutes |
+| **Evaluation** | Every 1 minute |
+| **Severity** | 1 (Error) |
+
+```bash
+az monitor metrics alert create \
+  --name "container-restart-detected" \
+  --resource-group "$RG" \
+  --subscription "$SUB" \
+  --scopes "$BACKEND_SCOPE" \
+  --condition "total RestartCount > 0" \
+  --window-size 5m \
+  --evaluation-frequency 1m \
+  --severity 1 \
+  --description "Container app replica restarted. Likely cause: OOM kill, crash loop, or failed health probe." \
+  --action "$ACTION_GROUP" \
+  --tags application=three-rivers-bank component=backend alert-type=restart
+```
+
+#### Alert 3 — High Response Time
+
+Fires when the **average response time exceeds 3 seconds** over a 5-minute window.
+
+| Property | Value |
+|---|---|
+| **Metric** | `ResponseTime` (Average, in milliseconds) |
+| **Threshold** | > 3000 ms |
+| **Window** | 5 minutes |
+| **Evaluation** | Every 1 minute |
+| **Severity** | 3 (Informational) |
+
+```bash
+az monitor metrics alert create \
+  --name "backend-high-response-time" \
+  --resource-group "$RG" \
+  --subscription "$SUB" \
+  --scopes "$BACKEND_SCOPE" \
+  --condition "avg ResponseTime > 3000" \
+  --window-size 5m \
+  --evaluation-frequency 1m \
+  --severity 3 \
+  --description "Backend p95 response time elevated. May indicate resource starvation, circuit breaker issues, or slow external API." \
+  --action "$ACTION_GROUP" \
+  --tags application=three-rivers-bank component=backend alert-type=latency
+```
+
+#### Verify the alerts
+
+```bash
+az monitor metrics alert list \
+  --resource-group "$RG" \
+  --subscription "$SUB" \
+  --query "[].{Name:name, Severity:severity, Enabled:enabled, Window:windowSize}" \
+  --output table
+```
+
+Expected output:
 
 ```
-Resource: {env}-backend Container App
-Condition: Average response time
-Threshold: Greater than 3 seconds over 5 minutes
-Severity: 3 (Informational)
-Action Group: Link to SRE Agent
+Name                          Severity  Enabled  Window
+----------------------------  --------  -------  ------
+backend-5xx-error-spike       2         True     PT5M
+container-restart-detected    1         True     PT5M
+backend-high-response-time    3         True     PT5M
 ```
 
 ### Step 6.3: Create Incident Response Plan
@@ -504,7 +621,151 @@ jobs:
 
 ---
 
-## 8. Demo Walkthrough
+## 8. Chaos Engineering Scenarios
+
+Two methods are available for injecting chaos. Choose the one that fits your demo:
+
+| | Option A: az CLI Script | Option B: Agentic Workflow |
+|---|---|---|
+| **How it works** | Modifies live Azure Container App config directly | Creates a PR with a code-level breaking change |
+| **Best for** | Quick infra-level faults (env vars, ports, resources) | Demonstrating SRE Agent detecting bad *code commits* |
+| **Prerequisites** | `az login` | `gh-aw` CLI + `COPILOT_GITHUB_TOKEN` secret |
+| **Rollback** | `./chaos-engineering.sh rollback <scenario>` | Revert the PR |
+
+Both options cover the same 10 scenarios:
+
+| # | Scenario | Target | Difficulty | Symptoms |
+|---|---|---|---|---|
+| 1 | `port-mismatch` | Backend | Medium | 503 errors, health check fails |
+| 2 | `bad-api-url` | Backend | Easy | BIAN API fails, degraded data |
+| 3 | `cors-broken` | Backend | Medium | Browser CORS errors, blank pages |
+| 4 | `low-resources` | Backend | Easy | OOM kills, restarts, slow responses |
+| 5 | `health-check-disabled` | Backend | Medium | Health probes fail, restart loop |
+| 6 | `bad-image-tag` | Backend | Easy | Image pull fails, container stuck |
+| 7 | `db-corruption` | Backend | Hard | Spring Boot fails, all 500 errors |
+| 8 | `profile-wrong` | Backend | Medium | Wrong profile, behavioral drift |
+| 9 | `circuit-breaker-disabled` | Backend | Hard | Requests hang, thread exhaustion |
+| 10 | `frontend-api-broken` | Frontend | Easy | API calls fail, no card data |
+
+---
+
+### Option A: az CLI Script (Infrastructure-Level Chaos)
+
+Modifies live Azure configuration instantly — no CI/CD pipeline involved.
+
+#### A.1: Set Environment Variables
+
+The script auto-detects values from `azd env`. Alternatively, export manually:
+
+```bash
+export AZURE_RESOURCE_GROUP="<your-resource-group>"       # e.g. rg-banking-demo
+export AZURE_BACKEND_APP="<your-backend-container-app>"   # e.g. ca-banking-demo-backend
+export AZURE_FRONTEND_APP="<your-frontend-container-app>" # e.g. ca-banking-demo-frontend
+```
+
+#### A.2: Inject a Fault
+
+```bash
+./chaos-engineering.sh bad-api-url
+```
+
+#### A.3: Roll Back
+
+```bash
+./chaos-engineering.sh rollback bad-api-url
+```
+
+#### A.4: Other Commands
+
+```bash
+./chaos-engineering.sh list     # show all scenarios
+./chaos-engineering.sh status   # show current app configuration
+```
+
+#### A.5: Troubleshooting
+
+| Problem | Solution |
+|---|---|
+| `az` not found | Install Azure CLI: `brew install azure-cli` or `winget install Microsoft.AzureCLI` |
+| Permission denied on script | Run `chmod +x chaos-engineering.sh` |
+| "not logged in" error | Run `az login` first |
+| Revision fails to deploy | Check logs: `az containerapp logs show --name <app> --resource-group <rg>` |
+| Rollback doesn't fix it | Check `./chaos-engineering.sh status` and compare against expected values in Section 5 Task 3 |
+
+---
+
+### Option B: Agentic Workflow (Code-Level Chaos)
+
+Creates a PR with a realistic code-level breaking change via GitHub Agentic Workflows (`gh-aw`). This is ideal for demonstrating the SRE Agent detecting an issue introduced by a *code commit*, and having Copilot Coding Agent fix it via PR.
+
+#### B.1: Install the gh-aw CLI Extension
+
+```bash
+gh extension install github/gh-aw
+gh aw --version   # verify installation
+```
+
+#### B.2: Create a Fine-Grained PAT for Copilot
+
+1. Open the **pre-filled token creation link**:
+   [Create COPILOT_GITHUB_TOKEN PAT](https://github.com/settings/personal-access-tokens/new?name=COPILOT_GITHUB_TOKEN&description=GitHub+Agentic+Workflows+-+Copilot+engine+authentication&user_copilot_requests=read)
+
+2. Verify these settings before generating:
+   - **Resource owner**: Your **personal user account** (not an organization)
+   - **Permissions → Account permissions**: `Copilot Requests` set to **Read**
+   - No repository permissions are needed
+
+3. Click **Generate token** and copy the value immediately.
+
+#### B.3: Add the Secret to Your Repository
+
+```bash
+# Option 1 — gh-aw CLI (recommended)
+gh aw secrets set COPILOT_GITHUB_TOKEN --value "<your-github-pat>"
+
+# Option 2 — standard gh CLI
+gh secret set COPILOT_GITHUB_TOKEN --body "<your-github-pat>"
+```
+
+#### B.4: Compile the Workflow
+
+The `.md` file is the source of truth. The compiled `.lock.yml` is what GitHub Actions runs:
+
+```bash
+gh aw compile .github/workflows/chaos-engineering.md
+```
+
+> **Important**: Always commit both the `.md` source and the `.lock.yml` together.
+
+#### B.5: Trigger the Workflow
+
+```bash
+# Random scenario
+gh workflow run chaos-engineering.lock.yml
+
+# Specific scenario
+gh workflow run chaos-engineering.lock.yml -f scenario=bad-api-url
+```
+
+Monitor the run:
+
+```bash
+gh run list --workflow=chaos-engineering.lock.yml --limit 1
+gh run watch
+```
+
+#### B.6: Troubleshooting
+
+| Problem | Solution |
+|---|---|
+| Workflow fails at Copilot inference step | Verify the PAT owner has an **active Copilot license** |
+| Secret not found error | Confirm secret name is exactly `COPILOT_GITHUB_TOKEN`. Run `gh aw secrets bootstrap` |
+| `gh aw compile` fails | Ensure `.md` is in `.github/workflows/` with valid frontmatter |
+| Workflow creates empty PR | Agent may have hit a rate limit — check Actions logs |
+
+---
+
+## 9. Demo Walkthrough
 
 ### The Full Demo Loop
 
@@ -512,13 +773,15 @@ jobs:
 ┌─────────────────────────────────────────────────────┐
 │                    DEMO FLOW                         │
 │                                                     │
-│  1. Trigger Chaos Workflow                          │
-│     └─ .github/workflows/chaos-engineering.md       │
-│        (workflow_dispatch)                           │
+│  1. Introduce Chaos (pick one)                      │
+│     ├─ Option A: ./chaos-engineering.sh <scenario>  │
+│     │  (modifies live Azure config directly)        │
+│     └─ Option B: gh workflow run chaos-engineering   │
+│        (creates PR with code-level break)           │
 │                                                     │
-│  2. Breaking Change Deployed                        │
-│     └─ CI/CD pipeline deploys broken code           │
-│        to Azure Container Apps                      │
+│  2. Breaking Change Takes Effect                    │
+│     ├─ A: Container App deploys new revision        │
+│     └─ B: CI/CD deploys broken code from PR         │
 │                                                     │
 │  3. SRE Agent Detects Issue                         │
 │     └─ Scheduled task or alert fires                │
@@ -561,13 +824,25 @@ jobs:
 4. Show the healthy response.
 
 **Part 2: Introduce Chaos** (~1 min)
+
+*Option A — az CLI (instant infra change):*
+1. Inject a chaos scenario:
+   ```bash
+   ./chaos-engineering.sh bad-api-url
+   ```
+2. Show the revision being deployed:
+   ```bash
+   az containerapp revision list --name "$AZURE_BACKEND_APP" --resource-group "$AZURE_RESOURCE_GROUP" -o table
+   ```
+
+*Option B — Agentic Workflow (code commit via PR):*
 1. Trigger the chaos engineering workflow:
    ```bash
-   gh workflow run chaos-engineering.yml
+   gh workflow run chaos-engineering.lock.yml -f scenario=bad-api-url
    ```
 2. Show the workflow running in the GitHub Actions tab.
 3. Show the PR it creates with the breaking change.
-4. Merge the PR (or let it auto-merge if configured).
+4. Merge the PR to deploy the break via CI/CD.
 
 **Part 3: Wait for Detection** (~3-5 min)
 1. The CD pipeline deploys the broken code.
@@ -598,7 +873,7 @@ jobs:
 
 ---
 
-## 9. Troubleshooting
+## 10. Troubleshooting
 
 ### SRE Agent Can't See My Container Apps
 
@@ -633,7 +908,7 @@ jobs:
 
 ---
 
-## 10. Reference Links
+## 11. Reference Links
 
 | Resource | URL |
 |---|---|
