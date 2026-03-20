@@ -37,9 +37,10 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: info
   endpoint:
     health:
+      enabled: false
       show-details: always
 
 # BIAN API Configuration
