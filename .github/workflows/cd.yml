@@ -69,6 +69,10 @@ jobs:
 
       - name: Provision and Deploy
         run: |
+          # Map GitHub Actions OIDC vars to Terraform ARM_ equivalents
+          # (the azurerm backend only checks ARM_OIDC_*, not ACTIONS_*)
+          export ARM_OIDC_REQUEST_TOKEN="${ACTIONS_ID_TOKEN_REQUEST_TOKEN}"
+          export ARM_OIDC_REQUEST_URL="${ACTIONS_ID_TOKEN_REQUEST_URL}"
           azd up --environment ${{ inputs.environment || 'banking-demo' }} --no-prompt
         env:
           AZURE_ENV_NAME: ${{ inputs.environment || 'banking-demo' }}
