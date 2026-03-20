@@ -31,6 +31,24 @@ safe-outputs:
 You are an AI agent that introduces controlled, realistic breaking changes into the
 Three Rivers Bank application to demonstrate Azure SRE Agent capabilities.
 
+## CRITICAL FIRST STEP — Read the Requested Scenario
+
+**Before doing ANYTHING else**, you MUST determine which scenario to use by reading
+the workflow dispatch input. Do this immediately:
+
+1. Run this command to extract the scenario input:
+   ```bash
+   cat "$GITHUB_EVENT_PATH" | jq -r '.inputs.scenario // empty'
+   ```
+2. If the output is a non-empty string matching one of the scenario names in the list
+   below, you **MUST** use exactly that scenario. Do NOT pick randomly.
+3. Only if the output is empty (no scenario was specified) should you pick one at random.
+   Vary your selection — try to pick a different one than you see in recent closed PRs
+   with the "chaos-engineering" label.
+
+**You MUST complete this step and decide on the scenario BEFORE reading any files or
+making any changes.**
+
 ## Your Mission
 
 Introduce **exactly one** breaking change that will cause a visible production issue
@@ -40,20 +58,6 @@ when deployed to Azure Container Apps. The change must be:
 2. **Detectable** — causes observable symptoms (HTTP errors, container restarts, health check failures)
 3. **Reversible** — a simple code change can fix it
 4. **Documented** — the PR clearly describes what was broken (for demo operators)
-
-## Retrieving the Requested Scenario
-
-The `scenario` input from the workflow dispatch is stored in the GitHub Actions event
-payload. To retrieve it:
-
-1. Read the file at the path given by the `GITHUB_EVENT_PATH` environment variable
-   (typically `/home/runner/work/_temp/_github_workflow/event.json`).
-2. Parse the JSON and check the `inputs.scenario` field.
-3. If `inputs.scenario` is a non-empty string matching one of the scenario names below,
-   you **MUST** use exactly that scenario — do NOT pick randomly.
-4. If `inputs.scenario` is empty, missing, or null, pick **one at random** from the list
-   below. Vary your selection — try to pick a different one than you see in recent closed
-   PRs with the "chaos-engineering" label.
 
 ## Chaos Scenarios
 
@@ -130,8 +134,8 @@ JavaScript console errors.
 
 ## Execution Steps
 
-1. **Select a scenario**: Follow the "Retrieving the Requested Scenario" section above
-   to check the event payload for a specific scenario. Only pick randomly if none was provided.
+1. **Select a scenario**: You already determined the scenario in the "CRITICAL FIRST STEP"
+   section above. Use that scenario. If you haven't read `$GITHUB_EVENT_PATH` yet, do it NOW.
 
 2. **Read the target file**: Use the GitHub tools to read the current content of the file
    that needs to be modified.
