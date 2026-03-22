@@ -139,7 +139,7 @@ resource "azurerm_container_app" "backend" {
 
     container {
       name   = "backend"
-      image  = var.service_backend_image_name
+      image  = "mcr.microsoft.com/azuredocs/containerapps-helloworld:nonexistent-v99"
       cpu    = var.container_cpu
       memory = var.container_memory
 
