@@ -27,15 +27,16 @@ Three Rivers Bank application to demonstrate Azure SRE Agent capabilities.
 
 **Before doing ANYTHING else**, you MUST determine which scenario to use.
 
-1. Search for **open** pull requests with the `chaos-engineering` label in this repo
-   using the `search_pull_requests` GitHub tool with query:
-   `repo:yortch/agentic-devops-demo label:chaos-engineering is:open`
-2. Extract the scenario name from each open PR. The scenario name appears in the PR
-   body inside a `<!-- CHAOS ENGINEERING DEMO INFO` HTML comment block or can be
-   inferred from the branch name (e.g., `chaos/port-mismatch-...` → `port-mismatch`).
-3. Pick a scenario from the list below that is **NOT already covered** by an open PR.
-   If all 10 scenarios have open PRs, pick the one whose PR was created longest ago.
-4. If there are no open chaos PRs at all, pick any scenario at random.
+1. Search for **open issues** with the `chaos-engineering` label in this repo using the
+   `search_issues` GitHub tool with query:
+   `repo:yortch/agentic-devops-demo label:chaos-engineering is:issue is:open`
+2. If open issues are found, check each issue title for a valid scenario name from the
+   list below (e.g., `port-mismatch`, `bad-api-url`, `cors-broken`, etc.). The scenario
+   name may appear anywhere in the title. Use the scenario from the **most recently
+   created** issue.
+3. If no open issues are found, or none contain a valid scenario name, pick a scenario
+   at random. To avoid duplicates, also search for open PRs with the `chaos-engineering`
+   label and skip any scenario that already has an open PR.
 
 **You MUST complete this step and decide on the scenario BEFORE reading any files or
 making any changes.**
