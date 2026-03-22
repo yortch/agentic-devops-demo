@@ -36,6 +36,7 @@ server:
 management:
   endpoints:
     web:
+      base-path: /internal/actuator
       exposure:
         include: health,info
   endpoint:
