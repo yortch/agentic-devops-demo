@@ -133,6 +133,15 @@ as the first line inside the method body, before the `return` statement.
 credit card data. Backend logs show `NullPointerException` in `CreditCardService.convertToDto`.
 **Difficulty**: Easy — a classic null pointer bug in the service layer.
 
+### Scenario 12: `backend-image-tag`
+**Target**: `infra/terraform/main.tf`
+**Change**: In the backend container app resource (`azurerm_container_app.backend`), change the
+`image` value from `var.service_backend_image_name` to a hardcoded nonexistent image tag like
+`"mcr.microsoft.com/azuredocs/containerapps-helloworld:nonexistent-v99"`.
+**Symptoms**: Container App revision fails to start due to image pull error. Backend becomes
+unreachable, health checks fail, all requests return 503.
+**Difficulty**: Easy — invalid container image tag in Terraform config.
+
 ## Execution Steps
 
 1. **Select a scenario**: You already determined the scenario in the "CRITICAL FIRST STEP"
@@ -162,6 +171,7 @@ credit card data. Backend logs show `NullPointerException` in `CreditCardService
      - `circuit-breaker-disabled`: "chaos: circuit breaker thresholds misconfigured"
      - `frontend-api-broken`: "chaos: frontend API URL points to wrong backend"
      - `backend-500`: "chaos: null pointer in card service DTO conversion"
+     - `backend-image-tag`: "chaos: backend container image tag changed to nonexistent version"
    - **Body**: Write a realistic-looking PR description (1-2 sentences) that does NOT
      reveal this is intentional chaos. Then, below a `---` separator, add a hidden
      details section for demo operators:
