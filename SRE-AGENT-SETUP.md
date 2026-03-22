@@ -664,6 +664,7 @@ Both options cover the same 10 scenarios:
 | 10 | `frontend-api-broken` | Frontend | Easy | API calls fail, no card data |
 | 11 | `backend-500` | Backend | Easy | GET /api/cards returns 500, NPE in service |
 | 12 | `backend-image-tag` | Backend | Easy | Image pull fails, backend unreachable, 503 |
+| 13 | `backend-slow-response` | Backend | Medium | GET /api/cards takes 0–30s, timeouts |
 
 ---
 
@@ -772,7 +773,7 @@ gh issue create \
 Valid scenario names for the title: `port-mismatch`, `bad-api-url`, `cors-broken`,
 `low-resources`, `health-check-disabled`, `bad-image-tag`, `db-corruption`,
 `profile-wrong`, `circuit-breaker-disabled`, `frontend-api-broken`, `backend-500`,
-`backend-image-tag`.
+`backend-image-tag`, `backend-slow-response`.
 
 > **Note**: If no open issue with a valid scenario is found, the workflow picks one at
 > random (avoiding scenarios that already have open PRs).

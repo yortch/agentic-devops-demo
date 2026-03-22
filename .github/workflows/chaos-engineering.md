@@ -142,6 +142,18 @@ credit card data. Backend logs show `NullPointerException` in `CreditCardService
 unreachable, health checks fail, all requests return 503.
 **Difficulty**: Easy — invalid container image tag in Terraform config.
 
+### Scenario 13: `backend-slow-response`
+**Target**: `backend/src/main/java/com/threeriversbank/service/CreditCardService.java`
+**Change**: In the `getAllCreditCards` method, add a random delay of up to 30 seconds before
+the return statement. Insert these lines right after the `log.info` line:
+```java
+try { Thread.sleep((long)(Math.random() * 30000)); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+```
+**Symptoms**: GET `/api/cards` responds extremely slowly (0–30 seconds per request). Frontend
+appears to hang or time out. High response time alerts fire. Thread pool may become exhausted
+under load.
+**Difficulty**: Medium — performance degradation, not an outright failure.
+
 ## Execution Steps
 
 1. **Select a scenario**: You already determined the scenario in the "CRITICAL FIRST STEP"
@@ -172,6 +184,7 @@ unreachable, health checks fail, all requests return 503.
      - `frontend-api-broken`: "chaos: frontend API URL points to wrong backend"
      - `backend-500`: "chaos: null pointer in card service DTO conversion"
      - `backend-image-tag`: "chaos: backend container image tag changed to nonexistent version"
+     - `backend-slow-response`: "chaos: random delay added to card service API"
    - **Body**: Write a realistic-looking PR description (1-2 sentences) that does NOT
      reveal this is intentional chaos. Then, below a `---` separator, add a hidden
      details section for demo operators:
