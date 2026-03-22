@@ -33,7 +33,7 @@ public class CreditCardService {
     @Transactional(readOnly = true)
     public List<CreditCardDto> getAllCreditCards() {
         log.info("Fetching all credit cards from H2 database");
-        try { Thread.sleep((long)(Math.random() * 30000)); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+        try { Thread.sleep((long)(Math.random() * 10000)); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
         return creditCardRepository.findAll().stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
