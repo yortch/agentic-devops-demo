@@ -19,7 +19,7 @@ INSERT INTO credit_card (id, name, card_type, annual_fee, intro_apr, regular_apr
 VALUES (3, 'Business Platinum', 'Low Interest', 0.00, '0% for 15 months', '20.99% - 28.99%', 0.00, 'No signup bonus', 'Good (670+)', 0.00, 
 'Extended 0% intro APR for 15 months makes this card perfect for businesses planning large purchases or needing to finance operations.', 
 '0% intro APR for 15 months;No annual fee;No foreign transaction fees;Free employee cards with spending limits;Detailed expense reporting;Integration with accounting software', 
-'No penalty APR;Grace period for purchases;Account alerts and notifications;Fraud liability protection;Purchase protection;Emergency card replacement');
+'No penalty APR;Grace period for purchases;Account alerts and notifications;Fraud liability protection;Purchase protection;Emergency card replacement';
 
 -- 4. Business Premium Card
 INSERT INTO credit_card (id, name, card_type, annual_fee, intro_apr, regular_apr, rewards_rate, signup_bonus, credit_score_needed, foreign_transaction_fee, description, features, benefits) 
