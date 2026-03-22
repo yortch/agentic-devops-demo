@@ -144,12 +144,12 @@ unreachable, health checks fail, all requests return 503.
 
 ### Scenario 13: `backend-slow-response`
 **Target**: `backend/src/main/java/com/threeriversbank/service/CreditCardService.java`
-**Change**: In the `getAllCreditCards` method, add a random delay of up to 10 seconds before
+**Change**: In the `getAllCreditCards` method, add a random delay of up to 9 seconds before
 the return statement. Insert these lines right after the `log.info` line:
 ```java
-try { Thread.sleep((long)(Math.random() * 10000)); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+try { Thread.sleep((long)(Math.random() * 9000)); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
 ```
-**Symptoms**: GET `/api/cards` responds extremely slowly (0–10 seconds per request). Frontend
+**Symptoms**: GET `/api/cards` responds extremely slowly (0–9 seconds per request). Frontend
 appears to hang or time out. High response time alerts fire. Thread pool may become exhausted
 under load.
 **Difficulty**: Medium — performance degradation, not an outright failure.

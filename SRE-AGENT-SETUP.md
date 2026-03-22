@@ -664,7 +664,7 @@ Both options cover the same 10 scenarios:
 | 10 | `frontend-api-broken` | Frontend | Easy | API calls fail, no card data |
 | 11 | `backend-500` | Backend | Easy | GET /api/cards returns 500, NPE in service |
 | 12 | `backend-image-tag` | Backend | Easy | Image pull fails, backend unreachable, 503 |
-| 13 | `backend-slow-response` | Backend | Medium | GET /api/cards takes 0–10s, timeouts |
+| 13 | `backend-slow-response` | Backend | Medium | GET /api/cards takes 0–9s, timeouts |
 
 ---
 
