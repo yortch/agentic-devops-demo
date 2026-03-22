@@ -755,8 +755,28 @@ gh aw compile .github/workflows/chaos-engineering.md
 
 #### B.5: Trigger the Workflow
 
+First, create a GitHub issue with the `chaos-engineering` label specifying which scenario
+to inject. The workflow reads open issues with this label and extracts the scenario name
+from the issue title:
+
 ```bash
-# Run the chaos workflow (picks a scenario not already covered by open PRs)
+# Create an issue requesting a specific chaos scenario
+gh issue create \
+  --title "chaos-engineering: port-mismatch" \
+  --body "Inject the port-mismatch chaos scenario for SRE Agent demo." \
+  --label "chaos-engineering"
+```
+
+Valid scenario names for the title: `port-mismatch`, `bad-api-url`, `cors-broken`,
+`low-resources`, `health-check-disabled`, `bad-image-tag`, `db-corruption`,
+`profile-wrong`, `circuit-breaker-disabled`, `frontend-api-broken`.
+
+> **Note**: If no open issue with a valid scenario is found, the workflow picks one at
+> random (avoiding scenarios that already have open PRs).
+
+Then trigger the workflow:
+
+```bash
 gh aw run chaos-engineering
 ```
 
