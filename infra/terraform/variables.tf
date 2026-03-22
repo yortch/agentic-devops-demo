@@ -36,11 +36,11 @@ variable "service_frontend_image_name" {
 variable "container_cpu" {
   type        = number
   description = "The amount of CPU to allocate to containers"
-  default     = 0.1
+  default     = 0.5
 }
 
 variable "container_memory" {
   type        = string
   description = "The amount of memory to allocate to containers"
-  default     = "0.2Gi"
+  default     = "1Gi"
 }
