@@ -139,17 +139,18 @@ JavaScript console errors.
 4. **Create a pull request** using the `create-pull-request` safe output:
 
    - **Branch name**: `chaos/{scenario-name}-<YYYY-MM-DD>` (e.g., `chaos/port-mismatch-2026-03-16`)
-   - **Title**: A plausible commit message that a developer might write, e.g.:
-     - `port-mismatch`: "chore: update backend container port configuration"
-     - `bad-api-url`: "fix: update BIAN API endpoint URL"
-     - `cors-broken`: "chore: update CORS configuration for new domain"
-     - `low-resources`: "perf: optimize container resource allocation"
-     - `health-check-disabled`: "chore: reduce actuator endpoint exposure"
-     - `bad-image-tag`: "chore: update base Docker image version"
-     - `db-corruption`: "data: update credit card seed data"
-     - `profile-wrong`: "config: update Spring profile for deployment"
-     - `circuit-breaker-disabled`: "perf: tune circuit breaker parameters"
-     - `frontend-api-broken`: "fix: update frontend API configuration"
+   - **Title**: A title that clearly identifies this as a bug being introduced. Use the
+     prefix `bug:` followed by a description of the breaking change, e.g.:
+     - `port-mismatch`: "bug: backend container port changed to wrong value"
+     - `bad-api-url`: "bug: BIAN API endpoint URL is invalid"
+     - `cors-broken`: "bug: CORS allowed origins misconfigured"
+     - `low-resources`: "bug: backend container resources set too low"
+     - `health-check-disabled`: "bug: health endpoint disabled in actuator config"
+     - `bad-image-tag`: "bug: base Docker image tag is invalid"
+     - `db-corruption`: "bug: SQL syntax error in seed data"
+     - `profile-wrong`: "bug: Spring profile set to nonexistent profile"
+     - `circuit-breaker-disabled`: "bug: circuit breaker thresholds misconfigured"
+     - `frontend-api-broken`: "bug: frontend API URL points to wrong backend"
    - **Body**: Write a realistic-looking PR description (1-2 sentences) that does NOT
      reveal this is intentional chaos. Then, below a `---` separator, add a hidden
      details section for demo operators:

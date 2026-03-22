@@ -38,6 +38,22 @@
 | **Repository Access** | Push access to `agentic-devops-demo` repository |
 | **GitHub PAT** | Personal Access Token with `repo` scope (for GitHub MCP connector) |
 | **Copilot License** | GitHub Copilot Enterprise or Business (for Copilot Coding Agent) |
+| **Actions PR Permission** | "Allow GitHub Actions to create and approve pull requests" must be enabled (see below) |
+
+#### Enable GitHub Actions PR Creation
+
+The chaos engineering agentic workflow creates PRs via GitHub Actions. By default, the
+`GITHUB_TOKEN` is **not** permitted to create pull requests. Enable it with:
+
+```bash
+gh api repos/<owner>/<repo>/actions/permissions/workflow \
+  -X PUT \
+  -f default_workflow_permissions=read \
+  -F can_approve_pull_request_reviews=true
+```
+
+Or via the UI: **Settings → Actions → General → Workflow permissions** → check
+**"Allow GitHub Actions to create and approve pull requests"**.
 | **az CLI** | Azure CLI installed and logged in (`az login`) |
 | **gh CLI + gh-aw** | *(Optional — for Option B)* GitHub CLI with `gh-aw` extension installed ([install guide](https://github.github.com/gh-aw/setup/quick-start/)) |
 | **COPILOT_GITHUB_TOKEN** | *(Optional — for Option B)* GitHub Actions secret for Copilot-powered agentic workflows (see [Section 8B](#option-b-agentic-workflow-code-level-chaos)) |
@@ -740,11 +756,8 @@ gh aw compile .github/workflows/chaos-engineering.md
 #### B.5: Trigger the Workflow
 
 ```bash
-# Random scenario
-gh workflow run chaos-engineering.lock.yml
-
-# Specific scenario
-gh workflow run chaos-engineering.lock.yml -f scenario=bad-api-url
+# Run the chaos workflow (picks a scenario not already covered by open PRs)
+gh aw run chaos-engineering
 ```
 
 Monitor the run:
@@ -762,6 +775,7 @@ gh run watch
 | Secret not found error | Confirm secret name is exactly `COPILOT_GITHUB_TOKEN`. Run `gh aw secrets bootstrap` |
 | `gh aw compile` fails | Ensure `.md` is in `.github/workflows/` with valid frontmatter |
 | Workflow creates empty PR | Agent may have hit a rate limit — check Actions logs |
+| "not permitted to create pull requests" | Enable PR creation: **Settings → Actions → General → Workflow permissions** → check "Allow GitHub Actions to create and approve pull requests". Or run: `gh api repos/<owner>/<repo>/actions/permissions/workflow -X PUT -f default_workflow_permissions=read -F can_approve_pull_request_reviews=true` |
 
 ---
 
