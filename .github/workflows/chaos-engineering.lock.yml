@@ -23,16 +23,11 @@
 #
 # Chaos engineering workflow that introduces a random breaking change to the  Three Rivers Bank application for Azure SRE Agent demo purposes. Triggers manually, creates a PR with a realistic fault, and waits for SRE Agent to detect, diagnose, and create a fix issue for Copilot Coding Agent.
 #
-# gh-aw-metadata: {"schema_version":"v2","frontmatter_hash":"34eefba1efd8e70cdad88462386305db972fbfd577991f6ddb6f35ea4e520ab6","compiler_version":"v0.56.1","strict":true}
+# gh-aw-metadata: {"schema_version":"v2","frontmatter_hash":"b647c9025c9b89cd28ffdd31fa7ca2cecda8bc7042b6541f166032212cbebe8c","compiler_version":"v0.56.1","strict":true}
 
 name: "Chaos Engineering — SRE Agent Demo"
 "on":
-  workflow_dispatch:
-    inputs:
-      scenario:
-        description: |
-          Optional chaos scenario to introduce. Leave blank for random selection. Options: port-mismatch, bad-api-url, cors-broken, low-resources, health-check-disabled, bad-image-tag, db-corruption, profile-wrong, circuit-breaker-disabled, frontend-api-broken
-        required: false
+  workflow_dispatch: {}
 
 permissions: {}
 

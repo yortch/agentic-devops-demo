@@ -5,15 +5,7 @@ description: >
   manually, creates a PR with a realistic fault, and waits for SRE Agent
   to detect, diagnose, and create a fix issue for Copilot Coding Agent.
 on:
-  workflow_dispatch:
-    inputs:
-      scenario:
-        description: >
-          Optional chaos scenario to introduce. Leave blank for random selection.
-          Options: port-mismatch, bad-api-url, cors-broken, low-resources,
-          health-check-disabled, bad-image-tag, db-corruption, profile-wrong,
-          circuit-breaker-disabled, frontend-api-broken
-        required: false
+  workflow_dispatch: {}
 permissions:
   contents: read
   pull-requests: read
@@ -31,24 +23,19 @@ safe-outputs:
 You are an AI agent that introduces controlled, realistic breaking changes into the
 Three Rivers Bank application to demonstrate Azure SRE Agent capabilities.
 
-## CRITICAL FIRST STEP — Read the Requested Scenario
+## CRITICAL FIRST STEP — Choose a Scenario
 
-**Before doing ANYTHING else**, you MUST determine which scenario to use by querying
-the GitHub API for the workflow run inputs. Do this immediately:
+**Before doing ANYTHING else**, you MUST determine which scenario to use.
 
-1. Run this command to extract the scenario input from the workflow dispatch:
-   ```bash
-   curl -s -H "Authorization: token $GITHUB_TOKEN" \
-     "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
-     | jq -r '.inputs.scenario // empty'
-   ```
-   NOTE: Do NOT try to read `$GITHUB_EVENT_PATH` — that file is not accessible in the
-   agentic workflow container. Always use the GitHub API method above.
-2. If the output is a non-empty string matching one of the scenario names in the list
-   below, you **MUST** use exactly that scenario. Do NOT pick randomly.
-3. Only if the output is empty (no scenario was specified) should you pick one at random.
-   Vary your selection — try to pick a different one than you see in recent closed PRs
-   with the "chaos-engineering" label.
+1. Search for **open** pull requests with the `chaos-engineering` label in this repo
+   using the `search_pull_requests` GitHub tool with query:
+   `repo:yortch/agentic-devops-demo label:chaos-engineering is:open`
+2. Extract the scenario name from each open PR. The scenario name appears in the PR
+   body inside a `<!-- CHAOS ENGINEERING DEMO INFO` HTML comment block or can be
+   inferred from the branch name (e.g., `chaos/port-mismatch-...` → `port-mismatch`).
+3. Pick a scenario from the list below that is **NOT already covered** by an open PR.
+   If all 10 scenarios have open PRs, pick the one whose PR was created longest ago.
+4. If there are no open chaos PRs at all, pick any scenario at random.
 
 **You MUST complete this step and decide on the scenario BEFORE reading any files or
 making any changes.**
@@ -139,7 +126,7 @@ JavaScript console errors.
 ## Execution Steps
 
 1. **Select a scenario**: You already determined the scenario in the "CRITICAL FIRST STEP"
-   section above. Use that scenario. If you haven't read `$GITHUB_EVENT_PATH` yet, do it NOW.
+   section above. Use that scenario — do NOT pick a different one.
 
 2. **Read the target file**: Use the GitHub tools to read the current content of the file
    that needs to be modified.
