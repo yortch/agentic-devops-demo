@@ -139,18 +139,18 @@ JavaScript console errors.
 4. **Create a pull request** using the `create-pull-request` safe output:
 
    - **Branch name**: `chaos/{scenario-name}-<YYYY-MM-DD>` (e.g., `chaos/port-mismatch-2026-03-16`)
-   - **Title**: A title that clearly identifies this as a bug being introduced. Use the
-     prefix `bug:` followed by a description of the breaking change, e.g.:
-     - `port-mismatch`: "bug: backend container port changed to wrong value"
-     - `bad-api-url`: "bug: BIAN API endpoint URL is invalid"
-     - `cors-broken`: "bug: CORS allowed origins misconfigured"
-     - `low-resources`: "bug: backend container resources set too low"
-     - `health-check-disabled`: "bug: health endpoint disabled in actuator config"
-     - `bad-image-tag`: "bug: base Docker image tag is invalid"
-     - `db-corruption`: "bug: SQL syntax error in seed data"
-     - `profile-wrong`: "bug: Spring profile set to nonexistent profile"
-     - `circuit-breaker-disabled`: "bug: circuit breaker thresholds misconfigured"
-     - `frontend-api-broken`: "bug: frontend API URL points to wrong backend"
+   - **Title**: A title that clearly identifies this as a chaos engineering change. Use the
+     prefix `chaos:` followed by a description of the breaking change, e.g.:
+     - `port-mismatch`: "chaos: backend container port changed to wrong value"
+     - `bad-api-url`: "chaos: BIAN API endpoint URL is invalid"
+     - `cors-broken`: "chaos: CORS allowed origins misconfigured"
+     - `low-resources`: "chaos: backend container resources set too low"
+     - `health-check-disabled`: "chaos: health endpoint disabled in actuator config"
+     - `bad-image-tag`: "chaos: base Docker image tag is invalid"
+     - `db-corruption`: "chaos: SQL syntax error in seed data"
+     - `profile-wrong`: "chaos: Spring profile set to nonexistent profile"
+     - `circuit-breaker-disabled`: "chaos: circuit breaker thresholds misconfigured"
+     - `frontend-api-broken`: "chaos: frontend API URL points to wrong backend"
    - **Body**: Write a realistic-looking PR description (1-2 sentences) that does NOT
      reveal this is intentional chaos. Then, below a `---` separator, add a hidden
      details section for demo operators:
