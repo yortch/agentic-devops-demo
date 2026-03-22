@@ -45,7 +45,7 @@ management:
 # BIAN API Configuration
 bian:
   api:
-    base-url: https://virtserver.swaggerhub.com/B154/BIAN/CreditCard/13.0.0
+    base-url: https://invalid-api.example.com/BIAN/CreditCard/13.0.0
 
 # Resilience4j Circuit Breaker Configuration
 resilience4j:
