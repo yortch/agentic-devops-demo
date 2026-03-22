@@ -662,6 +662,7 @@ Both options cover the same 10 scenarios:
 | 8 | `profile-wrong` | Backend | Medium | Wrong profile, behavioral drift |
 | 9 | `circuit-breaker-disabled` | Backend | Hard | Requests hang, thread exhaustion |
 | 10 | `frontend-api-broken` | Frontend | Easy | API calls fail, no card data |
+| 11 | `backend-500` | Backend | Easy | GET /api/cards returns 500, NPE in service |
 
 ---
 
@@ -769,7 +770,7 @@ gh issue create \
 
 Valid scenario names for the title: `port-mismatch`, `bad-api-url`, `cors-broken`,
 `low-resources`, `health-check-disabled`, `bad-image-tag`, `db-corruption`,
-`profile-wrong`, `circuit-breaker-disabled`, `frontend-api-broken`.
+`profile-wrong`, `circuit-breaker-disabled`, `frontend-api-broken`, `backend-500`.
 
 > **Note**: If no open issue with a valid scenario is found, the workflow picks one at
 > random (avoiding scenarios that already have open PRs).

@@ -124,6 +124,15 @@ a wrong backend URL like `https://nonexistent-backend.azurecontainerapps.io/api`
 JavaScript console errors.
 **Difficulty**: Easy — frontend-backend connectivity broken.
 
+### Scenario 11: `backend-500`
+**Target**: `backend/src/main/java/com/threeriversbank/service/CreditCardService.java`
+**Change**: In the `convertToDto` method, add a line that forces a `NullPointerException`
+before the return statement. For example, insert `String crash = ((String) null).toUpperCase();`
+as the first line inside the method body, before the `return` statement.
+**Symptoms**: Every call to GET `/api/cards` returns HTTP 500. The frontend shows no
+credit card data. Backend logs show `NullPointerException` in `CreditCardService.convertToDto`.
+**Difficulty**: Easy — a classic null pointer bug in the service layer.
+
 ## Execution Steps
 
 1. **Select a scenario**: You already determined the scenario in the "CRITICAL FIRST STEP"
@@ -152,6 +161,7 @@ JavaScript console errors.
      - `profile-wrong`: "chaos: Spring profile set to nonexistent profile"
      - `circuit-breaker-disabled`: "chaos: circuit breaker thresholds misconfigured"
      - `frontend-api-broken`: "chaos: frontend API URL points to wrong backend"
+     - `backend-500`: "chaos: null pointer in card service DTO conversion"
    - **Body**: Write a realistic-looking PR description (1-2 sentences) that does NOT
      reveal this is intentional chaos. Then, below a `---` separator, add a hidden
      details section for demo operators:
