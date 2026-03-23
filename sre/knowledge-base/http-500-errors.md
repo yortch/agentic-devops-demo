@@ -76,9 +76,9 @@ by bin(timestamp, 5m)
 
 ## Phase 3: Common Root Causes for Three Rivers Bank
 
-### 3.1 NullPointerException in CreditCardService
+### 3.1 NullPointerException in Service Layer
 **Symptom**: All `/api/cards` requests return 500
-**Root cause**: Code change introducing NPE in `CreditCardService.convertToDto()` or `getAllCreditCards()`
+**Root cause**: NPE in `CreditCardService.convertToDto()` or `getAllCreditCards()`
 **File**: `backend/src/main/java/com/threeriversbank/service/CreditCardService.java`
 ```kql
 ContainerAppConsoleLogs_CL
@@ -88,9 +88,9 @@ ContainerAppConsoleLogs_CL
 | take 20
 ```
 
-### 3.2 Slow Response Times (Thread.sleep injection)
-**Symptom**: GET /api/cards takes 3-9 seconds, timeouts
-**Root cause**: `Thread.sleep()` injected in service layer
+### 3.2 Slow Response Times
+**Symptom**: GET /api/cards takes several seconds, timeouts
+**Root cause**: Blocking call or resource contention in service layer
 **File**: `backend/src/main/java/com/threeriversbank/service/CreditCardService.java`
 ```kql
 requests
@@ -103,7 +103,7 @@ by bin(timestamp, 5m)
 
 ### 3.3 Bad Backend Image Tag
 **Symptom**: Backend unreachable, 503 errors, image pull failures
-**Root cause**: Terraform `container_app_backend_image` changed to nonexistent tag
+**Root cause**: Container image tag changed to nonexistent version
 **File**: `infra/terraform/variables.tf` or `infra/terraform/main.tf`
 ```bash
 az containerapp show -g <resourceGroup> -n <backendAppName> --query "properties.template.containers[0].image" -o tsv
@@ -148,7 +148,7 @@ ContainerAppSystemLogs_CL
 |--------|---------|----------|--------|
 | CPU % | > 70% | > 90% | Scale out replicas |
 | Memory % | > 75% | > 90% | Scale up or fix leak |
-| Response Time p95 | > 3s | > 10s | Check for injected delays or resource starvation |
+| Response Time p95 | > 3s | > 10s | Check for blocking calls or resource starvation |
 | Restart Count | > 0 | > 3 | Check OOM, health probes, image pull |
 
 ---
@@ -164,5 +164,3 @@ Search the repository for recent changes to:
 - infra/terraform/variables.tf
 - infra/terraform/main.tf
 ```
-
-Look for PRs with the `chaos-engineering` label — these are intentional breaks introduced for testing.
