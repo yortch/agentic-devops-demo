@@ -37,7 +37,7 @@
 |---|---|
 | **Azure CLI** 2.60+ | `winget install Microsoft.AzureCLI` |
 | **Azure Developer CLI** 1.9+ | `winget install Microsoft.Azd` |
-| **Python** 3.10+ | `winget install Python.Python.3.12` |
+| **jq** | `winget install jqlang.jq` |
 | **Git** | `winget install Git.Git` |
 | **gh CLI** *(optional)* | `winget install GitHub.cli` |
 

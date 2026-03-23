@@ -18,13 +18,9 @@
 # =============================================================================
 set -uo pipefail
 
-# Python detection (Windows compat)
-if command -v python3 &>/dev/null; then
-  PYTHON=python3
-elif command -v python &>/dev/null; then
-  PYTHON=python
-else
-  echo "❌ ERROR: Python not found. Install Python 3."
+# jq detection
+if ! command -v jq &>/dev/null; then
+  echo "❌ ERROR: jq not found. Install jq (https://jqlang.github.io/jq/download/)."
   exit 1
 fi
 
@@ -98,16 +94,62 @@ get_token() {
   az account get-access-token --resource https://azuresre.dev --query accessToken -o tsv 2>/dev/null
 }
 
+# ── Helper: Convert subagent YAML to API JSON (no Python needed) ─────────────
+# Reads the fixed YAML structure and builds the v2 API JSON body using jq.
+yaml_to_api_json() {
+  local yaml_file="$1"
+  local content
+  content=$(cat "$yaml_file")
+
+  # Extract fields using simple text parsing (structure is fixed/known)
+  local name system_prompt handoff_desc
+  name=$(echo "$content" | sed -n 's/^  name: *//p' | head -1)
+  handoff_desc=$(echo "$content" | sed -n 's/^  handoff_description: *//p' | head -1)
+
+  # Extract multi-line system_prompt (indented block after "system_prompt: |")
+  system_prompt=$(echo "$content" | sed -n '/^  system_prompt: |/,/^  [a-z_]*:/{ /^  system_prompt:/d; /^  [a-z_]*:/d; p; }' | sed 's/^    //')
+
+  # Substitute GITHUB_REPO_PLACEHOLDER
+  system_prompt=$(echo "$system_prompt" | sed "s|GITHUB_REPO_PLACEHOLDER|${GITHUB_REPO}|g")
+  handoff_desc=$(echo "$handoff_desc" | sed "s|GITHUB_REPO_PLACEHOLDER|${GITHUB_REPO}|g")
+
+  # Extract tools list (lines starting with "    - " after "tools:")
+  local tools_json
+  tools_json=$(echo "$content" | sed -n '/^  tools:/,/^  [a-z_]*:\|^$/{ /^    - /p; }' | sed 's/^    - //' | jq -R . | jq -s .)
+
+  # Build API JSON body
+  jq -n \
+    --arg name "$name" \
+    --arg instructions "$system_prompt" \
+    --arg handoff "$handoff_desc" \
+    --argjson tools "$tools_json" \
+    '{
+      name: $name,
+      type: "ExtendedAgent",
+      tags: [],
+      owner: "",
+      properties: {
+        instructions: $instructions,
+        handoffDescription: $handoff,
+        handoffs: [],
+        tools: $tools,
+        mcpTools: [],
+        allowParallelToolCalls: true,
+        enableSkills: true
+      }
+    }'
+}
+
 # ── Helper: Create subagent via data plane v2 API ────────────────────────────
 create_subagent() {
   local yaml_file="$1"
   local agent_name="$2"
 
   local json_body
-  json_body=$($PYTHON "$SCRIPT_DIR/yaml-to-api-json.py" "$yaml_file" "-" "$GITHUB_REPO" 2>&1)
+  json_body=$(yaml_to_api_json "$yaml_file" 2>&1)
 
-  if [ -z "$json_body" ] || echo "$json_body" | grep -q "^Traceback\|ModuleNotFoundError"; then
-    echo "   ⚠️  ${agent_name}: Python conversion failed"
+  if [ -z "$json_body" ] || ! echo "$json_body" | jq . &>/dev/null; then
+    echo "   ⚠️  ${agent_name}: YAML conversion failed"
     echo "   $json_body" | head -3
     return
   fi
@@ -244,13 +286,7 @@ echo "   ✅ GitHub OAuth connector (ARM)"
 # Get OAuth URL for user authorization
 TOKEN=$(get_token)
 OAUTH_URL=$(curl -s "${AGENT_ENDPOINT}/api/v1/github/config" \
-  -H "Authorization: Bearer ${TOKEN}" 2>/dev/null | $PYTHON -c "
-import sys, json
-try:
-    d = json.load(sys.stdin)
-    print(d.get('oAuthUrl', '') or d.get('OAuthUrl', '') or '')
-except: print('')
-" 2>/dev/null)
+  -H "Authorization: Bearer ${TOKEN}" 2>/dev/null | jq -r '.oAuthUrl // .OAuthUrl // empty' 2>/dev/null)
 
 echo ""
 echo "============================================="
