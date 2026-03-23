@@ -262,14 +262,7 @@ When the SRE Agent creates an issue with the `copilot:fix-this` label:
 
 ## 7. Chaos Engineering Scenarios
 
-Two methods for injecting chaos:
-
-| | Option A: az CLI Script | Option B: Agentic Workflow |
-|---|---|---|
-| **How it works** | Modifies live Azure Container App config directly | Creates a PR with a code-level breaking change |
-| **Best for** | Quick infra-level faults | Demonstrating SRE Agent detecting bad *code commits* |
-| **Prerequisites** | `az login` | `gh-aw` CLI + `COPILOT_GITHUB_TOKEN` secret |
-| **Rollback** | `./chaos-engineering.sh rollback <scenario>` | Revert the PR |
+The chaos engineering workflow uses [GitHub Agentic Workflows](https://github.com/github/gh-aw) to inject code-level breaking changes via PR.
 
 ### Available Scenarios
 
@@ -289,25 +282,13 @@ Two methods for injecting chaos:
 | 12 | `backend-image-tag` | Backend | Image pull fails, 503 |
 | 13 | `backend-slow-response` | Backend | GET /api/cards takes 0–9s |
 
-### Option A: az CLI Script
-
-```bash
-# From the repository root
-./chaos-engineering.sh backend-500        # Inject fault
-./chaos-engineering.sh rollback backend-500  # Roll back
-./chaos-engineering.sh list               # List scenarios
-./chaos-engineering.sh status             # Show current config
-```
-
-### Option B: Agentic Workflow
-
-#### Install gh-aw
+### Install gh-aw
 
 ```bash
 gh extension install github/gh-aw
 ```
 
-#### Trigger via GitHub Issue
+### Trigger via GitHub Issue
 
 Create an issue with the `chaos-engineering` label to specify a scenario:
 
