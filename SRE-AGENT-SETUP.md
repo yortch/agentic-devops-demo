@@ -179,6 +179,7 @@ This approach provides full GitHub integration including the ability to create i
 7. Wait for status to show **Connected** (green checkmark).
 
 > 💡 **Recommendation**: Use **both Option A and Option B** together. Option A gives the agent automatic code context during investigations. Option B enables issue creation and advanced GitHub operations.
+> 📋 **CLI Alternative**: See [Section 12.3](#123-github-oauth-connector-section-3-alternative) for automating GitHub OAuth connector setup via CLI.
 
 ---
 
@@ -245,6 +246,8 @@ Format the issue body using this template:
    Or use the wildcard: `github-three-rivers/*`
 
 6. Click **Save**.
+
+> 📋 **CLI Alternative**: See [Section 12.2](#122-subagent-creation-section-4-alternative) for creating subagents via the data plane API with YAML config files.
 
 ### Step 4.2: Create a Code Analyst Subagent
 
@@ -365,6 +368,8 @@ Check for configuration drift in the Three Rivers Bank deployment:
 
 4. If drift is detected, create a GitHub issue with details and recommended fixes.
 ```
+
+> 📋 **CLI Alternative**: See [Section 12.5](#125-scheduled-tasks-section-5-alternative) for creating scheduled tasks via the data plane API.
 
 ---
 
@@ -561,6 +566,8 @@ When an incident is received for the Three Rivers Bank application:
    - Post investigation summary
    - Include link to the created GitHub issue
 ```
+
+> 📋 **CLI Alternative**: See [Section 12.4](#124-incident-response-plan-section-63-alternative) for creating response plans via the data plane API.
 
 ---
 
@@ -960,4 +967,265 @@ gh run watch
 | **Workflow Automation** | https://learn.microsoft.com/en-us/azure/sre-agent/workflow-automation |
 | **Troubleshoot Container Apps Tutorial** | https://learn.microsoft.com/en-us/azure/sre-agent/troubleshoot-azure-container-apps |
 | **SRE Agent Samples (GitHub)** | https://github.com/microsoft/sre-agent/tree/main/samples |
+| **SRE Agent Lab (GitHub)** | https://github.com/microsoft/sre-agent/tree/main/labs/starter-lab |
+| **SRE Agent Data Plane API (post-provision.sh)** | https://github.com/microsoft/sre-agent/blob/main/labs/starter-lab/scripts/post-provision.sh |
 | **GitHub Copilot Coding Agent** | https://docs.github.com/en/copilot/using-github-copilot/using-copilot-coding-agent |
+
+---
+
+## 12. Appendix: CLI / Data Plane API Automation
+
+> **Source**: These APIs are documented in the official [microsoft/sre-agent](https://github.com/microsoft/sre-agent/tree/main/labs/starter-lab) lab repository. The `post-provision.sh` script demonstrates full automation using data plane REST APIs — no portal needed.
+
+### Authentication
+
+All data plane API calls require a bearer token scoped to `https://azuresre.dev`:
+
+```bash
+TOKEN=$(az account get-access-token --resource https://azuresre.dev --query accessToken -o tsv)
+```
+
+You also need the agent's data plane endpoint:
+
+```bash
+# Set your variables
+SUB="<your-subscription-id>"
+RG_AGENT="<sre-agent-resource-group>"    # e.g. rg-sre-agent-threeriversbank
+AGENT_NAME="three-rivers-bank-sre"
+
+AGENT_RESOURCE_ID="/subscriptions/${SUB}/resourceGroups/${RG_AGENT}/providers/Microsoft.App/agents/${AGENT_NAME}"
+API_VERSION="2025-05-01-preview"
+
+# Get the agent endpoint
+AGENT_ENDPOINT=$(az rest --method GET \
+  --url "https://management.azure.com${AGENT_RESOURCE_ID}?api-version=${API_VERSION}" \
+  --query "properties.agentEndpoint" -o tsv)
+```
+
+> **Prerequisite**: You must have the **SRE Agent Administrator** role (`e79298df-d852-4c6d-84f9-5d13249d1e55`) on the agent resource to use data plane APIs.
+
+### 12.1 Knowledge Base Upload (Section 5 Alternative)
+
+```bash
+# Upload knowledge base files
+curl -s -X POST "${AGENT_ENDPOINT}/api/v1/AgentMemory/upload" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -F "triggerIndexing=true" \
+  -F "files=@./knowledge-base/runbook.md;type=text/plain"
+
+# List uploaded files
+curl -s "${AGENT_ENDPOINT}/api/v1/AgentMemory/files" \
+  -H "Authorization: Bearer ${TOKEN}"
+```
+
+### 12.2 Subagent Creation (Section 4 Alternative)
+
+Create a YAML config file (e.g., `sre-config/agents/github-issue-creator.yaml`):
+
+```yaml
+api_version: azuresre.ai/v1
+kind: AgentConfiguration
+spec:
+  name: github-issue-creator
+  system_prompt: |
+    You create GitHub issues in the yortch/agentic-devops-demo repository when
+    production problems are detected. Each issue should include:
+    1. A clear title describing the problem
+    2. Root cause analysis with evidence (logs, metrics, code references)
+    3. The specific files and lines involved
+    4. A recommended fix
+    5. The label "copilot:fix-this"
+  handoff_description: Creates GitHub issues with root cause analysis for Three Rivers Bank
+  agent_type: Autonomous
+  tools:
+    - SearchMemory
+    - RunAzCliReadCommands
+    - QueryLogAnalyticsByWorkspaceId
+    - QueryAppInsightsByResourceId
+    - CreateGithubIssue
+    - CreateGithubIssueComment
+    - FetchGithubIssue
+    - FetchGithubIssues
+    - UpdateGithubIssue
+    - FindConnectedGitHubRepo
+    - GetIaCForGitHub
+```
+
+Push via the data plane v2 API:
+
+```bash
+# Convert YAML to API JSON
+API_BODY=$(python3 -c "
+import yaml, json
+with open('sre-config/agents/github-issue-creator.yaml') as f:
+    data = yaml.safe_load(f)
+spec = data['spec']
+body = {
+    'name': spec['name'],
+    'type': 'ExtendedAgent',
+    'tags': [],
+    'owner': '',
+    'properties': {
+        'instructions': spec.get('system_prompt', ''),
+        'handoffDescription': spec.get('handoff_description', ''),
+        'handoffs': spec.get('handoffs', []),
+        'tools': spec.get('tools', []),
+        'mcpTools': spec.get('mcp_tools', []),
+        'allowParallelToolCalls': True,
+        'enableSkills': True,
+    }
+}
+print(json.dumps(body))
+")
+
+# Create/update the subagent
+TOKEN=$(az account get-access-token --resource https://azuresre.dev --query accessToken -o tsv)
+curl -s -X PUT "${AGENT_ENDPOINT}/api/v2/extendedAgent/agents/github-issue-creator" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "$API_BODY"
+```
+
+Available built-in tools for subagents:
+
+| Tool | Category | Purpose |
+|---|---|---|
+| `SearchMemory` | Knowledge | Search past incidents and KB files |
+| `RunAzCliReadCommands` | Azure | Execute read-only az CLI commands |
+| `RunAzCliWriteCommands` | Azure | Execute write az CLI commands |
+| `QueryLogAnalyticsByWorkspaceId` | Monitoring | Run KQL queries on Log Analytics |
+| `QueryAppInsightsByResourceId` | Monitoring | Query App Insights telemetry |
+| `ExecutePythonCode` | Compute | Run Python code (plotting, analysis) |
+| `CreateGithubIssue` | GitHub | Create issues (requires GitHub OAuth connector) |
+| `CreateGithubIssueComment` | GitHub | Comment on issues |
+| `FetchGithubIssue` / `FetchGithubIssues` | GitHub | Read issues |
+| `UpdateGithubIssue` | GitHub | Update issue (labels, state) |
+| `FindConnectedGitHubRepo` | GitHub | Find linked repos |
+| `GetIaCForGitHub` | GitHub | Get IaC files from repo |
+| `PlotAreaChartWithCorrelation` | Visualization | Create area charts |
+
+> **Note on GitHub tools**: These are **built-in native tools**, not MCP tools. Once the GitHub OAuth connector is created, all subagents get access to GitHub tools automatically — no explicit `mcp_tools` assignment needed. See [microsoft/sre-agent README](https://github.com/microsoft/sre-agent/tree/main/labs/starter-lab).
+
+### 12.3 GitHub OAuth Connector (Section 3 Alternative)
+
+```bash
+TOKEN=$(az account get-access-token --resource https://azuresre.dev --query accessToken -o tsv)
+
+# Step 1: Create connector via data plane
+curl -s -X PUT "${AGENT_ENDPOINT}/api/v2/extendedAgent/connectors/github" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"github","type":"AgentConnector","properties":{"dataConnectorType":"GitHubOAuth","dataSource":"github-oauth"}}'
+
+# Step 2: Also create via ARM (needed for full OAuth flow)
+az rest --method PUT \
+  --url "https://management.azure.com${AGENT_RESOURCE_ID}/DataConnectors/github?api-version=${API_VERSION}" \
+  --body '{"properties":{"dataConnectorType":"GitHubOAuth","dataSource":"github-oauth"}}'
+
+# Step 3: Get the OAuth URL for user authorization (one-time browser step)
+OAUTH_URL=$(curl -s "${AGENT_ENDPOINT}/api/v1/github/config" \
+  -H "Authorization: Bearer ${TOKEN}" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+print(d.get('oAuthUrl', '') or d.get('OAuthUrl', ''))
+")
+echo "Open this URL in your browser to authorize: $OAUTH_URL"
+```
+
+> ⚠️ The GitHub OAuth authorization (step 3) is the **only step that requires a browser** — the user must open the URL and click "Authorize" once. Everything else is fully automated.
+
+### 12.4 Incident Response Plan (Section 6.3 Alternative)
+
+```bash
+TOKEN=$(az account get-access-token --resource https://azuresre.dev --query accessToken -o tsv)
+
+# Create a response plan that routes incidents to the github-issue-creator subagent
+curl -s -X PUT "${AGENT_ENDPOINT}/api/v1/incidentPlayground/filters/three-rivers-http-errors" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "three-rivers-http-errors",
+    "name": "Three Rivers Bank HTTP Errors",
+    "priorities": ["Sev0", "Sev1", "Sev2", "Sev3", "Sev4"],
+    "titleContains": "",
+    "handlingAgent": "github-issue-creator",
+    "agentMode": "autonomous",
+    "maxAttempts": 3
+  }'
+
+# List existing response plans
+curl -s "${AGENT_ENDPOINT}/api/v1/incidentPlayground/filters" \
+  -H "Authorization: Bearer ${TOKEN}"
+```
+
+### 12.5 Scheduled Tasks (Section 5 Alternative)
+
+```bash
+TOKEN=$(az account get-access-token --resource https://azuresre.dev --query accessToken -o tsv)
+
+# Create a scheduled health check task
+curl -s -X POST "${AGENT_ENDPOINT}/api/v1/scheduledtasks" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "three-rivers-health-check",
+    "description": "Health check of Three Rivers Bank backend and frontend every 15 minutes",
+    "cronExpression": "*/15 * * * *",
+    "agentPrompt": "Perform a comprehensive health check of the Three Rivers Bank application. Check backend container app health, frontend health, and infrastructure health. If any issues are detected, use the github-issue-creator subagent to create a GitHub issue with the label copilot:fix-this.",
+    "agent": "github-issue-creator"
+  }'
+
+# List scheduled tasks
+curl -s "${AGENT_ENDPOINT}/api/v1/scheduledtasks" \
+  -H "Authorization: Bearer ${TOKEN}"
+```
+
+### 12.6 Enable Azure Monitor + DevOps Tools
+
+```bash
+az rest --method PATCH \
+  --url "https://management.azure.com${AGENT_RESOURCE_ID}?api-version=${API_VERSION}" \
+  --body '{
+    "properties": {
+      "incidentManagementConfiguration": {
+        "type": "AzMonitor",
+        "connectionName": "azmonitor"
+      },
+      "experimentalSettings": {
+        "EnableWorkspaceTools": true,
+        "EnableDevOpsTools": true,
+        "EnablePythonTools": true
+      }
+    }
+  }'
+```
+
+### 12.7 RBAC: SRE Agent Administrator Role
+
+The data plane APIs require the **SRE Agent Administrator** role on the agent resource:
+
+```bash
+# Assign SRE Agent Administrator to yourself
+az role assignment create \
+  --assignee "$(az ad signed-in-user show --query id -o tsv)" \
+  --role "e79298df-d852-4c6d-84f9-5d13249d1e55" \
+  --scope "${AGENT_RESOURCE_ID}"
+```
+
+### 12.8 Automation Coverage Summary
+
+| Component | Automatable? | Method |
+|---|---|---|
+| Agent resource creation | ✅ Full | Bicep (`Microsoft.App/agents@2025-05-01-preview`) or `az rest PUT` |
+| RBAC roles | ✅ Full | `az role assignment create` |
+| Subagents | ✅ Full | `PUT /api/v2/extendedAgent/agents/{name}` |
+| GitHub OAuth connector | ⚠️ 95% | Data plane + ARM APIs; browser OAuth is one-time |
+| MCP connectors (Kusto, etc.) | ✅ Full | `az rest PUT .../connectors/{name}` |
+| Scheduled tasks | ✅ Full | `POST /api/v1/scheduledtasks` |
+| Incident response plans | ✅ Full | `PUT /api/v1/incidentPlayground/filters/{id}` |
+| Knowledge base | ✅ Full | `POST /api/v1/AgentMemory/upload` |
+| Azure Monitor integration | ✅ Full | `az rest PATCH` on agent resource |
+| Alert rules | ✅ Full | `az monitor metrics alert create` |
+| GitHub OAuth authorization | ❌ Manual | User must open URL in browser once |
+
+> **Reference**: See the full [microsoft/sre-agent starter lab](https://github.com/microsoft/sre-agent/tree/main/labs/starter-lab) for a complete working example using `azd up` + `post-provision.sh`.
