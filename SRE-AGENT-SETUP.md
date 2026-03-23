@@ -431,8 +431,7 @@ sre/
 │       ├── subscription-rbac.bicep     # RBAC role assignments
 │       └── alert-rules.bicep           # Azure Monitor alerts (3 rules)
 ├── scripts/
-│   ├── post-provision.sh               # Configures KB, subagents, response plan, GitHub
-│   └── yaml-to-api-json.py             # YAML → API JSON converter
+│   └── post-provision.sh               # Configures KB, subagents, response plan, GitHub
 ├── sre-config/
 │   └── agents/
 │       ├── incident-handler.yaml       # Investigates incidents, creates GitHub issues
