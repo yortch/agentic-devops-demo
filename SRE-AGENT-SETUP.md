@@ -39,7 +39,7 @@
 | **Azure Developer CLI** 1.9+ | `winget install Microsoft.Azd` |
 | **jq** | `winget install jqlang.jq` |
 | **Git** | `winget install Git.Git` |
-| **gh CLI** | `winget install GitHub.cli` |
+| **gh CLI** *(optional)* | `winget install GitHub.cli` |
 
 ### GitHub Requirements
 
@@ -122,7 +122,13 @@ azd env new sre-three-rivers
 # Set the application resource group (from Step 2)
 azd env set APP_RESOURCE_GROUP "$APP_RESOURCE_GROUP"
 
-# Deploy — select your subscription and eastus2 as region
+# Set the backend container app name (from app deployment outputs)
+azd env set BACKEND_CONTAINER_APP_NAME "$(cd .. && azd env get-value backend_service_name)"
+
+# Set the azure location (must be eastus2, swedencentral, or australiaeast)
+azd env set AZURE_LOCATION eastus2
+
+# Deploy — select your subscription
 azd up
 ```
 

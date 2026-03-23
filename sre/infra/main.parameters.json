@@ -10,6 +10,9 @@
     },
     "appResourceGroup": {
       "value": "${APP_RESOURCE_GROUP}"
+    },
+    "backendContainerAppName": {
+      "value": "${BACKEND_CONTAINER_APP_NAME}"
     }
   }
 }

@@ -7,6 +7,9 @@ param location string
 @description('Resource group ID of the already-deployed application')
 param appResourceGroupId string
 
+@description('Name of the backend container app to monitor')
+param backendContainerAppName string
+
 // ============================================================
 // Variables
 // ============================================================
@@ -46,7 +49,9 @@ module alertRules 'modules/alert-rules.bicep' = {
   name: 'alert-rules'
   params: {
     appResourceGroupId: appResourceGroupId
+    backendContainerAppName: backendContainerAppName
     environmentName: environmentName
+    appLocation: location
   }
 }
 

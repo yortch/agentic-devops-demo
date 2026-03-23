@@ -1,8 +1,17 @@
-@description('Application resource group ID (alerts are created in the SRE RG but scope to the app RG)')
+@description('Application resource group ID (used to construct container app resource IDs)')
 param appResourceGroupId string
+
+@description('Name of the backend container app to monitor')
+param backendContainerAppName string
 
 @description('Environment name for naming')
 param environmentName string
+
+@description('Location of the container apps (for targetResourceRegion)')
+param appLocation string = 'eastus2'
+
+// Construct the backend container app resource ID
+var backendResourceId = '${appResourceGroupId}/providers/Microsoft.App/containerApps/${backendContainerAppName}'
 
 // Action Group — SRE Agent picks up alerts via managed resources
 resource actionGroup 'Microsoft.Insights/actionGroups@2023-01-01' = {
@@ -26,14 +35,12 @@ resource http5xxAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
     severity: 2
     enabled: true
     scopes: [
-      appResourceGroupId
+      backendResourceId
     ]
     evaluationFrequency: 'PT1M'
     windowSize: 'PT5M'
-    targetResourceType: 'Microsoft.App/containerApps'
-    targetResourceRegion: 'eastus2'
     criteria: {
-      'odata.type': 'Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria'
+      'odata.type': 'Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria'
       allOf: [
         {
           name: 'http5xx'
@@ -72,14 +79,12 @@ resource restartAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
     severity: 1
     enabled: true
     scopes: [
-      appResourceGroupId
+      backendResourceId
     ]
     evaluationFrequency: 'PT1M'
     windowSize: 'PT5M'
-    targetResourceType: 'Microsoft.App/containerApps'
-    targetResourceRegion: 'eastus2'
     criteria: {
-      'odata.type': 'Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria'
+      'odata.type': 'Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria'
       allOf: [
         {
           name: 'restarts'
@@ -109,14 +114,12 @@ resource latencyAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
     severity: 3
     enabled: true
     scopes: [
-      appResourceGroupId
+      backendResourceId
     ]
     evaluationFrequency: 'PT1M'
     windowSize: 'PT5M'
-    targetResourceType: 'Microsoft.App/containerApps'
-    targetResourceRegion: 'eastus2'
     criteria: {
-      'odata.type': 'Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria'
+      'odata.type': 'Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria'
       allOf: [
         {
           name: 'highLatency'

@@ -10,6 +10,9 @@ param location string = 'eastus2'
 @description('Resource group of the already-deployed Three Rivers Bank application')
 param appResourceGroup string
 
+@description('Name of the backend container app to monitor (from app deployment output)')
+param backendContainerAppName string
+
 // SRE Agent gets its own resource group
 var resourceGroupName = 'rg-sre-${environmentName}'
 
@@ -31,6 +34,7 @@ module resources 'resources.bicep' = {
     environmentName: environmentName
     location: location
     appResourceGroupId: appRg.id
+    backendContainerAppName: backendContainerAppName
   }
 }
 
