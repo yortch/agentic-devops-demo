@@ -313,8 +313,8 @@ Create an issue with the `chaos-engineering` label to specify a scenario:
 
 ```bash
 gh issue create \
-  --title "chaos: backend-500" \
-  --body "Inject backend-500 scenario to test SRE Agent detection" \
+  --title "chaos: backend-slow-response" \
+  --body "Inject backend-slow-response scenario to test SRE Agent detection" \
   --label "chaos-engineering"
 ```
 
@@ -381,7 +381,7 @@ If no matching issue is found, a random scenario is selected.
 
 **Part 2: Introduce Chaos** (~1 min)
 ```bash
-./chaos-engineering.sh backend-500
+./chaos-engineering.sh backend-slow-response
 ```
 
 **Part 3: Wait for Detection** (~3-5 min)
