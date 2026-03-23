@@ -261,17 +261,18 @@ curl -s -o /dev/null -X DELETE \
 
 echo ""
 
-# ── Step 4: GitHub OAuth connector ───────────────────────────────────────────
+# ── Step 4: GitHub OAuth connector + knowledge source ────────────────────────
 echo "🔗 Step 4/4: GitHub integration..."
 
 TOKEN=$(get_token)
-RESULT=$(curl -s -o /dev/null -w "%{http_code}" \
+REPOS_JSON=$(jq -n --arg repo "$GITHUB_REPO" '{"name":"github","type":"AgentConnector","properties":{"dataConnectorType":"GitHubOAuth","dataSource":"github-oauth","extendedProperties":{"repos":[$repo]}}}')
+RESULT=$(echo "$REPOS_JSON" | curl -s -o /dev/null -w "%{http_code}" \
   -X PUT "${AGENT_ENDPOINT}/api/v2/extendedAgent/connectors/github" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
-  -d '{"name":"github","type":"AgentConnector","properties":{"dataConnectorType":"GitHubOAuth","dataSource":"github-oauth"}}')
+  -d @-)
 if [ "$RESULT" = "200" ] || [ "$RESULT" = "201" ]; then
-  echo "   ✅ GitHub OAuth connector (data plane)"
+  echo "   ✅ GitHub OAuth connector + knowledge source: ${GITHUB_REPO}"
 else
   echo "   ⚠️  GitHub connector returned HTTP ${RESULT}"
 fi
