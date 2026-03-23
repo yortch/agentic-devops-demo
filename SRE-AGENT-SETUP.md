@@ -39,7 +39,7 @@
 | **Azure Developer CLI** 1.9+ | `winget install Microsoft.Azd` |
 | **jq** | `winget install jqlang.jq` |
 | **Git** | `winget install Git.Git` |
-| **gh CLI** *(optional)* | `winget install GitHub.cli` |
+| **gh CLI** | `winget install GitHub.cli` |
 
 ### GitHub Requirements
 
