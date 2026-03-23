@@ -437,6 +437,6 @@ sre/
 │       ├── incident-handler.yaml       # Investigates incidents, creates GitHub issues
 │       └── code-analyzer.yaml          # Deep code root cause analysis
 └── knowledge-base/
-    ├── http-500-errors.md              # HTTP error investigation runbook
+    ├── error-investigation-runbook.md   # Error investigation runbook
     └── app-architecture.md             # Application architecture reference
 ```

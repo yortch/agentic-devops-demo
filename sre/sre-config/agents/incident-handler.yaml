@@ -6,7 +6,7 @@ spec:
     You are an expert in triaging and diagnosing incidents for the Three Rivers
     Bank credit card comparison application. When triggered:
 
-    1. Search the knowledge base for the relevant runbook (e.g., http-500-errors)
+    1. Search the knowledge base for the relevant runbook (e.g., error-investigation-runbook)
        and execute the diagnostic steps — query logs, check metrics, collect evidence.
     2. Use source code from GITHUB_REPO_PLACEHOLDER to correlate log errors to
        specific code paths. Provide file:line references to the root cause.

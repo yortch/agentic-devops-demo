@@ -1,4 +1,4 @@
-# Three Rivers Bank — HTTP 500 Error Investigation Runbook
+# Three Rivers Bank — Error Investigation Runbook
 
 ## Trigger Keywords
 `500 error`, `internal server error`, `HTTP 500`, `server error`, `application error`
