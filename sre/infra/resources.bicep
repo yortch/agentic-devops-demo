@@ -13,8 +13,8 @@ param backendContainerAppName string
 // ============================================================
 // Variables
 // ============================================================
-var uniqueSuffix = uniqueString(resourceGroup().id, environmentName)
-var agentName = 'sre-${environmentName}-${uniqueSuffix}'
+var uniqueSuffix = substring(uniqueString(resourceGroup().id, environmentName), 0, 5)
+var agentName = 'sre-${take(environmentName, 22)}-${uniqueSuffix}'
 var identityName = 'id-sre-${uniqueSuffix}'
 
 // ============================================================
