@@ -250,13 +250,11 @@ gh label create "chaos-engineering" \
 1. Go to **Settings → General → Features** → ensure **Copilot** is enabled.
 2. Enable **Copilot Coding Agent** under Copilot settings.
 
-### 6.3 Auto-Assignment Workflow
+### 6.3 How It Works
 
-The repository includes `.github/workflows/auto-assign-copilot.yml` which automatically assigns `@copilot` to issues labeled `copilot:fix-this`.
-
-When the SRE Agent creates an issue with `copilot:fix-this`:
-1. The auto-assign workflow triggers → assigns Copilot
-2. Copilot Coding Agent reads the issue (including RCA and affected code)
+When the SRE Agent creates an issue with the `copilot:fix-this` label:
+1. Copilot Coding Agent is automatically assigned to the issue
+2. Copilot reads the issue (including RCA and affected code)
 3. Copilot creates a fix PR
 4. You review and merge
 
