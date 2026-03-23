@@ -1,22 +1,21 @@
 # Azure SRE Agent Setup Guide — Three Rivers Bank Demo
 
-> **Goal**: Set up Azure SRE Agent to monitor the deployed Three Rivers Bank application (backend + frontend on Azure Container Apps), connect it to your GitHub repository for code-aware root cause analysis, and enable the full agentic loop: **detect → diagnose → create issue → auto-fix**.
+> **Goal**: Deploy Azure SRE Agent to monitor the Three Rivers Bank application (backend + frontend on Azure Container Apps), connect to GitHub for code-aware root cause analysis, and enable the full agentic loop: **detect → diagnose → create issue → auto-fix**.
 
 ---
 
 ## Table of Contents
 
 1. [Prerequisites](#1-prerequisites)
-2. [Create the Azure SRE Agent](#2-create-the-azure-sre-agent)
-3. [Connect Your GitHub Repository](#3-connect-your-github-repository)
-4. [Configure a GitHub Subagent for Issue Creation](#4-configure-a-github-subagent-for-issue-creation)
-5. [Set Up Scheduled Proactive Diagnostics](#5-set-up-scheduled-proactive-diagnostics)
-6. [Configure Incident Response Plan](#6-configure-incident-response-plan)
-7. [Enable Copilot Coding Agent Auto-Fix](#7-enable-copilot-coding-agent-auto-fix)
-8. [Chaos Engineering Scenarios](#8-chaos-engineering-scenarios)
-9. [Demo Walkthrough](#9-demo-walkthrough)
-10. [Troubleshooting](#10-troubleshooting)
-11. [Reference Links](#11-reference-links)
+2. [Deploy the Application](#2-deploy-the-application)  
+3. [Deploy the SRE Agent](#3-deploy-the-sre-agent)
+4. [Configure the SRE Agent (Post-Provision)](#4-configure-the-sre-agent-post-provision)
+5. [Verify Setup](#5-verify-setup)
+6. [Enable Copilot Coding Agent Auto-Fix](#6-enable-copilot-coding-agent-auto-fix)
+7. [Chaos Engineering Scenarios](#7-chaos-engineering-scenarios)
+8. [Demo Walkthrough](#8-demo-walkthrough)
+9. [Troubleshooting](#9-troubleshooting)
+10. [Reference Links](#10-reference-links)
 
 ---
 
@@ -27,23 +26,30 @@
 | Requirement | Details |
 |---|---|
 | **Azure Subscription** | Active subscription with billing enabled |
-| **RBAC Permissions** | `Microsoft.Authorization/roleAssignments/write` — requires **Role Based Access Control Administrator** or **User Access Administrator** |
-| **Firewall Allowlist** | Add `*.azuresre.ai` to your network allowlist |
-| **Deployed Application** | Three Rivers Bank backend + frontend deployed to Azure Container Apps (see [README-AZURE-DEPLOYMENT.md](README-AZURE-DEPLOYMENT.md)) |
+| **Owner Role** | Required on the subscription for RBAC role assignments |
+| **SRE Agent Region** | `eastus2`, `swedencentral`, or `australiaeast` |
+| **Resource Provider** | `Microsoft.App` registered: `az provider register -n Microsoft.App --wait` |
+| **Deployed Application** | Three Rivers Bank backend + frontend on Azure Container Apps (see Section 2) |
+
+### Tools Required
+
+| Tool | Install |
+|---|---|
+| **Azure CLI** 2.60+ | `winget install Microsoft.AzureCLI` |
+| **Azure Developer CLI** 1.9+ | `winget install Microsoft.Azd` |
+| **Python** 3.10+ | `winget install Python.Python.3.12` |
+| **Git** | `winget install Git.Git` |
+| **gh CLI** *(optional)* | `winget install GitHub.cli` |
 
 ### GitHub Requirements
 
 | Requirement | Details |
 |---|---|
 | **Repository Access** | Push access to `agentic-devops-demo` repository |
-| **GitHub PAT** | Personal Access Token with `repo` scope (for GitHub MCP connector) |
 | **Copilot License** | GitHub Copilot Enterprise or Business (for Copilot Coding Agent) |
-| **Actions PR Permission** | "Allow GitHub Actions to create and approve pull requests" must be enabled (see below) |
+| **Actions PR Permission** | "Allow GitHub Actions to create and approve pull requests" (see below) |
 
 #### Enable GitHub Actions PR Creation
-
-The chaos engineering agentic workflow creates PRs via GitHub Actions. By default, the
-`GITHUB_TOKEN` is **not** permitted to create pull requests. Enable it with:
 
 ```bash
 gh api repos/<owner>/<repo>/actions/permissions/workflow \
@@ -52,72 +58,150 @@ gh api repos/<owner>/<repo>/actions/permissions/workflow \
   -F can_approve_pull_request_reviews=true
 ```
 
-Or via the UI: **Settings → Actions → General → Workflow permissions** → check
-**"Allow GitHub Actions to create and approve pull requests"**.
-| **az CLI** | Azure CLI installed and logged in (`az login`) |
-| **gh CLI + gh-aw** | *(Optional — for Option B)* GitHub CLI with `gh-aw` extension installed ([install guide](https://github.github.com/gh-aw/setup/quick-start/)) |
-| **COPILOT_GITHUB_TOKEN** | *(Optional — for Option B)* GitHub Actions secret for Copilot-powered agentic workflows (see [Section 8B](#option-b-agentic-workflow-code-level-chaos)) |
-
-### Deployed Resources to Monitor
-
-After running `azd up`, your resource group should contain:
-
-| Resource | Type | Purpose |
-|---|---|---|
-| `{env}-backend` | Container App | Spring Boot API server |
-| `{env}-frontend` | Container App | React/Nginx static site |
-| Container App Environment | Environment | Shared networking & logging |
-| Log Analytics Workspace | Monitoring | Container logs & metrics |
-| Azure Container Registry | Registry | Docker image storage |
-
-> **Note**: Replace `{env}` with your azd environment name (e.g., `banking-demo`).
+Or via UI: **Settings → Actions → General → Workflow permissions** → check **"Allow GitHub Actions to create and approve pull requests"**.
 
 ---
 
-## 2. Create the Azure SRE Agent
+## 2. Deploy the Application
 
-### Step 2.1: Open Azure SRE Agent Portal
+The application is deployed from the **repository root** using the existing Terraform infrastructure:
 
-1. Sign in to the [Azure Portal](https://portal.azure.com).
-2. Search for **Azure SRE Agent** in the search bar, or navigate directly to [https://aka.ms/sreagent/portal](https://aka.ms/sreagent/portal).
-3. Click **Create**.
+```bash
+# From the repository root
+az login
+azd auth login
+azd up
+```
 
-### Step 2.2: Configure the Agent
+After deployment, export the required environment variables for the SRE Agent:
 
-Fill in the **Create agent** form:
+```bash
+# Get the app resource group name from the deployment
+APP_RESOURCE_GROUP=$(azd env get-value AZURE_RESOURCE_GROUP)
+echo "App Resource Group: $APP_RESOURCE_GROUP"
+```
 
-**Project Details:**
+> **Note**: The application deployment creates the backend/frontend Container Apps, Container Registry, Log Analytics Workspace, and Container App Environment. The SRE Agent deployment (next section) creates only the agent itself in a **separate** resource group.
 
-| Property | Value |
+---
+
+## 3. Deploy the SRE Agent
+
+The SRE Agent is deployed from the `sre/` directory using its own `azd` project with Bicep infrastructure.
+
+### What Gets Deployed
+
+| Resource | Type | Purpose |
+|---|---|---|
+| SRE Agent | `Microsoft.App/agents` | AI agent for incident investigation |
+| User-Assigned Managed Identity | `Microsoft.ManagedIdentity` | Agent identity for Azure access |
+| Action Group | `Microsoft.Insights/actionGroups` | Alert notification target |
+| Alert: HTTP 5xx Spike | `Microsoft.Insights/metricAlerts` | Severity 2 — backend error rate |
+| Alert: Container Restart | `Microsoft.Insights/metricAlerts` | Severity 1 — OOM/crash detection |
+| Alert: High Response Time | `Microsoft.Insights/metricAlerts` | Severity 3 — latency monitoring |
+
+### RBAC Roles Assigned (Subscription Scope)
+
+| Role | Purpose |
 |---|---|
-| **Subscription** | Select your Azure subscription |
-| **Resource group** | Create new: `rg-sre-agent-threeriversbank` |
+| Reader | Agent can read all resources |
+| Monitoring Reader | Agent can read metrics and alerts |
+| Monitoring Contributor | Agent can manage alert rules |
+| Log Analytics Reader | Agent can query logs via KQL |
+| Container Apps Contributor | Agent can manage container apps |
 
-> ⚠️ Create a **separate** resource group for the SRE Agent — do not put it in the same resource group as your application.
+### Deploy
 
-**Agent Details:**
+```bash
+# Navigate to the SRE directory
+cd sre
 
-| Property | Value |
+# Create a new azd environment
+azd env new sre-three-rivers
+
+# Set the application resource group (from Step 2)
+azd env set APP_RESOURCE_GROUP "$APP_RESOURCE_GROUP"
+
+# Deploy — select your subscription and eastus2 as region
+azd up
+```
+
+Deployment takes ~3-5 minutes. The output will include:
+- `SRE_AGENT_NAME` — the agent resource name
+- `SRE_AGENT_ENDPOINT` — the agent's data plane API URL
+- `AGENT_PORTAL_URL` — link to https://sre.azure.com
+
+---
+
+## 4. Configure the SRE Agent (Post-Provision)
+
+After `azd up` completes, run the post-provision script to configure knowledge base, subagents, incident response plan, and GitHub integration:
+
+```bash
+# Still in the sre/ directory
+bash scripts/post-provision.sh
+```
+
+### What the Script Configures
+
+| Step | Component | Method |
+|---|---|---|
+| 1 | **Knowledge Base** — HTTP errors runbook + app architecture docs | Data plane API: `POST /api/v1/AgentMemory/upload` |
+| 2 | **Subagents** — `incident-handler` + `code-analyzer` | Data plane API: `PUT /api/v2/extendedAgent/agents/{name}` |
+| 3 | **Azure Monitor** — Incident platform + response plan routing to `incident-handler` | ARM PATCH + data plane API |
+| 4 | **GitHub OAuth** — Connector for code search and issue creation | Data plane + ARM API |
+
+### GitHub Authorization (One-Time)
+
+The script will print a GitHub OAuth URL at the end:
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  Sign in to GitHub to authorize the SRE Agent:               │
+│  https://...                                                 │
+│  Open this URL in your browser and click 'Authorize'         │
+└──────────────────────────────────────────────────────────────┘
+```
+
+Open this URL in your browser and authorize the agent. This is a **one-time** step.
+
+### Re-running the Script
+
+```bash
+# Re-run if any step failed
+bash scripts/post-provision.sh --retry
+
+# Check current status
+bash scripts/post-provision.sh --status
+```
+
+### Customizing the GitHub Repository
+
+By default, the script uses `yortch/agentic-devops-demo`. To use a different repo:
+
+```bash
+azd env set GITHUB_REPO "<owner>/<repo>"
+bash scripts/post-provision.sh
+```
+
+---
+
+## 5. Verify Setup
+
+### 5.1 Check the Portal
+
+Open [sre.azure.com](https://sre.azure.com) and click **Full setup**. You should see green checkmarks on:
+
+| Card | Expected Status |
 |---|---|
-| **Agent name** | `three-rivers-bank-sre` |
-| **Region** | `East US 2` (currently the recommended region) |
+| **Code** | ✅ 1 repository |
+| **Incidents** | ✅ Connected to Azure Monitor |
+| **Azure resources** | ✅ 1 resource group added |
+| **Knowledge files** | ✅ 2 files |
 
-### Step 2.3: Link Your Application Resource Group
+### 5.2 Test the Agent
 
-1. Click **Choose resource groups**.
-2. Search for your application resource group (the one created by `azd up`, e.g., `banking-demo-{suffix}`).
-3. Check the box next to it — a ✅ checkmark indicates Container Apps have specialized support.
-4. Click **Save**.
-
-### Step 2.4: Deploy
-
-1. Click **Create**.
-2. Wait for the deployment to complete (~2-3 minutes).
-3. Click **Chat with agent** once deployment succeeds.
-
-### Step 2.5: Verify the Agent
-
-In the chat window, ask these verification questions:
+In the agent chat, ask verification questions:
 
 ```text
 What subscriptions and resource groups are you managing?
@@ -128,470 +212,30 @@ List all container apps in the monitored resource groups.
 ```
 
 ```text
-What is the health status of the three-rivers-bank backend container app?
+What is the health status of the Three Rivers Bank backend container app?
 ```
 
-The agent should identify your backend and frontend Container Apps and report their health.
-
-> **Resources auto-created**: When you create the agent, Azure automatically provisions Application Insights, a Log Analytics workspace, and a Managed Identity for the agent.
-
----
-
-## 3. Connect Your GitHub Repository
-
-Connecting source code enables the SRE Agent to perform **code-aware root cause analysis** — correlating production errors to specific files and line numbers.
-
-### Option A: Resource Mapping (Recommended for this demo)
-
-This approach links the repository directly to your Container App resources.
-
-1. In your SRE Agent, select **Monitor** in the left sidebar.
-2. Select **Resource mapping**.
-3. Find the `{env}-backend` Container App.
-4. Click on it to open the detail view.
-5. Click **Add repository**.
-6. Paste your repository URL: `https://github.com/{your-org}/agentic-devops-demo`
-7. Sign in to GitHub if prompted.
-8. Click **Add**.
-9. **Repeat** for the `{env}-frontend` Container App.
-
-### Option B: GitHub MCP Connector (Full repo access + issue creation)
-
-This approach provides full GitHub integration including the ability to create issues.
-
-#### Add the GitHub MCP Connector
-
-1. Select **Builder** in the left sidebar.
-2. Select **Connectors**.
-3. Click **Add connector**.
-4. Select **GitHub MCP server**.
-5. Configure:
-
-| Field | Value |
-|---|---|
-| **Name** | `github-three-rivers` |
-| **Connection type** | Streamable-HTTP |
-| **URL** | `https://api.githubcopilot.com/mcp/` |
-| **Authentication method** | Bearer token |
-| **Personal access token** | Your GitHub PAT with `repo` scope |
-
-6. Click **Next** → **Add connector**.
-7. Wait for status to show **Connected** (green checkmark).
-
-> 💡 **Recommendation**: Use **both Option A and Option B** together. Option A gives the agent automatic code context during investigations. Option B enables issue creation and advanced GitHub operations.
-> 📋 **CLI Alternative**: See [Section 12.3](#123-github-oauth-connector-section-3-alternative) for automating GitHub OAuth connector setup via CLI.
-
----
-
-## 4. Configure a GitHub Subagent for Issue Creation
-
-The SRE Agent needs a subagent to create GitHub issues from its investigations.
-
-### Step 4.1: Create the Issue Creator Subagent
-
-1. Select **Builder** → **Subagent builder**.
-2. Click **Create subagent**.
-3. Configure:
-
-| Field | Value |
-|---|---|
-| **Name** | `github-issue-creator` |
-| **Description** | Creates GitHub issues with root cause analysis for the Three Rivers Bank application |
-
-4. In the **Instructions** field, paste:
-
-```text
-You create GitHub issues in the agentic-devops-demo repository when production 
-problems are detected. Each issue should include:
-
-1. A clear title describing the problem (e.g., "Backend: Container app failing health checks due to port mismatch")
-2. Root cause analysis with evidence (logs, metrics, code references)
-3. The specific files and lines involved
-4. A recommended fix
-5. The label "copilot:fix-this" to trigger automatic remediation by GitHub Copilot Coding Agent
-
-Format the issue body using this template:
-
-## Problem
-[Description of the production issue detected]
-
-## Evidence
-- **Symptoms**: [What was observed — errors, timeouts, failures]
-- **Metrics**: [Relevant metrics data]
-- **Logs**: [Key log entries]
-
-## Root Cause Analysis
-[Detailed analysis of what went wrong]
-
-## Affected Code
-- File: `[path/to/file]`
-- Lines: [line numbers]
-- Change: [What was changed and when]
-
-## Recommended Fix
-[Specific code changes needed to resolve the issue]
-
-## SRE Agent Investigation
-- **Agent**: three-rivers-bank-sre
-- **Detected**: [timestamp]
-- **Severity**: [Critical/High/Medium/Low]
-```
-
-5. In the **Tools** section, select these GitHub MCP tools:
-   - `github-three-rivers_create_issue` (or the equivalent `create_issue` tool)
-   - `github-three-rivers_search_code`
-   - `github-three-rivers_get_file_contents`
-   - `github-three-rivers_list_commits`
-   
-   Or use the wildcard: `github-three-rivers/*`
-
-6. Click **Save**.
-
-> 📋 **CLI Alternative**: See [Section 12.2](#122-subagent-creation-section-4-alternative) for creating subagents via the data plane API with YAML config files.
-
-### Step 4.2: Create a Code Analyst Subagent
-
-1. Create another subagent:
-
-| Field | Value |
-|---|---|
-| **Name** | `code-analyst` |
-| **Description** | Analyzes source code for root cause analysis in the Three Rivers Bank repo |
-| **Instructions** | (see below) |
-
-```text
-You analyze the agentic-devops-demo GitHub repository to find root causes of 
-production issues. When given symptoms (errors, metrics anomalies), you:
-
-1. Search the codebase for relevant code patterns
-2. Check recent commits for suspicious changes
-3. Identify the specific file and line causing the issue
-4. Provide detailed root cause analysis
-
-Key areas to check:
-- Backend: backend/src/main/java/com/threeriversbank/ (Spring Boot app)
-- Frontend: frontend/src/ (React app)
-- Infrastructure: infra/terraform/ (Terraform configs)
-- Docker: docker/ (Dockerfiles)
-- Config: backend/src/main/resources/application.yml
-```
-
-2. Add the same GitHub MCP tools (or wildcard `github-three-rivers/*`).
-3. Click **Save**.
-
----
-
-## 5. Set Up Scheduled Proactive Diagnostics
-
-Scheduled tasks let the SRE Agent automatically check your application health on a recurring basis.
-
-### Task 1: Container App Health Check (Every 15 minutes)
-
-1. In your SRE Agent, select the **Schedule tasks** tab.
-2. Click **Create scheduled task**.
-3. Configure:
-
-| Field | Value |
-|---|---|
-| **Task name** | `Three Rivers Bank Health Check` |
-| **Schedule** | Every 15 minutes |
-
-4. In the **Instructions** field:
-
-```text
-Perform a comprehensive health check of the Three Rivers Bank application:
-
-1. Check the backend container app health:
-   - Query the /actuator/health endpoint status
-   - Check container restart count (alert if > 0 in last 15 min)
-   - Verify HTTP 2xx success rate (alert if < 95%)
-   - Check response time p95 (alert if > 2 seconds)
-   - Verify memory and CPU utilization
-
-2. Check the frontend container app health:
-   - Verify the app is serving responses
-   - Check HTTP error rates
-   - Verify the frontend can reach the backend API
-
-3. Check infrastructure health:
-   - Container App Environment status
-   - Log Analytics workspace connectivity
-   - Container Registry availability
-
-4. If ANY issues are detected:
-   - Use the code-analyst subagent to check for recent code changes that may have caused the issue
-   - Use the github-issue-creator subagent to create a GitHub issue with the label "copilot:fix-this"
-   - Include full root cause analysis in the issue
-```
-
-5. Click **Create scheduled task**.
-
-### Task 2: Daily Reliability Report (Every day at 8 AM)
-
-```text
-Generate a daily reliability report for the Three Rivers Bank application:
-
-1. Summarize the past 24 hours:
-   - Total request count (backend + frontend)
-   - Error rate trend
-   - Average and p95 response times
-   - Container restart events
-   - Scaling events (replicas changes)
-
-2. Check for degradation trends:
-   - Is error rate increasing over the past 7 days?
-   - Are response times trending upward?
-   - Any recurring container restarts?
-
-3. Review recent deployments:
-   - Check GitHub for merged PRs in the last 24 hours
-   - Correlate any deployments with metric changes
-
-4. Provide recommendations for improving reliability.
-```
-
-### Task 3: Configuration Drift Detection (Every 6 hours)
-
-```text
-Check for configuration drift in the Three Rivers Bank deployment:
-
-1. Verify environment variables match expected values:
-   - BIAN_API_BASE_URL should be: https://virtserver.swaggerhub.com/B154/BIAN/CreditCard/13.0.0
-   - SPRING_PROFILES_ACTIVE should be: production
-   - SPRING_H2_CONSOLE_ENABLED should be: false
-
-2. Verify container resource limits:
-   - Backend: 0.5 vCPU, 1GB memory
-   - Frontend: 0.25 vCPU, 0.5GB memory
-
-3. Check container image versions match latest deployment
-
-4. If drift is detected, create a GitHub issue with details and recommended fixes.
-```
-
-> 📋 **CLI Alternative**: See [Section 12.5](#125-scheduled-tasks-section-5-alternative) for creating scheduled tasks via the data plane API.
-
----
-
-## 6. Configure Incident Response Plan
-
-Set up automatic incident handling when Azure Monitor detects problems.
-
-### Step 6.1: Enable Azure Monitor Alerts Integration
-
-The SRE Agent connects to Azure Monitor Alerts by default. Verify this:
-
-1. Select the **Incident management** tab in your SRE Agent.
-2. Confirm **Azure Monitor** is listed as the incident platform.
-
-### Step 6.2: Create Alert Rules
-
-Create an action group and three alert rules using the Azure CLI. The SRE Agent automatically
-picks up Azure Monitor alerts from monitored resource groups — no extra wiring is needed.
-
-> **Substitute** `{SUBSCRIPTION_ID}`, `{RESOURCE_GROUP}`, `{BACKEND_APP}`, and
-> `{CONTAINER_ENV}` with your actual values (or set them as shell variables first).
-
-#### Set variables
+### 5.3 Verify Alerts
 
 ```bash
-# ── Customize these ──────────────────────────────────────────────
-SUB="<your-subscription-id>"
-RG="<your-resource-group>"               # e.g. rg-banking-demo
-BACKEND="<your-backend-container-app>"    # e.g. ca-banking-demo-backend
-ENV_NAME="<your-container-app-env>"       # e.g. banking-demo-cae
-# ─────────────────────────────────────────────────────────────────
-
-BACKEND_SCOPE="/subscriptions/$SUB/resourceGroups/$RG/providers/Microsoft.App/containerapps/$BACKEND"
-ENV_SCOPE="/subscriptions/$SUB/resourceGroups/$RG/providers/Microsoft.App/managedEnvironments/$ENV_NAME"
-```
-
-#### Create the Action Group
-
-```bash
-az monitor action-group create \
-  --name "sre-agent-action-group" \
-  --resource-group "$RG" \
-  --subscription "$SUB" \
-  --short-name "SREAgent" \
-  --output table
-```
-
-```bash
-ACTION_GROUP=$(az monitor action-group show \
-  --name "sre-agent-action-group" \
-  --resource-group "$RG" \
-  --subscription "$SUB" \
-  --query id -o tsv)
-```
-
-> **Tip**: If you later add a webhook, email, or Logic App to this action group, the SRE
-> Agent will receive richer context automatically.
-
-#### Alert 1 — Backend 5xx Error Rate Spike
-
-Fires when the backend receives **more than 5 HTTP 5xx responses in a 5-minute window**.
-
-| Property | Value |
-|---|---|
-| **Metric** | `Requests` (total) |
-| **Dimension** | `statusCodeCategory` includes `5xx` |
-| **Threshold** | > 5 |
-| **Window** | 5 minutes |
-| **Evaluation** | Every 1 minute |
-| **Severity** | 2 (Warning) |
-
-```bash
-az monitor metrics alert create \
-  --name "backend-5xx-error-spike" \
-  --resource-group "$RG" \
-  --subscription "$SUB" \
-  --scopes "$BACKEND_SCOPE" \
-  --condition "total Requests > 5 where statusCodeCategory includes 5xx" \
-  --window-size 5m \
-  --evaluation-frequency 1m \
-  --severity 2 \
-  --description "Backend HTTP 5xx errors exceeded threshold. Investigate for bad deployments, misconfiguration, or upstream failures." \
-  --action "$ACTION_GROUP" \
-  --tags application=three-rivers-bank component=backend alert-type=error-rate
-```
-
-#### Alert 2 — Container App Restart
-
-Fires when **any replica restart** is detected in the Container App Environment (severity 1 — Error).
-
-| Property | Value |
-|---|---|
-| **Metric** | `RestartCount` |
-| **Aggregation** | Total |
-| **Threshold** | > 0 |
-| **Window** | 5 minutes |
-| **Evaluation** | Every 1 minute |
-| **Severity** | 1 (Error) |
-
-```bash
-az monitor metrics alert create \
-  --name "container-restart-detected" \
-  --resource-group "$RG" \
-  --subscription "$SUB" \
-  --scopes "$BACKEND_SCOPE" \
-  --condition "total RestartCount > 0" \
-  --window-size 5m \
-  --evaluation-frequency 1m \
-  --severity 1 \
-  --description "Container app replica restarted. Likely cause: OOM kill, crash loop, or failed health probe." \
-  --action "$ACTION_GROUP" \
-  --tags application=three-rivers-bank component=backend alert-type=restart
-```
-
-#### Alert 3 — High Response Time
-
-Fires when the **average response time exceeds 3 seconds** over a 5-minute window.
-
-| Property | Value |
-|---|---|
-| **Metric** | `ResponseTime` (Average, in milliseconds) |
-| **Threshold** | > 3000 ms |
-| **Window** | 5 minutes |
-| **Evaluation** | Every 1 minute |
-| **Severity** | 3 (Informational) |
-
-```bash
-az monitor metrics alert create \
-  --name "backend-high-response-time" \
-  --resource-group "$RG" \
-  --subscription "$SUB" \
-  --scopes "$BACKEND_SCOPE" \
-  --condition "avg ResponseTime > 3000" \
-  --window-size 5m \
-  --evaluation-frequency 1m \
-  --severity 3 \
-  --description "Backend p95 response time elevated. May indicate resource starvation, circuit breaker issues, or slow external API." \
-  --action "$ACTION_GROUP" \
-  --tags application=three-rivers-bank component=backend alert-type=latency
-```
-
-#### Verify the alerts
-
-```bash
+# From the sre/ directory or anywhere with az login
 az monitor metrics alert list \
-  --resource-group "$RG" \
-  --subscription "$SUB" \
-  --query "[].{Name:name, Severity:severity, Enabled:enabled, Window:windowSize}" \
+  --resource-group "$(azd env get-value AZURE_RESOURCE_GROUP)" \
+  --query "[].{Name:name, Severity:severity, Enabled:enabled}" \
   --output table
 ```
 
-Expected output:
-
-```
-Name                          Severity  Enabled  Window
-----------------------------  --------  -------  ------
-backend-5xx-error-spike       2         True     PT5M
-container-restart-detected    1         True     PT5M
-backend-high-response-time    3         True     PT5M
-```
-
-### Step 6.3: Create Incident Response Plan
-
-In the SRE Agent, create an incident response plan:
-
-```text
-When an incident is received for the Three Rivers Bank application:
-
-1. ACKNOWLEDGE the incident immediately.
-
-2. GATHER CONTEXT:
-   - Query Azure Monitor for error details
-   - Check container logs for exceptions
-   - Review Application Insights for request traces
-   - Check recent GitHub commits for code changes
-
-3. PERFORM ROOT CAUSE ANALYSIS:
-   - Use the code-analyst subagent to search the repository for the error
-   - Identify the specific code file and line causing the issue
-   - Determine if this was caused by a recent deployment
-
-4. CREATE A GITHUB ISSUE:
-   - Use the github-issue-creator subagent
-   - Include full RCA with code references
-   - Add the label "copilot:fix-this"
-   - Add the label "sre-agent-detected"
-
-5. ATTEMPT AUTOMATED MITIGATION (if safe):
-   - If the issue is a bad deployment: suggest rollback
-   - If the issue is resource exhaustion: suggest scaling
-   - Always request approval before taking action
-
-6. NOTIFY:
-   - Post investigation summary
-   - Include link to the created GitHub issue
-```
-
-> 📋 **CLI Alternative**: See [Section 12.4](#124-incident-response-plan-section-63-alternative) for creating response plans via the data plane API.
-
 ---
 
-## 7. Enable Copilot Coding Agent Auto-Fix
+## 6. Enable Copilot Coding Agent Auto-Fix
 
-### Step 7.1: Repository Settings
-
-1. Go to your repository **Settings** → **General** → **Features**.
-2. Ensure **Copilot** is enabled (requires Copilot Enterprise or Business).
-3. Enable **Copilot Coding Agent** under the Copilot settings.
-
-### Step 7.2: Create the `copilot:fix-this` Label
-
-The label signals to Copilot Coding Agent that an issue needs automated fixing.
+### 6.1 Create Required Labels
 
 ```bash
 gh label create "copilot:fix-this" \
   --description "Issues for Copilot Coding Agent to auto-fix" \
   --color "7057ff"
-```
 
-Also create supporting labels:
-
-```bash
 gh label create "sre-agent-detected" \
   --description "Issue detected by Azure SRE Agent" \
   --color "d73a4a"
@@ -601,631 +245,217 @@ gh label create "chaos-engineering" \
   --color "fbca04"
 ```
 
-### Step 7.3: Configure Copilot Coding Agent
+### 6.2 Enable Copilot Coding Agent
 
-When the SRE Agent creates an issue with the `copilot:fix-this` label:
+1. Go to **Settings → General → Features** → ensure **Copilot** is enabled.
+2. Enable **Copilot Coding Agent** under Copilot settings.
 
-1. **Assign Copilot** to the issue (can be done in the SRE Agent's issue creation instructions or manually).
-2. Copilot Coding Agent will:
-   - Read the issue description (including RCA and affected code)
-   - Analyze the repository
-   - Create a fix PR
-   - Request review
+### 6.3 Auto-Assignment Workflow
 
-### Step 7.4: Auto-Assignment (Optional)
+The repository includes `.github/workflows/auto-assign-copilot.yml` which automatically assigns `@copilot` to issues labeled `copilot:fix-this`.
 
-You can configure a GitHub Actions workflow to auto-assign issues with the `copilot:fix-this` label:
-
-```yaml
-# .github/workflows/auto-assign-copilot.yml
-name: Auto-assign Copilot to SRE Issues
-on:
-  issues:
-    types: [labeled]
-
-jobs:
-  assign:
-    if: github.event.label.name == 'copilot:fix-this'
-    runs-on: ubuntu-latest
-    permissions:
-      issues: write
-    steps:
-      - name: Assign Copilot
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await github.rest.issues.addAssignees({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              assignees: ['copilot']
-            });
-```
+When the SRE Agent creates an issue with `copilot:fix-this`:
+1. The auto-assign workflow triggers → assigns Copilot
+2. Copilot Coding Agent reads the issue (including RCA and affected code)
+3. Copilot creates a fix PR
+4. You review and merge
 
 ---
 
-## 8. Chaos Engineering Scenarios
+## 7. Chaos Engineering Scenarios
 
-Two methods are available for injecting chaos. Choose the one that fits your demo:
+Two methods for injecting chaos:
 
 | | Option A: az CLI Script | Option B: Agentic Workflow |
 |---|---|---|
 | **How it works** | Modifies live Azure Container App config directly | Creates a PR with a code-level breaking change |
-| **Best for** | Quick infra-level faults (env vars, ports, resources) | Demonstrating SRE Agent detecting bad *code commits* |
+| **Best for** | Quick infra-level faults | Demonstrating SRE Agent detecting bad *code commits* |
 | **Prerequisites** | `az login` | `gh-aw` CLI + `COPILOT_GITHUB_TOKEN` secret |
 | **Rollback** | `./chaos-engineering.sh rollback <scenario>` | Revert the PR |
 
-Both options cover the same 10 scenarios:
+### Available Scenarios
 
-| # | Scenario | Target | Difficulty | Symptoms |
-|---|---|---|---|---|
-| 1 | `port-mismatch` | Backend | Medium | 503 errors, health check fails |
-| 2 | `bad-api-url` | Backend | Easy | BIAN API fails, degraded data |
-| 3 | `cors-broken` | Backend | Medium | Browser CORS errors, blank pages |
-| 4 | `low-resources` | Backend | Easy | OOM kills, restarts, slow responses |
-| 5 | `health-check-disabled` | Backend | Medium | Health probes fail, restart loop |
-| 6 | `bad-image-tag` | Backend | Easy | Image pull fails, container stuck |
-| 7 | `db-corruption` | Backend | Hard | Spring Boot fails, all 500 errors |
-| 8 | `profile-wrong` | Backend | Medium | Wrong profile, behavioral drift |
-| 9 | `circuit-breaker-disabled` | Backend | Hard | Requests hang, thread exhaustion |
-| 10 | `frontend-api-broken` | Frontend | Easy | API calls fail, no card data |
-| 11 | `backend-500` | Backend | Easy | GET /api/cards returns 500, NPE in service |
-| 12 | `backend-image-tag` | Backend | Easy | Image pull fails, backend unreachable, 503 |
-| 13 | `backend-slow-response` | Backend | Medium | GET /api/cards takes 0–9s, timeouts |
+| # | Scenario | Target | Symptoms |
+|---|---|---|---|
+| 1 | `port-mismatch` | Backend | 503 errors, health check fails |
+| 2 | `bad-api-url` | Backend | BIAN API fails, degraded data |
+| 3 | `cors-broken` | Backend | Browser CORS errors, blank pages |
+| 4 | `low-resources` | Backend | OOM kills, restarts, slow responses |
+| 5 | `health-check-disabled` | Backend | Health probes fail, restart loop |
+| 6 | `bad-image-tag` | Backend | Image pull fails, container stuck |
+| 7 | `db-corruption` | Backend | Spring Boot fails, all 500 errors |
+| 8 | `profile-wrong` | Backend | Wrong profile, behavioral drift |
+| 9 | `circuit-breaker-disabled` | Backend | Requests hang, thread exhaustion |
+| 10 | `frontend-api-broken` | Frontend | API calls fail, no card data |
+| 11 | `backend-500` | Backend | GET /api/cards returns 500, NPE |
+| 12 | `backend-image-tag` | Backend | Image pull fails, 503 |
+| 13 | `backend-slow-response` | Backend | GET /api/cards takes 0–9s |
 
----
-
-### Option A: az CLI Script (Infrastructure-Level Chaos)
-
-Modifies live Azure configuration instantly — no CI/CD pipeline involved.
-
-#### A.1: Set Environment Variables
-
-The script auto-detects values from `azd env`. Alternatively, export manually:
+### Option A: az CLI Script
 
 ```bash
-export AZURE_RESOURCE_GROUP="<your-resource-group>"       # e.g. rg-banking-demo
-export AZURE_BACKEND_APP="<your-backend-container-app>"   # e.g. ca-banking-demo-backend
-export AZURE_FRONTEND_APP="<your-frontend-container-app>" # e.g. ca-banking-demo-frontend
+# From the repository root
+./chaos-engineering.sh backend-500        # Inject fault
+./chaos-engineering.sh rollback backend-500  # Roll back
+./chaos-engineering.sh list               # List scenarios
+./chaos-engineering.sh status             # Show current config
 ```
 
-#### A.2: Inject a Fault
+### Option B: Agentic Workflow
 
-```bash
-./chaos-engineering.sh bad-api-url
-```
-
-#### A.3: Roll Back
-
-```bash
-./chaos-engineering.sh rollback bad-api-url
-```
-
-#### A.4: Other Commands
-
-```bash
-./chaos-engineering.sh list     # show all scenarios
-./chaos-engineering.sh status   # show current app configuration
-```
-
-#### A.5: Troubleshooting
-
-| Problem | Solution |
-|---|---|
-| `az` not found | Install Azure CLI: `brew install azure-cli` or `winget install Microsoft.AzureCLI` |
-| Permission denied on script | Run `chmod +x chaos-engineering.sh` |
-| "not logged in" error | Run `az login` first |
-| Revision fails to deploy | Check logs: `az containerapp logs show --name <app> --resource-group <rg>` |
-| Rollback doesn't fix it | Check `./chaos-engineering.sh status` and compare against expected values in Section 5 Task 3 |
-
----
-
-### Option B: Agentic Workflow (Code-Level Chaos)
-
-Creates a PR with a realistic code-level breaking change via GitHub Agentic Workflows (`gh-aw`). This is ideal for demonstrating the SRE Agent detecting an issue introduced by a *code commit*, and having Copilot Coding Agent fix it via PR.
-
-#### B.1: Install the gh-aw CLI Extension
+#### Install gh-aw
 
 ```bash
 gh extension install github/gh-aw
-gh aw --version   # verify installation
 ```
 
-#### B.2: Create a Fine-Grained PAT for Copilot
+#### Trigger via GitHub Issue
 
-1. Open the **pre-filled token creation link**:
-   [Create COPILOT_GITHUB_TOKEN PAT](https://github.com/settings/personal-access-tokens/new?name=COPILOT_GITHUB_TOKEN&description=GitHub+Agentic+Workflows+-+Copilot+engine+authentication&user_copilot_requests=read)
-
-2. Verify these settings before generating:
-   - **Resource owner**: Your **personal user account** (not an organization)
-   - **Permissions → Account permissions**: `Copilot Requests` set to **Read**
-   - No repository permissions are needed
-
-3. Click **Generate token** and copy the value immediately.
-
-#### B.3: Add the Secret to Your Repository
+Create an issue with the `chaos-engineering` label to specify a scenario:
 
 ```bash
-# Option 1 — gh-aw CLI (recommended)
-gh aw secrets set COPILOT_GITHUB_TOKEN --value "<your-github-pat>"
-
-# Option 2 — standard gh CLI
-gh secret set COPILOT_GITHUB_TOKEN --body "<your-github-pat>"
-```
-
-#### B.4: Compile the Workflow
-
-The `.md` file is the source of truth. The compiled `.lock.yml` is what GitHub Actions runs:
-
-```bash
-gh aw compile .github/workflows/chaos-engineering.md
-```
-
-> **Important**: Always commit both the `.md` source and the `.lock.yml` together.
-
-#### B.5: Trigger the Workflow
-
-First, create a GitHub issue with the `chaos-engineering` label specifying which scenario
-to inject. The workflow reads open issues with this label and extracts the scenario name
-from the issue title:
-
-```bash
-# Create an issue requesting a specific chaos scenario
 gh issue create \
-  --title "chaos-engineering: port-mismatch" \
-  --body "Inject the port-mismatch chaos scenario for SRE Agent demo." \
+  --title "chaos: backend-500" \
+  --body "Inject backend-500 scenario to test SRE Agent detection" \
   --label "chaos-engineering"
 ```
-
-Valid scenario names for the title: `port-mismatch`, `bad-api-url`, `cors-broken`,
-`low-resources`, `health-check-disabled`, `bad-image-tag`, `db-corruption`,
-`profile-wrong`, `circuit-breaker-disabled`, `frontend-api-broken`, `backend-500`,
-`backend-image-tag`, `backend-slow-response`.
-
-> **Note**: If no open issue with a valid scenario is found, the workflow picks one at
-> random (avoiding scenarios that already have open PRs).
 
 Then trigger the workflow:
 
 ```bash
-gh aw run chaos-engineering
+gh workflow run chaos-engineering.lock.yml
 ```
 
-Monitor the run:
+The agentic workflow will:
+1. Find the open issue with `chaos-engineering` label
+2. Extract the scenario from the issue title
+3. Apply the code-level breaking change
+4. Create a PR with the `chaos` prefix
 
-```bash
-gh run list --workflow=chaos-engineering.lock.yml --limit 1
-gh run watch
-```
-
-#### B.6: Troubleshooting
-
-| Problem | Solution |
-|---|---|
-| Workflow fails at Copilot inference step | Verify the PAT owner has an **active Copilot license** |
-| Secret not found error | Confirm secret name is exactly `COPILOT_GITHUB_TOKEN`. Run `gh aw secrets bootstrap` |
-| `gh aw compile` fails | Ensure `.md` is in `.github/workflows/` with valid frontmatter |
-| Workflow creates empty PR | Agent may have hit a rate limit — check Actions logs |
-| "not permitted to create pull requests" | Enable PR creation: **Settings → Actions → General → Workflow permissions** → check "Allow GitHub Actions to create and approve pull requests". Or run: `gh api repos/<owner>/<repo>/actions/permissions/workflow -X PUT -f default_workflow_permissions=read -F can_approve_pull_request_reviews=true` |
+If no matching issue is found, a random scenario is selected.
 
 ---
 
-## 9. Demo Walkthrough
-
-### The Full Demo Loop
+## 8. Demo Walkthrough
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                    DEMO FLOW                         │
-│                                                     │
 │  1. Introduce Chaos (pick one)                      │
 │     ├─ Option A: ./chaos-engineering.sh <scenario>  │
-│     │  (modifies live Azure config directly)        │
-│     └─ Option B: gh workflow run chaos-engineering   │
-│        (creates PR with code-level break)           │
+│     └─ Option B: gh issue → gh workflow run         │
 │                                                     │
 │  2. Breaking Change Takes Effect                    │
 │     ├─ A: Container App deploys new revision        │
 │     └─ B: CI/CD deploys broken code from PR         │
 │                                                     │
 │  3. SRE Agent Detects Issue                         │
-│     └─ Scheduled task or alert fires                │
-│     └─ Agent investigates using logs + code         │
+│     └─ Alert fires → agent investigates             │
+│     └─ Agent queries logs + code                    │
 │                                                     │
 │  4. RCA + GitHub Issue Created                      │
-│     └─ Agent creates issue with full analysis       │
 │     └─ Labels: copilot:fix-this, sre-agent-detected │
 │                                                     │
 │  5. Copilot Coding Agent Fixes                      │
-│     └─ Reads issue, analyzes code, creates fix PR   │
+│     └─ Reads issue → creates fix PR                 │
 │                                                     │
-│  6. Fix Deployed                                    │
-│     └─ CI/CD pipeline deploys the fix               │
-│     └─ SRE Agent confirms health restored           │
+│  6. Fix Deployed + Health Restored                  │
 └─────────────────────────────────────────────────────┘
 ```
 
-### Step-by-Step Demo Script
+### Before the Demo
 
-#### Before the Demo
-
-1. Verify application is healthy:
+1. Verify app is healthy:
    ```bash
    curl https://{backend-fqdn}/actuator/health
    curl https://{frontend-fqdn}/
    ```
 
 2. Open these windows:
-   - **Azure Portal** → SRE Agent chat
+   - **Azure Portal** → SRE Agent chat ([sre.azure.com](https://sre.azure.com))
    - **GitHub** → Repository issues tab
-   - **Terminal** → Ready to trigger the chaos workflow
+   - **Terminal** → Ready to trigger chaos
 
-#### During the Demo
+### During the Demo
 
-**Part 1: Show the Healthy Application** (~2 min)
-1. Open the Three Rivers Bank website in a browser.
-2. Show the card comparison page working normally.
-3. In SRE Agent chat, ask: *"What is the current health of my container apps?"*
-4. Show the healthy response.
+**Part 1: Show Healthy App** (~2 min)
+- Open Three Rivers Bank website, show card comparison working
+- In SRE Agent chat: *"What is the current health of my container apps?"*
 
 **Part 2: Introduce Chaos** (~1 min)
-
-*Option A — az CLI (instant infra change):*
-1. Inject a chaos scenario:
-   ```bash
-   ./chaos-engineering.sh bad-api-url
-   ```
-2. Show the revision being deployed:
-   ```bash
-   az containerapp revision list --name "$AZURE_BACKEND_APP" --resource-group "$AZURE_RESOURCE_GROUP" -o table
-   ```
-
-*Option B — Agentic Workflow (code commit via PR):*
-1. Trigger the chaos engineering workflow:
-   ```bash
-   gh workflow run chaos-engineering.lock.yml -f scenario=bad-api-url
-   ```
-2. Show the workflow running in the GitHub Actions tab.
-3. Show the PR it creates with the breaking change.
-4. Merge the PR to deploy the break via CI/CD.
+```bash
+./chaos-engineering.sh backend-500
+```
 
 **Part 3: Wait for Detection** (~3-5 min)
-1. The CD pipeline deploys the broken code.
-2. Either wait for the scheduled health check, or in SRE Agent chat, ask:
-   ```text
-   Check the health of the Three Rivers Bank backend. Is anything wrong?
-   ```
-3. The SRE Agent investigates, finds the issue, and performs RCA.
+- Azure Monitor alert fires → SRE Agent investigates automatically
+- Or ask manually: *"Check the health of the Three Rivers Bank backend. Is anything wrong?"*
 
-**Part 4: Show the RCA and Issue Creation** (~2 min)
-1. Ask the SRE Agent:
-   ```text
-   Create a GitHub issue with your findings and label it "copilot:fix-this".
-   ```
-2. Switch to GitHub and show the newly created issue.
-3. Highlight the RCA details, code references, and recommended fix.
+**Part 4: Show RCA + Issue** (~2 min)
+- The agent creates a GitHub issue with root cause, code references, and fix suggestion
+- Show the issue with `copilot:fix-this` label
 
-**Part 5: Copilot Fixes the Issue** (~2-3 min)
-1. Assign `@copilot` to the issue (or show auto-assignment).
-2. Wait for Copilot Coding Agent to create a fix PR.
-3. Show the PR with the corrected code.
-4. Merge the fix.
+**Part 5: Copilot Fixes** (~2-3 min)
+- Copilot Coding Agent picks up the issue → creates fix PR
+- Review and merge
 
-**Part 6: Show Recovery** (~1 min)
-1. After CI/CD deploys the fix, verify the app is healthy again.
-2. In SRE Agent chat: *"Is the application healthy now?"*
-3. Show the positive confirmation.
+**Part 6: Recovery** (~1 min)
+- CI/CD deploys fix → verify app healthy again
+- SRE Agent confirms: *"Is the application healthy now?"*
 
 ---
 
-## 10. Troubleshooting
+## 9. Troubleshooting
 
-### SRE Agent Can't See My Container Apps
-
-- Verify the application resource group is linked in **Settings** → **Managed resource groups**.
-- Ensure the agent's managed identity has at least **Reader** role on the resource group.
-- Check that `*.azuresre.ai` is allowlisted in any firewall/NSG rules.
-
-### GitHub Connector Shows Disconnected
-
-- Verify your PAT hasn't expired.
-- Test the PAT: `curl -H "Authorization: token YOUR_PAT" https://api.github.com/user`
-- Re-create the connector with a fresh PAT if needed.
-
-### SRE Agent Doesn't Find Code Context
-
-- Ensure the repository is linked via Resource Mapping (Option A).
-- Verify the MCP connector shows "Connected" status.
-- Ask the agent directly: *"Search the agentic-devops-demo repository for application.yml"*
-
-### Copilot Coding Agent Doesn't Pick Up Issues
-
-- Verify the `copilot:fix-this` label exists on the issue.
-- Check that Copilot is assigned to the issue.
-- Ensure Copilot Coding Agent is enabled in repository settings.
-- Verify your GitHub plan includes Copilot Coding Agent access.
-
-### Scheduled Tasks Not Running
-
-- Check the task schedule configuration.
-- Verify the agent is online (not in stopped state).
-- Review the task execution history in the SRE Agent portal.
+| Problem | Solution |
+|---|---|
+| `azd up` fails in `sre/` | Ensure `APP_RESOURCE_GROUP` is set: `azd env set APP_RESOURCE_GROUP <name>` |
+| `Microsoft.App not registered` | Run: `az provider register -n Microsoft.App --wait` |
+| Post-provision script fails on response plan | Wait 30s and run: `bash scripts/post-provision.sh --retry` |
+| SRE Agent can't see Container Apps | Verify `APP_RESOURCE_GROUP` matches your app deployment's resource group |
+| GitHub OAuth URL not shown | Check SRE Agent Administrator role is assigned (script does this automatically) |
+| GitHub connector shows disconnected | Re-run `bash scripts/post-provision.sh --retry` and re-authorize OAuth URL |
+| Copilot doesn't pick up issues | Verify `copilot:fix-this` label exists and Copilot Coding Agent is enabled |
+| Alert rules not firing | Check alerts: `az monitor metrics alert list --resource-group $(azd env get-value AZURE_RESOURCE_GROUP)` |
+| `roleAssignments/write` denied | Need **Owner** role on subscription |
 
 ---
 
-## 11. Reference Links
+## 10. Reference Links
 
 | Resource | URL |
 |---|---|
 | **Azure SRE Agent Overview** | https://learn.microsoft.com/en-us/azure/sre-agent/overview |
-| **SRE Agent Portal** | https://aka.ms/sreagent/portal |
-| **Create and Use an Agent** | https://learn.microsoft.com/en-us/azure/sre-agent/usage |
-| **Connect Source Code** | https://learn.microsoft.com/en-us/azure/sre-agent/connect-source-code |
-| **Connectors Setup** | https://learn.microsoft.com/en-us/azure/sre-agent/connectors |
-| **Tools Reference** | https://learn.microsoft.com/en-us/azure/sre-agent/tools |
-| **Incident Response** | https://learn.microsoft.com/en-us/azure/sre-agent/incident-response |
-| **Workflow Automation** | https://learn.microsoft.com/en-us/azure/sre-agent/workflow-automation |
-| **Troubleshoot Container Apps Tutorial** | https://learn.microsoft.com/en-us/azure/sre-agent/troubleshoot-azure-container-apps |
-| **SRE Agent Samples (GitHub)** | https://github.com/microsoft/sre-agent/tree/main/samples |
+| **SRE Agent Portal** | https://sre.azure.com |
 | **SRE Agent Lab (GitHub)** | https://github.com/microsoft/sre-agent/tree/main/labs/starter-lab |
-| **SRE Agent Data Plane API (post-provision.sh)** | https://github.com/microsoft/sre-agent/blob/main/labs/starter-lab/scripts/post-provision.sh |
+| **Data Plane API Reference (post-provision.sh)** | https://github.com/microsoft/sre-agent/blob/main/labs/starter-lab/scripts/post-provision.sh |
+| **Connect Source Code** | https://learn.microsoft.com/en-us/azure/sre-agent/connect-source-code |
+| **Connectors** | https://learn.microsoft.com/en-us/azure/sre-agent/connectors |
+| **Incident Response** | https://learn.microsoft.com/en-us/azure/sre-agent/incident-response |
 | **GitHub Copilot Coding Agent** | https://docs.github.com/en/copilot/using-github-copilot/using-copilot-coding-agent |
 
 ---
 
-## 12. Appendix: CLI / Data Plane API Automation
+## Appendix: Directory Structure
 
-> **Source**: These APIs are documented in the official [microsoft/sre-agent](https://github.com/microsoft/sre-agent/tree/main/labs/starter-lab) lab repository. The `post-provision.sh` script demonstrates full automation using data plane REST APIs — no portal needed.
-
-### Authentication
-
-All data plane API calls require a bearer token scoped to `https://azuresre.dev`:
-
-```bash
-TOKEN=$(az account get-access-token --resource https://azuresre.dev --query accessToken -o tsv)
 ```
-
-You also need the agent's data plane endpoint:
-
-```bash
-# Set your variables
-SUB="<your-subscription-id>"
-RG_AGENT="<sre-agent-resource-group>"    # e.g. rg-sre-agent-threeriversbank
-AGENT_NAME="three-rivers-bank-sre"
-
-AGENT_RESOURCE_ID="/subscriptions/${SUB}/resourceGroups/${RG_AGENT}/providers/Microsoft.App/agents/${AGENT_NAME}"
-API_VERSION="2025-05-01-preview"
-
-# Get the agent endpoint
-AGENT_ENDPOINT=$(az rest --method GET \
-  --url "https://management.azure.com${AGENT_RESOURCE_ID}?api-version=${API_VERSION}" \
-  --query "properties.agentEndpoint" -o tsv)
+sre/
+├── azure.yaml                          # azd project config
+├── infra/
+│   ├── main.bicep                      # Entry point (subscription scope)
+│   ├── resources.bicep                 # Resource orchestration
+│   └── modules/
+│       ├── sre-agent.bicep             # SRE Agent resource
+│       ├── identity.bicep              # Managed Identity
+│       ├── subscription-rbac.bicep     # RBAC role assignments
+│       └── alert-rules.bicep           # Azure Monitor alerts (3 rules)
+├── scripts/
+│   ├── post-provision.sh               # Configures KB, subagents, response plan, GitHub
+│   └── yaml-to-api-json.py             # YAML → API JSON converter
+├── sre-config/
+│   └── agents/
+│       ├── incident-handler.yaml       # Investigates incidents, creates GitHub issues
+│       └── code-analyzer.yaml          # Deep code root cause analysis
+└── knowledge-base/
+    ├── http-500-errors.md              # HTTP error investigation runbook
+    └── app-architecture.md             # Application architecture reference
 ```
-
-> **Prerequisite**: You must have the **SRE Agent Administrator** role (`e79298df-d852-4c6d-84f9-5d13249d1e55`) on the agent resource to use data plane APIs.
-
-### 12.1 Knowledge Base Upload (Section 5 Alternative)
-
-```bash
-# Upload knowledge base files
-curl -s -X POST "${AGENT_ENDPOINT}/api/v1/AgentMemory/upload" \
-  -H "Authorization: Bearer ${TOKEN}" \
-  -F "triggerIndexing=true" \
-  -F "files=@./knowledge-base/runbook.md;type=text/plain"
-
-# List uploaded files
-curl -s "${AGENT_ENDPOINT}/api/v1/AgentMemory/files" \
-  -H "Authorization: Bearer ${TOKEN}"
-```
-
-### 12.2 Subagent Creation (Section 4 Alternative)
-
-Create a YAML config file (e.g., `sre-config/agents/github-issue-creator.yaml`):
-
-```yaml
-api_version: azuresre.ai/v1
-kind: AgentConfiguration
-spec:
-  name: github-issue-creator
-  system_prompt: |
-    You create GitHub issues in the yortch/agentic-devops-demo repository when
-    production problems are detected. Each issue should include:
-    1. A clear title describing the problem
-    2. Root cause analysis with evidence (logs, metrics, code references)
-    3. The specific files and lines involved
-    4. A recommended fix
-    5. The label "copilot:fix-this"
-  handoff_description: Creates GitHub issues with root cause analysis for Three Rivers Bank
-  agent_type: Autonomous
-  tools:
-    - SearchMemory
-    - RunAzCliReadCommands
-    - QueryLogAnalyticsByWorkspaceId
-    - QueryAppInsightsByResourceId
-    - CreateGithubIssue
-    - CreateGithubIssueComment
-    - FetchGithubIssue
-    - FetchGithubIssues
-    - UpdateGithubIssue
-    - FindConnectedGitHubRepo
-    - GetIaCForGitHub
-```
-
-Push via the data plane v2 API:
-
-```bash
-# Convert YAML to API JSON
-API_BODY=$(python3 -c "
-import yaml, json
-with open('sre-config/agents/github-issue-creator.yaml') as f:
-    data = yaml.safe_load(f)
-spec = data['spec']
-body = {
-    'name': spec['name'],
-    'type': 'ExtendedAgent',
-    'tags': [],
-    'owner': '',
-    'properties': {
-        'instructions': spec.get('system_prompt', ''),
-        'handoffDescription': spec.get('handoff_description', ''),
-        'handoffs': spec.get('handoffs', []),
-        'tools': spec.get('tools', []),
-        'mcpTools': spec.get('mcp_tools', []),
-        'allowParallelToolCalls': True,
-        'enableSkills': True,
-    }
-}
-print(json.dumps(body))
-")
-
-# Create/update the subagent
-TOKEN=$(az account get-access-token --resource https://azuresre.dev --query accessToken -o tsv)
-curl -s -X PUT "${AGENT_ENDPOINT}/api/v2/extendedAgent/agents/github-issue-creator" \
-  -H "Authorization: Bearer ${TOKEN}" \
-  -H "Content-Type: application/json" \
-  -d "$API_BODY"
-```
-
-Available built-in tools for subagents:
-
-| Tool | Category | Purpose |
-|---|---|---|
-| `SearchMemory` | Knowledge | Search past incidents and KB files |
-| `RunAzCliReadCommands` | Azure | Execute read-only az CLI commands |
-| `RunAzCliWriteCommands` | Azure | Execute write az CLI commands |
-| `QueryLogAnalyticsByWorkspaceId` | Monitoring | Run KQL queries on Log Analytics |
-| `QueryAppInsightsByResourceId` | Monitoring | Query App Insights telemetry |
-| `ExecutePythonCode` | Compute | Run Python code (plotting, analysis) |
-| `CreateGithubIssue` | GitHub | Create issues (requires GitHub OAuth connector) |
-| `CreateGithubIssueComment` | GitHub | Comment on issues |
-| `FetchGithubIssue` / `FetchGithubIssues` | GitHub | Read issues |
-| `UpdateGithubIssue` | GitHub | Update issue (labels, state) |
-| `FindConnectedGitHubRepo` | GitHub | Find linked repos |
-| `GetIaCForGitHub` | GitHub | Get IaC files from repo |
-| `PlotAreaChartWithCorrelation` | Visualization | Create area charts |
-
-> **Note on GitHub tools**: These are **built-in native tools**, not MCP tools. Once the GitHub OAuth connector is created, all subagents get access to GitHub tools automatically — no explicit `mcp_tools` assignment needed. See [microsoft/sre-agent README](https://github.com/microsoft/sre-agent/tree/main/labs/starter-lab).
-
-### 12.3 GitHub OAuth Connector (Section 3 Alternative)
-
-```bash
-TOKEN=$(az account get-access-token --resource https://azuresre.dev --query accessToken -o tsv)
-
-# Step 1: Create connector via data plane
-curl -s -X PUT "${AGENT_ENDPOINT}/api/v2/extendedAgent/connectors/github" \
-  -H "Authorization: Bearer ${TOKEN}" \
-  -H "Content-Type: application/json" \
-  -d '{"name":"github","type":"AgentConnector","properties":{"dataConnectorType":"GitHubOAuth","dataSource":"github-oauth"}}'
-
-# Step 2: Also create via ARM (needed for full OAuth flow)
-az rest --method PUT \
-  --url "https://management.azure.com${AGENT_RESOURCE_ID}/DataConnectors/github?api-version=${API_VERSION}" \
-  --body '{"properties":{"dataConnectorType":"GitHubOAuth","dataSource":"github-oauth"}}'
-
-# Step 3: Get the OAuth URL for user authorization (one-time browser step)
-OAUTH_URL=$(curl -s "${AGENT_ENDPOINT}/api/v1/github/config" \
-  -H "Authorization: Bearer ${TOKEN}" | python3 -c "
-import sys, json
-d = json.load(sys.stdin)
-print(d.get('oAuthUrl', '') or d.get('OAuthUrl', ''))
-")
-echo "Open this URL in your browser to authorize: $OAUTH_URL"
-```
-
-> ⚠️ The GitHub OAuth authorization (step 3) is the **only step that requires a browser** — the user must open the URL and click "Authorize" once. Everything else is fully automated.
-
-### 12.4 Incident Response Plan (Section 6.3 Alternative)
-
-```bash
-TOKEN=$(az account get-access-token --resource https://azuresre.dev --query accessToken -o tsv)
-
-# Create a response plan that routes incidents to the github-issue-creator subagent
-curl -s -X PUT "${AGENT_ENDPOINT}/api/v1/incidentPlayground/filters/three-rivers-http-errors" \
-  -H "Authorization: Bearer ${TOKEN}" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "id": "three-rivers-http-errors",
-    "name": "Three Rivers Bank HTTP Errors",
-    "priorities": ["Sev0", "Sev1", "Sev2", "Sev3", "Sev4"],
-    "titleContains": "",
-    "handlingAgent": "github-issue-creator",
-    "agentMode": "autonomous",
-    "maxAttempts": 3
-  }'
-
-# List existing response plans
-curl -s "${AGENT_ENDPOINT}/api/v1/incidentPlayground/filters" \
-  -H "Authorization: Bearer ${TOKEN}"
-```
-
-### 12.5 Scheduled Tasks (Section 5 Alternative)
-
-```bash
-TOKEN=$(az account get-access-token --resource https://azuresre.dev --query accessToken -o tsv)
-
-# Create a scheduled health check task
-curl -s -X POST "${AGENT_ENDPOINT}/api/v1/scheduledtasks" \
-  -H "Authorization: Bearer ${TOKEN}" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "three-rivers-health-check",
-    "description": "Health check of Three Rivers Bank backend and frontend every 15 minutes",
-    "cronExpression": "*/15 * * * *",
-    "agentPrompt": "Perform a comprehensive health check of the Three Rivers Bank application. Check backend container app health, frontend health, and infrastructure health. If any issues are detected, use the github-issue-creator subagent to create a GitHub issue with the label copilot:fix-this.",
-    "agent": "github-issue-creator"
-  }'
-
-# List scheduled tasks
-curl -s "${AGENT_ENDPOINT}/api/v1/scheduledtasks" \
-  -H "Authorization: Bearer ${TOKEN}"
-```
-
-### 12.6 Enable Azure Monitor + DevOps Tools
-
-```bash
-az rest --method PATCH \
-  --url "https://management.azure.com${AGENT_RESOURCE_ID}?api-version=${API_VERSION}" \
-  --body '{
-    "properties": {
-      "incidentManagementConfiguration": {
-        "type": "AzMonitor",
-        "connectionName": "azmonitor"
-      },
-      "experimentalSettings": {
-        "EnableWorkspaceTools": true,
-        "EnableDevOpsTools": true,
-        "EnablePythonTools": true
-      }
-    }
-  }'
-```
-
-### 12.7 RBAC: SRE Agent Administrator Role
-
-The data plane APIs require the **SRE Agent Administrator** role on the agent resource:
-
-```bash
-# Assign SRE Agent Administrator to yourself
-az role assignment create \
-  --assignee "$(az ad signed-in-user show --query id -o tsv)" \
-  --role "e79298df-d852-4c6d-84f9-5d13249d1e55" \
-  --scope "${AGENT_RESOURCE_ID}"
-```
-
-### 12.8 Automation Coverage Summary
-
-| Component | Automatable? | Method |
-|---|---|---|
-| Agent resource creation | ✅ Full | Bicep (`Microsoft.App/agents@2025-05-01-preview`) or `az rest PUT` |
-| RBAC roles | ✅ Full | `az role assignment create` |
-| Subagents | ✅ Full | `PUT /api/v2/extendedAgent/agents/{name}` |
-| GitHub OAuth connector | ⚠️ 95% | Data plane + ARM APIs; browser OAuth is one-time |
-| MCP connectors (Kusto, etc.) | ✅ Full | `az rest PUT .../connectors/{name}` |
-| Scheduled tasks | ✅ Full | `POST /api/v1/scheduledtasks` |
-| Incident response plans | ✅ Full | `PUT /api/v1/incidentPlayground/filters/{id}` |
-| Knowledge base | ✅ Full | `POST /api/v1/AgentMemory/upload` |
-| Azure Monitor integration | ✅ Full | `az rest PATCH` on agent resource |
-| Alert rules | ✅ Full | `az monitor metrics alert create` |
-| GitHub OAuth authorization | ❌ Manual | User must open URL in browser once |
-
-> **Reference**: See the full [microsoft/sre-agent starter lab](https://github.com/microsoft/sre-agent/tree/main/labs/starter-lab) for a complete working example using `azd up` + `post-provision.sh`.
