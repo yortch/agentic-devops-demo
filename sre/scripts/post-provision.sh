@@ -264,20 +264,20 @@ echo ""
 # ── Step 4: GitHub OAuth connector + knowledge source ────────────────────────
 echo "🔗 Step 4/4: GitHub integration..."
 
+# Create GitHub OAuth connector (data plane)
 TOKEN=$(get_token)
-REPOS_JSON=$(jq -n --arg repo "$GITHUB_REPO" '{"name":"github","type":"AgentConnector","properties":{"dataConnectorType":"GitHubOAuth","dataSource":"github-oauth","extendedProperties":{"repos":[$repo]}}}')
-RESULT=$(echo "$REPOS_JSON" | curl -s -o /dev/null -w "%{http_code}" \
+RESULT=$(curl -s -o /dev/null -w "%{http_code}" \
   -X PUT "${AGENT_ENDPOINT}/api/v2/extendedAgent/connectors/github" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
-  -d @-)
+  -d '{"name":"github","type":"AgentConnector","properties":{"dataConnectorType":"GitHubOAuth","dataSource":"github-oauth"}}')
 if [ "$RESULT" = "200" ] || [ "$RESULT" = "201" ]; then
-  echo "   ✅ GitHub OAuth connector + knowledge source: ${GITHUB_REPO}"
+  echo "   ✅ GitHub OAuth connector (data plane)"
 else
   echo "   ⚠️  GitHub connector returned HTTP ${RESULT}"
 fi
 
-# Also create via ARM
+# Also create via ARM (needed for OAuth flow)
 az rest --method PUT \
   --url "https://management.azure.com${AGENT_RESOURCE_ID}/DataConnectors/github?api-version=${API_VERSION}" \
   --body '{"properties":{"dataConnectorType":"GitHubOAuth","dataSource":"github-oauth"}}' \
@@ -289,6 +289,32 @@ TOKEN=$(get_token)
 OAUTH_URL=$(curl -s "${AGENT_ENDPOINT}/api/v1/github/config" \
   -H "Authorization: Bearer ${TOKEN}" 2>/dev/null | jq -r '.oAuthUrl // .OAuthUrl // empty' 2>/dev/null)
 
+if [ -n "$OAUTH_URL" ]; then
+  echo ""
+  echo "  ┌──────────────────────────────────────────────────────────┐"
+  echo "  │  Sign in to GitHub to authorize the SRE Agent:          │"
+  echo "  │  ${OAUTH_URL}"
+  echo "  │  Open this URL in your browser and click 'Authorize'    │"
+  echo "  └──────────────────────────────────────────────────────────┘"
+  echo ""
+  read -p "   Press Enter after you have authorized in the browser..." _unused
+fi
+
+# Add code repo AFTER OAuth so the GitHub token is active
+echo "   Adding ${GITHUB_REPO} as knowledge source..."
+TOKEN=$(get_token)
+REPO_NAME=$(echo "$GITHUB_REPO" | cut -d'/' -f2)
+HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+  -X PUT "${AGENT_ENDPOINT}/api/v2/repos/${REPO_NAME}" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{\"name\":\"${REPO_NAME}\",\"type\":\"CodeRepo\",\"properties\":{\"url\":\"https://github.com/${GITHUB_REPO}\",\"authConnectorName\":\"github\"}}")
+if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ]; then
+  echo "   ✅ Code repo: ${GITHUB_REPO}"
+else
+  echo "   ⚠️  Code repo returned HTTP ${HTTP_CODE} (authorize GitHub OAuth first, then re-run with --retry)"
+fi
+
 echo ""
 echo "============================================="
 echo "  ✅ SRE Agent Setup Complete!"
@@ -299,15 +325,6 @@ echo "  📡 Agent API:     ${AGENT_ENDPOINT}"
 echo "  📦 App RG:        ${APP_RESOURCE_GROUP}"
 echo "  🔗 GitHub Repo:   ${GITHUB_REPO}"
 echo ""
-
-if [ -n "$OAUTH_URL" ]; then
-  echo "  ┌──────────────────────────────────────────────────────────┐"
-  echo "  │  Sign in to GitHub to authorize the SRE Agent:          │"
-  echo "  │  ${OAUTH_URL}"
-  echo "  │  Open this URL in your browser and click 'Authorize'    │"
-  echo "  └──────────────────────────────────────────────────────────┘"
-  echo ""
-fi
 
 echo "  Next steps:"
 echo "  ├── Open https://sre.azure.com and verify green checkmarks"
