@@ -319,13 +319,11 @@ If no matching issue is found, a random scenario is selected.
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  1. Introduce Chaos (pick one)                      │
-│     ├─ Option A: ./chaos-engineering.sh <scenario>  │
-│     └─ Option B: gh issue → gh workflow run         │
+│  1. Introduce Chaos                                 │
+│     └─ gh issue create → gh workflow run            │
 │                                                     │
 │  2. Breaking Change Takes Effect                    │
-│     ├─ A: Container App deploys new revision        │
-│     └─ B: CI/CD deploys broken code from PR         │
+│     └─ CI/CD deploys broken code from PR            │
 │                                                     │
 │  3. SRE Agent Detects Issue                         │
 │     └─ Alert fires → agent investigates             │
