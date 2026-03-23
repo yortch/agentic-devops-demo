@@ -134,7 +134,7 @@ resource "azurerm_container_app" "backend" {
   tags                         = merge(local.tags, { "azd-service-name" = "backend" })
 
   template {
-    min_replicas = 1
+    min_replicas = 2
     max_replicas = 3
 
     container {
@@ -142,6 +142,29 @@ resource "azurerm_container_app" "backend" {
       image  = var.service_backend_image_name
       cpu    = var.container_cpu
       memory = var.container_memory
+
+      readiness_probe {
+        transport = "HTTP"
+        path      = "/actuator/health"
+        port      = 8080
+
+        initial_delay            = 10
+        period_seconds           = 10
+        timeout                  = 5
+        success_count_threshold  = 1
+        failure_count_threshold  = 3
+      }
+
+      startup_probe {
+        transport = "HTTP"
+        path      = "/actuator/health"
+        port      = 8080
+
+        initial_delay            = 10
+        period_seconds           = 10
+        timeout                  = 5
+        failure_count_threshold  = 10
+      }
 
       env {
         name  = "CORS_ALLOWED_ORIGINS"
