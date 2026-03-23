@@ -362,8 +362,13 @@ If no matching issue is found, a random scenario is selected.
 
 **Part 2: Introduce Chaos** (~1 min)
 ```bash
-./chaos-engineering.sh backend-slow-response
+gh issue create \
+  --title "chaos: backend-slow-response" \
+  --body "Inject backend-slow-response scenario" \
+  --label "chaos-engineering"
+gh workflow run chaos-engineering.lock.yml
 ```
+- Wait for the PR to be created and merged
 
 **Part 3: Wait for Detection** (~3-5 min)
 - Azure Monitor alert fires → SRE Agent investigates automatically
