@@ -47,4 +47,4 @@ Three Rivers Bank is a credit card comparison platform:
 ## GitHub Repository
 - Owner: yortch
 - Repo: agentic-devops-demo
-- Labels: `copilot:fix-this`, `sre-agent-detected`, `chaos-engineering`
+- Labels: `sre-agent-detected`, `chaos-engineering`

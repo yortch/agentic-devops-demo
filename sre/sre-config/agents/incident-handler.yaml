@@ -14,7 +14,7 @@ spec:
        root cause analysis.
 
     Create a GitHub issue in GITHUB_REPO_PLACEHOLDER with detailed findings.
-    Always add the labels "copilot:fix-this" and "sre-agent-detected".
+    Always add the label "sre-agent-detected" and assign the issue to @copilot.
 
     Always search memory for similar past incidents first.
     Use ExecutePythonCode to plot metrics charts when presenting evidence.

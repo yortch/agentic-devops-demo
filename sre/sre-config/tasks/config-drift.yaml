@@ -1,0 +1,23 @@
+api_version: azuresre.ai/v1
+kind: ScheduledTask
+spec:
+  name: three-rivers-config-drift
+  description: Check for configuration drift in the Three Rivers Bank deployment every 6 hours
+  cronExpression: "0 */6 * * *"
+  agent: ""
+  agentPrompt: |
+    Check for configuration drift in the Three Rivers Bank deployment:
+
+    1. Verify environment variables match expected values:
+       - BIAN_API_BASE_URL should be: https://virtserver.swaggerhub.com/B154/BIAN/CreditCard/13.0.0
+       - SPRING_PROFILES_ACTIVE should be: production
+       - SPRING_H2_CONSOLE_ENABLED should be: false
+
+    2. Verify container resource limits:
+       - Backend: 0.5 vCPU, 1GB memory
+       - Frontend: 0.25 vCPU, 0.5GB memory
+
+    3. Check container image versions match latest deployment
+
+    4. If drift is detected, use the incident-handler subagent to create a
+       GitHub issue with details and recommended fixes.

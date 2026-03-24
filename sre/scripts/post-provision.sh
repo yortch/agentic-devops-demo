@@ -5,6 +5,7 @@
 # Uses data plane REST APIs (no srectl dependency):
 #   - Uploads knowledge base files
 #   - Creates subagents via data plane v2 API
+#   - Creates scheduled tasks via data plane v1 API
 #   - Enables Azure Monitor incident platform
 #   - Creates incident response plan
 #   - Creates GitHub OAuth connector (optional)
@@ -170,8 +171,75 @@ create_subagent() {
   fi
 }
 
+# ── Helper: Create scheduled task via data plane v1 API ──────────────────────
+# Reads a task YAML file (kind: ScheduledTask), builds JSON, and POSTs to the
+# scheduledtasks API. Deletes any existing task with the same name first.
+# Reference: microsoft/sre-agent samples/hands-on-lab/scripts/post-provision.sh
+create_scheduled_task() {
+  local yaml_file="$1"
+  local content
+  content=$(cat "$yaml_file")
+
+  # Extract fields from the fixed YAML structure
+  local task_name description cron_expr agent_name agent_prompt
+  task_name=$(echo "$content" | sed -n 's/^  name: *//p' | head -1)
+  description=$(echo "$content" | sed -n 's/^  description: *//p' | head -1)
+  cron_expr=$(echo "$content" | sed -n 's/^  cronExpression: *"\{0,1\}\([^"]*\)"\{0,1\}/\1/p' | head -1)
+  agent_name=$(echo "$content" | sed -n 's/^  agent: *"\{0,1\}\([^"]*\)"\{0,1\}/\1/p' | head -1)
+
+  # Extract multi-line agentPrompt (indented block after "agentPrompt: |")
+  agent_prompt=$(echo "$content" | sed -n '/^  agentPrompt: |/,/^  [a-z_]*:\|^$/{ /^  agentPrompt:/d; /^  [a-z_]*:/d; /^$/d; p; }' | sed 's/^    //')
+
+  if [ -z "$task_name" ] || [ -z "$cron_expr" ] || [ -z "$agent_prompt" ]; then
+    echo "   ⚠️  Could not parse task YAML: ${yaml_file}"
+    return
+  fi
+
+  local token
+  token=$(get_token)
+
+  # Delete any existing task with the same name to avoid duplicates
+  EXISTING_TASKS=$(curl -s "${AGENT_ENDPOINT}/api/v1/scheduledtasks" \
+    -H "Authorization: Bearer ${token}" 2>/dev/null || echo "[]")
+  echo "$EXISTING_TASKS" | jq -r ".[] | select(.name==\"${task_name}\") | .id // empty" 2>/dev/null | while read -r task_id; do
+    if [ -n "$task_id" ]; then
+      curl -s -o /dev/null -X DELETE \
+        "${AGENT_ENDPOINT}/api/v1/scheduledtasks/${task_id}" \
+        -H "Authorization: Bearer ${token}" 2>/dev/null
+    fi
+  done
+
+  # Build the JSON body
+  local json_body
+  json_body=$(jq -n \
+    --arg name "$task_name" \
+    --arg desc "$description" \
+    --arg cron "$cron_expr" \
+    --arg prompt "$agent_prompt" \
+    --arg agent "$agent_name" \
+    '{
+      name: $name,
+      description: $desc,
+      cronExpression: $cron,
+      agentPrompt: $prompt
+    } + (if $agent != "" then {agent: $agent} else {} end)')
+
+  local http_code
+  http_code=$(echo "$json_body" | curl -s -o /dev/null -w "%{http_code}" \
+    -X POST "${AGENT_ENDPOINT}/api/v1/scheduledtasks" \
+    -H "Authorization: Bearer ${token}" \
+    -H "Content-Type: application/json" \
+    -d @-)
+
+  if [ "$http_code" = "200" ] || [ "$http_code" = "201" ] || [ "$http_code" = "202" ]; then
+    echo "   ✅ Scheduled: ${task_name} (${cron_expr})"
+  else
+    echo "   ⚠️  ${task_name} returned HTTP ${http_code}"
+  fi
+}
+
 # ── Step 1: Upload knowledge base ────────────────────────────────────────────
-echo "📚 Step 1/4: Uploading knowledge base..."
+echo "📚 Step 1/5: Uploading knowledge base..."
 TOKEN=$(get_token)
 
 CURL_ARGS=(-s -o /dev/null -w "%{http_code}" \
@@ -194,13 +262,20 @@ fi
 echo ""
 
 # ── Step 2: Create subagents ─────────────────────────────────────────────────
-echo "🤖 Step 2/4: Creating subagents..."
+echo "🤖 Step 2/5: Creating subagents..."
 create_subagent "sre-config/agents/incident-handler.yaml" "incident-handler"
 create_subagent "sre-config/agents/code-analyzer.yaml" "code-analyzer"
 echo ""
 
-# ── Step 3: Enable Azure Monitor + create response plan ─────────────────────
-echo "🚨 Step 3/4: Enabling Azure Monitor incident platform..."
+# ── Step 3: Create scheduled tasks ──────────────────────────────────────────
+echo "⏰ Step 3/5: Creating scheduled tasks..."
+for f in ./sre-config/tasks/*.yaml; do
+  [ -f "$f" ] && create_scheduled_task "$f"
+done
+echo ""
+
+# ── Step 4: Enable Azure Monitor + create response plan ─────────────────────
+echo "🚨 Step 4/5: Enabling Azure Monitor incident platform..."
 
 if az rest --method PATCH \
   --url "https://management.azure.com${AGENT_RESOURCE_ID}?api-version=${API_VERSION}" \
@@ -261,8 +336,8 @@ curl -s -o /dev/null -X DELETE \
 
 echo ""
 
-# ── Step 4: GitHub OAuth connector + knowledge source ────────────────────────
-echo "🔗 Step 4/4: GitHub integration..."
+# ── Step 5: GitHub OAuth connector + knowledge source ────────────────────────
+echo "🔗 Step 5/5: GitHub integration..."
 
 # Create GitHub OAuth connector (data plane)
 TOKEN=$(get_token)
@@ -329,6 +404,6 @@ echo ""
 echo "  Next steps:"
 echo "  ├── Open https://sre.azure.com and verify green checkmarks"
 echo "  ├── Ask the agent: 'List all container apps in my resource group'"
-echo "  └── Run chaos scenario: ./chaos-engineering.sh backend-500"
+echo "  └── Run chaos scenario: bash sre/scripts/chaos-engineering.sh backend-500"
 echo ""
 echo "============================================="

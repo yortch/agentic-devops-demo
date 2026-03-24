@@ -7,10 +7,10 @@
 # can detect, diagnose, and trigger a fix.
 #
 # Usage:
-#   ./chaos-engineering.sh <scenario>        # inject a specific fault
-#   ./chaos-engineering.sh rollback <scenario> # revert a specific fault
-#   ./chaos-engineering.sh list              # show available scenarios
-#   ./chaos-engineering.sh status            # show current app configuration
+#   bash sre/scripts/chaos-engineering.sh <scenario>        # inject a specific fault
+#   bash sre/scripts/chaos-engineering.sh rollback <scenario> # revert a specific fault
+#   bash sre/scripts/chaos-engineering.sh list              # show available scenarios
+#   bash sre/scripts/chaos-engineering.sh status            # show current app configuration
 #
 # Prerequisites:
 #   - az CLI logged in (`az login`)
@@ -312,12 +312,12 @@ Chaos Engineering Scenarios — Three Rivers Bank
  10. frontend-api-broken     Frontend     Easy        API calls fail, no card data
 
 Usage:
-  ./chaos-engineering.sh <scenario-name>           # inject fault
-  ./chaos-engineering.sh rollback <scenario-name>  # revert fault
+  bash sre/scripts/chaos-engineering.sh <scenario-name>           # inject fault
+  bash sre/scripts/chaos-engineering.sh rollback <scenario-name>  # revert fault
 
 Examples:
-  ./chaos-engineering.sh bad-api-url
-  ./chaos-engineering.sh rollback bad-api-url
+  bash sre/scripts/chaos-engineering.sh bad-api-url
+  bash sre/scripts/chaos-engineering.sh rollback bad-api-url
 EOF
 }
 

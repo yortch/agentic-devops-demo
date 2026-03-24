@@ -11,11 +11,12 @@
 3. [Deploy the SRE Agent](#3-deploy-the-sre-agent)
 4. [Configure the SRE Agent (Post-Provision)](#4-configure-the-sre-agent-post-provision)
 5. [Verify Setup](#5-verify-setup)
-6. [Enable Copilot Coding Agent Auto-Fix](#6-enable-copilot-coding-agent-auto-fix)
-7. [Chaos Engineering Scenarios](#7-chaos-engineering-scenarios)
-8. [Demo Walkthrough](#8-demo-walkthrough)
-9. [Troubleshooting](#9-troubleshooting)
-10. [Reference Links](#10-reference-links)
+6. [Scheduled Tasks](#6-scheduled-tasks)
+7. [Enable Copilot Coding Agent Auto-Fix](#7-enable-copilot-coding-agent-auto-fix)
+8. [Chaos Engineering Scenarios](#8-chaos-engineering-scenarios)
+9. [Demo Walkthrough](#9-demo-walkthrough)
+10. [Troubleshooting](#10-troubleshooting)
+11. [Reference Links](#11-reference-links)
 
 ---
 
@@ -141,6 +142,15 @@ Deployment takes ~3-5 minutes. The output will include:
 
 ## 4. Configure the SRE Agent (Post-Provision)
 
+### Customizing the GitHub Repository
+
+By default, the script uses `yortch/agentic-devops-demo`. To use a different repo:
+
+```bash
+azd env set GITHUB_REPO "<owner>/<repo>"
+bash scripts/post-provision.sh
+```
+
 After `azd up` completes, run the post-provision script to configure knowledge base, subagents, incident response plan, and GitHub integration:
 
 ```bash
@@ -154,8 +164,9 @@ bash scripts/post-provision.sh
 |---|---|---|
 | 1 | **Knowledge Base** — HTTP errors runbook + app architecture docs | Data plane API: `POST /api/v1/AgentMemory/upload` |
 | 2 | **Subagents** — `incident-handler` + `code-analyzer` | Data plane API: `PUT /api/v2/extendedAgent/agents/{name}` |
-| 3 | **Azure Monitor** — Incident platform + response plan routing to `incident-handler` | ARM PATCH + data plane API |
-| 4 | **GitHub OAuth** — Connector for code search and issue creation | Data plane + ARM API |
+| 3 | **Scheduled Tasks** — Health check (30min), config drift (6hr), daily reliability report (8am UTC) | Data plane API: `POST /api/v1/scheduledtasks` |
+| 4 | **Azure Monitor** — Incident platform + response plan routing to `incident-handler` | ARM PATCH + data plane API |
+| 5 | **GitHub OAuth** — Connector for code search and issue creation | Data plane + ARM API |
 
 ### GitHub Authorization (One-Time)
 
@@ -181,15 +192,6 @@ bash scripts/post-provision.sh --retry
 bash scripts/post-provision.sh --status
 ```
 
-### Customizing the GitHub Repository
-
-By default, the script uses `yortch/agentic-devops-demo`. To use a different repo:
-
-```bash
-azd env set GITHUB_REPO "<owner>/<repo>"
-bash scripts/post-provision.sh
-```
-
 ---
 
 ## 5. Verify Setup
@@ -204,6 +206,7 @@ Open [sre.azure.com](https://sre.azure.com) and click **Full setup**. You should
 | **Incidents** | ✅ Connected to Azure Monitor |
 | **Azure resources** | ✅ 1 resource group added |
 | **Knowledge files** | ✅ 2 files |
+| **Scheduled tasks** | ✅ 3 tasks active |
 
 ### 5.2 Test the Agent
 
@@ -233,15 +236,29 @@ az monitor metrics alert list \
 
 ---
 
-## 6. Enable Copilot Coding Agent Auto-Fix
+## 6. Scheduled Tasks
+
+The post-provision script creates three automated scheduled tasks that run proactively:
+
+| Task | Schedule | Description |
+|---|---|---|
+| `three-rivers-health-check` | Every 30 minutes | Checks backend/frontend health, error rates, response times, container restarts, and infrastructure status. Escalates to `code-analyzer` + `incident-handler` if issues are found. |
+| `three-rivers-config-drift` | Every 6 hours | Verifies environment variables, container resource limits, and image versions match expected values. Creates a GitHub issue via `incident-handler` if drift is detected. |
+| `three-rivers-daily-reliability-report` | Daily at 8am UTC | Summarizes 24-hour metrics, checks 7-day degradation trends, correlates recent GitHub PRs with metric changes, and provides reliability recommendations. |
+
+Task definitions live in `sre/sre-config/tasks/` and are automatically picked up by the post-provision script.
+
+### Verify Scheduled Tasks
+
+In the [SRE Agent Portal](https://sre.azure.com), navigate to **Builder → Scheduled tasks** and confirm all three tasks show status **On**.
+
+---
+
+## 7. Enable Copilot Coding Agent Auto-Fix
 
 ### 6.1 Create Required Labels
 
 ```bash
-gh label create "copilot:fix-this" \
-  --description "Issues for Copilot Coding Agent to auto-fix" \
-  --color "7057ff"
-
 gh label create "sre-agent-detected" \
   --description "Issue detected by Azure SRE Agent" \
   --color "d73a4a"
@@ -258,15 +275,15 @@ gh label create "chaos-engineering" \
 
 ### 6.3 How It Works
 
-When the SRE Agent creates an issue with the `copilot:fix-this` label:
-1. Copilot Coding Agent is automatically assigned to the issue
+When the SRE Agent creates an issue and assigns it to `@copilot`:
+1. Copilot Coding Agent picks up the assigned issue
 2. Copilot reads the issue (including RCA and affected code)
 3. Copilot creates a fix PR
 4. You review and merge
 
 ---
 
-## 7. Chaos Engineering Scenarios
+## 8. Chaos Engineering Scenarios
 
 The chaos engineering workflow uses [GitHub Agentic Workflows](https://github.com/github/gh-aw) to inject code-level breaking changes via PR.
 
@@ -321,7 +338,7 @@ If no matching issue is found, a random scenario is selected.
 
 ---
 
-## 8. Demo Walkthrough
+## 9. Demo Walkthrough
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -336,7 +353,7 @@ If no matching issue is found, a random scenario is selected.
 │     └─ Agent queries logs + code                    │
 │                                                     │
 │  4. RCA + GitHub Issue Created                      │
-│     └─ Labels: copilot:fix-this, sre-agent-detected │
+│     └─ Assigned to @copilot, label: sre-agent-detected│
 │                                                     │
 │  5. Copilot Coding Agent Fixes                      │
 │     └─ Reads issue → creates fix PR                 │
@@ -362,6 +379,10 @@ If no matching issue is found, a random scenario is selected.
 
 **Part 1: Show Healthy App** (~2 min)
 - Open Three Rivers Bank website, show card comparison working
+- Start the load generator to establish a healthy baseline:
+  ```bash
+  bash sre/scripts/generate-load.sh --rps 2 --forever
+  ```
 - In SRE Agent chat: *"What is the current health of my container apps?"*
 
 **Part 2: Introduce Chaos** (~1 min)
@@ -373,14 +394,16 @@ gh issue create \
 gh workflow run chaos-engineering.lock.yml
 ```
 - Wait for the PR to be created and merged
+- Keep the load generator running — it will show errors as the chaos takes effect
 
 **Part 3: Wait for Detection** (~3-5 min)
+- Watch the load generator output for rising error counts
 - Azure Monitor alert fires → SRE Agent investigates automatically
 - Or ask manually: *"Check the health of the Three Rivers Bank backend. Is anything wrong?"*
 
 **Part 4: Show RCA + Issue** (~2 min)
 - The agent creates a GitHub issue with root cause, code references, and fix suggestion
-- Show the issue with `copilot:fix-this` label
+- Show the issue assigned to `@copilot` with `sre-agent-detected` label
 
 **Part 5: Copilot Fixes** (~2-3 min)
 - Copilot Coding Agent picks up the issue → creates fix PR
@@ -388,11 +411,13 @@ gh workflow run chaos-engineering.lock.yml
 
 **Part 6: Recovery** (~1 min)
 - CI/CD deploys fix → verify app healthy again
+- Watch the load generator output return to all green
 - SRE Agent confirms: *"Is the application healthy now?"*
+- Stop the load generator with `Ctrl+C` to see the summary
 
 ---
 
-## 9. Troubleshooting
+## 10. Troubleshooting
 
 | Problem | Solution |
 |---|---|
@@ -402,13 +427,13 @@ gh workflow run chaos-engineering.lock.yml
 | SRE Agent can't see Container Apps | Verify `APP_RESOURCE_GROUP` matches your app deployment's resource group |
 | GitHub OAuth URL not shown | Check SRE Agent Administrator role is assigned (script does this automatically) |
 | GitHub connector shows disconnected | Re-run `bash scripts/post-provision.sh --retry` and re-authorize OAuth URL |
-| Copilot doesn't pick up issues | Verify `copilot:fix-this` label exists and Copilot Coding Agent is enabled |
+| Copilot doesn't pick up issues | Verify the issue is assigned to `@copilot` and Copilot Coding Agent is enabled |
 | Alert rules not firing | Check alerts: `az monitor metrics alert list --resource-group $(azd env get-value AZURE_RESOURCE_GROUP)` |
 | `roleAssignments/write` denied | Need **Owner** role on subscription |
 
 ---
 
-## 10. Reference Links
+## 11. Reference Links
 
 | Resource | URL |
 |---|---|
@@ -437,11 +462,17 @@ sre/
 │       ├── subscription-rbac.bicep     # RBAC role assignments
 │       └── alert-rules.bicep           # Azure Monitor alerts (3 rules)
 ├── scripts/
-│   └── post-provision.sh               # Configures KB, subagents, response plan, GitHub
+│   ├── post-provision.sh               # Configures KB, subagents, tasks, response plan, GitHub
+│   ├── chaos-engineering.sh            # Inject/rollback infrastructure faults via az CLI
+│   └── generate-load.sh               # Generate light traffic against deployed app
 ├── sre-config/
-│   └── agents/
-│       ├── incident-handler.yaml       # Investigates incidents, creates GitHub issues
-│       └── code-analyzer.yaml          # Deep code root cause analysis
+│   ├── agents/
+│   │   ├── incident-handler.yaml       # Investigates incidents, creates GitHub issues
+│   │   └── code-analyzer.yaml          # Deep code root cause analysis
+│   └── tasks/
+│       ├── health-check.yaml           # Comprehensive health check every 30 minutes
+│       ├── config-drift.yaml           # Configuration drift detection every 6 hours
+│       └── daily-reliability-report.yaml # Daily reliability report at 8am UTC
 └── knowledge-base/
     ├── error-investigation-runbook.md   # Error investigation runbook
     └── app-architecture.md             # Application architecture reference

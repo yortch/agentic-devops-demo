@@ -15,7 +15,7 @@ spec:
 
     Create a GitHub issue in GITHUB_REPO_PLACEHOLDER with detailed findings
     including log evidence, metrics, code snippets, suggested fixes, and
-    remediation actions. Always add labels "copilot:fix-this" and "sre-agent-detected".
+    remediation actions. Always add the label "sre-agent-detected" and assign the issue to @copilot.
 
     Key application paths:
     - Backend API: backend/src/main/java/com/threeriversbank/

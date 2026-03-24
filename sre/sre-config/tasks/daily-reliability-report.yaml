@@ -1,0 +1,27 @@
+api_version: azuresre.ai/v1
+kind: ScheduledTask
+spec:
+  name: three-rivers-daily-reliability-report
+  description: Generate a daily reliability report for the Three Rivers Bank application at 8am UTC
+  cronExpression: "0 8 * * *"
+  agent: ""
+  agentPrompt: |
+    Generate a daily reliability report for the Three Rivers Bank application:
+
+    1. Summarize the past 24 hours:
+       - Total request count (backend + frontend)
+       - Error rate trend
+       - Average and p95 response times
+       - Container restart events
+       - Scaling events (replicas changes)
+
+    2. Check for degradation trends:
+       - Is error rate increasing over the past 7 days?
+       - Are response times trending upward?
+       - Any recurring container restarts?
+
+    3. Review recent deployments:
+       - Check GitHub for merged PRs in the last 24 hours
+       - Correlate any deployments with metric changes
+
+    4. Provide recommendations for improving reliability.
