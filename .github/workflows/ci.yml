@@ -7,9 +7,28 @@ on:
     branches: [main]
 
 jobs:
+  lint-no-thread-sleep:
+    name: Lint - No Thread.sleep in production code
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for Thread.sleep in production Java source
+        run: |
+          if grep -rn "Thread\.sleep" backend/src/main/ --include="*.java"; then
+            echo "ERROR: Thread.sleep found in production source code. Remove chaos/debug sleep calls before merging."
+            exit 1
+          fi
+          echo "No Thread.sleep found in production source. OK."
+
   build-backend:
     name: Build Backend
     runs-on: ubuntu-latest
+    needs: [lint-no-thread-sleep]
     permissions:
       contents: read
       packages: write
