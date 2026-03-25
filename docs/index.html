@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agentic DevOps — Three Rivers Bank</title>
+  <meta name="description" content="A live demo of Agentic DevOps: building and operating a full-stack banking app with GitHub Copilot, Copilot CLI, Copilot Coding Agent, and Azure SRE Agent." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── Reset & Variables ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:   #003366;
+      --teal:   #008080;
+      --teal-light: #00b3b3;
+      --bg:     #09090f;
+      --surface:#0f1117;
+      --surface2:#161b27;
+      --border: rgba(255,255,255,0.08);
+      --text:   #e8eaf0;
+      --muted:  #8892a4;
+      --accent: #00c8c8;
+      --red:    #ff4560;
+      --yellow: #ffb020;
+      --green:  #00e676;
+      --blue:   #4dabf7;
+      --purple: #a78bfa;
+      --grad:   linear-gradient(135deg, #003366, #008080);
+      --grad2:  linear-gradient(135deg, #00c8c8, #003da5);
+      --r:      12px;
+      --r-sm:   8px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ─── Utility ───────────────────────────────────────────────────── */
+    .container { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600;
+      letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    .badge-teal   { background: rgba(0,200,200,.12); color: var(--accent); border: 1px solid rgba(0,200,200,.3); }
+    .badge-blue   { background: rgba(77,171,247,.12); color: var(--blue);   border: 1px solid rgba(77,171,247,.3); }
+    .badge-purple { background: rgba(167,139,250,.12); color: var(--purple); border: 1px solid rgba(167,139,250,.3); }
+    .badge-red    { background: rgba(255,69,96,.12);   color: var(--red);    border: 1px solid rgba(255,69,96,.3); }
+    .badge-green  { background: rgba(0,230,118,.12);   color: var(--green);  border: 1px solid rgba(0,230,118,.3); }
+    .badge-yellow { background: rgba(255,176,32,.12);  color: var(--yellow); border: 1px solid rgba(255,176,32,.3); }
+
+    .section { padding: 100px 0; }
+    .section-label { font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+    .section-title { font-size: clamp(32px, 5vw, 52px); font-weight: 800; line-height: 1.15; margin-bottom: 20px; }
+    .section-desc  { font-size: 18px; color: var(--muted); max-width: 680px; line-height: 1.7; }
+    .highlight { background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+    /* ─── Reveal animation ──────────────────────────────────────────── */
+    .reveal { opacity: 0; transform: translateY(32px); transition: opacity .6s ease, transform .6s ease; }
+    .reveal.visible { opacity: 1; transform: none; }
+    .reveal-delay-1 { transition-delay: .1s; }
+    .reveal-delay-2 { transition-delay: .2s; }
+    .reveal-delay-3 { transition-delay: .3s; }
+    .reveal-delay-4 { transition-delay: .4s; }
+
+    /* ─── Nav ───────────────────────────────────────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      background: rgba(9,9,15,.75);
+      border-bottom: 1px solid var(--border);
+      height: 64px; display: flex; align-items: center;
+    }
+    nav .container { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+    .nav-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; color: var(--text); text-decoration: none; }
+    .nav-brand-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: var(--grad); display: flex; align-items: center; justify-content: center; font-size: 16px;
+    }
+    .nav-links { display: flex; gap: 32px; list-style: none; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 14px; font-weight: 500; transition: color .2s; }
+    .nav-links a:hover { color: var(--text); }
+    .nav-cta {
+      background: var(--grad); color: #fff; padding: 8px 20px; border-radius: var(--r-sm);
+      font-size: 14px; font-weight: 600; text-decoration: none; transition: opacity .2s;
+    }
+    .nav-cta:hover { opacity: .85; }
+
+    /* ─── Hero ──────────────────────────────────────────────────────── */
+    #hero {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden; padding-top: 64px;
+    }
+    .hero-bg {
+      position: absolute; inset: 0; z-index: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(0,128,128,.18), transparent),
+                  radial-gradient(ellipse 60% 40% at 80% 80%, rgba(0,51,102,.22), transparent);
+    }
+    .hero-grid {
+      position: absolute; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black, transparent);
+    }
+    .hero-content { position: relative; z-index: 1; text-align: center; max-width: 880px; margin: 0 auto; padding: 40px 24px; }
+    .hero-eyebrow { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 24px; }
+    .hero-eyebrow span { font-size: 13px; color: var(--muted); font-weight: 500; }
+    .hero-title {
+      font-size: clamp(48px, 8vw, 88px); font-weight: 900; line-height: 1.05;
+      letter-spacing: -2px; margin-bottom: 24px;
+    }
+    .hero-subtitle { font-size: clamp(16px, 2.5vw, 22px); color: var(--muted); margin-bottom: 48px; max-width: 640px; margin-left: auto; margin-right: auto; }
+    .hero-ctas { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 64px; }
+    .btn-primary {
+      background: var(--grad); color: #fff; padding: 14px 32px; border-radius: var(--r);
+      font-size: 16px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+      transition: transform .2s, box-shadow .2s;
+      box-shadow: 0 0 32px rgba(0,200,200,.25);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 48px rgba(0,200,200,.35); }
+    .btn-secondary {
+      background: var(--surface2); color: var(--text); padding: 14px 32px; border-radius: var(--r);
+      font-size: 16px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+      border: 1px solid var(--border); transition: border-color .2s, background .2s;
+    }
+    .btn-secondary:hover { border-color: rgba(255,255,255,.2); background: rgba(255,255,255,.05); }
+
+    /* stats bar */
+    .hero-stats {
+      display: flex; gap: 0; justify-content: center;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--r); overflow: hidden; max-width: 720px; margin: 0 auto;
+    }
+    .hero-stat {
+      flex: 1; padding: 20px 24px; text-align: center; border-right: 1px solid var(--border);
+    }
+    .hero-stat:last-child { border-right: none; }
+    .hero-stat-val { font-size: 28px; font-weight: 800; color: var(--accent); line-height: 1; }
+    .hero-stat-lbl { font-size: 12px; color: var(--muted); margin-top: 4px; font-weight: 500; }
+
+    /* ─── Section: Built with Copilot ──────────────────────────────── */
+    .built-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-top: 60px; }
+    .tool-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--r);
+      padding: 32px; transition: border-color .3s, transform .3s, box-shadow .3s;
+      position: relative; overflow: hidden;
+    }
+    .tool-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    }
+    .tool-card.blue::before   { background: var(--grad2); }
+    .tool-card.purple::before { background: linear-gradient(90deg, var(--purple), #6366f1); }
+    .tool-card.teal::before   { background: linear-gradient(90deg, var(--teal), var(--accent)); }
+    .tool-card:hover { border-color: rgba(255,255,255,.16); transform: translateY(-4px); box-shadow: var(--shadow); }
+    .tool-icon { font-size: 36px; margin-bottom: 16px; display: block; }
+    .tool-name { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+    .tool-desc { font-size: 14px; color: var(--muted); line-height: 1.65; }
+    .tool-examples { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .tool-examples li { font-size: 13px; color: var(--muted); margin-bottom: 6px; padding-left: 14px; position: relative; }
+    .tool-examples li::before { content: '→'; position: absolute; left: 0; color: var(--accent); }
+
+    /* ─── Section: Architecture ─────────────────────────────────────── */
+    .arch-diagram {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--r);
+      padding: 48px; margin-top: 48px; overflow-x: auto;
+    }
+    .arch-row { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 24px; }
+    .arch-row:last-child { margin-bottom: 0; }
+    .arch-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); width: 88px; flex-shrink: 0; padding-top: 10px; }
+    .arch-boxes { display: flex; gap: 12px; flex-wrap: wrap; }
+    .arch-box {
+      padding: 10px 18px; border-radius: var(--r-sm); font-size: 13px; font-weight: 600;
+      display: flex; align-items: center; gap: 8px; white-space: nowrap;
+    }
+    .arch-box.blue   { background: rgba(77,171,247,.12);  border: 1px solid rgba(77,171,247,.3);  color: var(--blue); }
+    .arch-box.teal   { background: rgba(0,200,200,.12);   border: 1px solid rgba(0,200,200,.3);   color: var(--accent); }
+    .arch-box.green  { background: rgba(0,230,118,.12);   border: 1px solid rgba(0,230,118,.3);   color: var(--green); }
+    .arch-box.purple { background: rgba(167,139,250,.12); border: 1px solid rgba(167,139,250,.3); color: var(--purple); }
+    .arch-box.yellow { background: rgba(255,176,32,.12);  border: 1px solid rgba(255,176,32,.3);  color: var(--yellow); }
+    .arch-arrow { color: var(--muted); align-self: center; font-size: 18px; }
+
+    /* ─── Section: SRE Agent ────────────────────────────────────────── */
+    #sre { background: linear-gradient(180deg, var(--bg), var(--surface) 40%, var(--bg)); }
+    .sre-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; margin-top: 60px; align-items: start; }
+    .sre-features { display: flex; flex-direction: column; gap: 20px; }
+    .sre-feature {
+      display: flex; gap: 16px; align-items: flex-start;
+      background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r);
+      padding: 20px; transition: border-color .3s;
+    }
+    .sre-feature:hover { border-color: rgba(0,200,200,.3); }
+    .sre-feature-icon {
+      width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      font-size: 20px; flex-shrink: 0;
+    }
+    .icon-red    { background: rgba(255,69,96,.15);   }
+    .icon-teal   { background: rgba(0,200,200,.15);   }
+    .icon-blue   { background: rgba(77,171,247,.15);  }
+    .icon-green  { background: rgba(0,230,118,.15);   }
+    .icon-yellow { background: rgba(255,176,32,.15);  }
+    .icon-purple { background: rgba(167,139,250,.15); }
+    .sre-feature-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .sre-feature-desc  { font-size: 13px; color: var(--muted); line-height: 1.55; }
+    .sre-panel {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--r);
+      overflow: hidden; position: sticky; top: 84px;
+    }
+    .sre-panel-header {
+      background: var(--surface2); padding: 14px 20px; display: flex; align-items: center; gap: 8px;
+      border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 600;
+    }
+    .sre-panel-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot-red { background: #ff5f57; }
+    .dot-yellow { background: #febc2e; }
+    .dot-green { background: #28c840; }
+    .sre-panel-body { padding: 20px; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.7; }
+    .sre-log-line { margin-bottom: 4px; }
+    .sre-log-time { color: var(--muted); }
+    .sre-log-level { font-weight: 600; }
+    .level-info    { color: var(--blue); }
+    .level-warn    { color: var(--yellow); }
+    .level-alert   { color: var(--red); }
+    .level-fix     { color: var(--green); }
+    .sre-log-msg   { color: var(--text); }
+    .typed-cursor { animation: blink 1s step-end infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    /* tasks table */
+    .tasks-table { width: 100%; border-collapse: collapse; margin-top: 48px; }
+    .tasks-table th {
+      text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; color: var(--muted); padding: 10px 16px; border-bottom: 1px solid var(--border);
+    }
+    .tasks-table td { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,.04); font-size: 14px; }
+    .tasks-table tr:hover td { background: rgba(255,255,255,.02); }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; margin-right: 6px; box-shadow: 0 0 6px var(--green); }
+
+    /* ─── Section: The Agentic Loop ─────────────────────────────────── */
+    #loop { position: relative; }
+    .loop-header { text-align: center; margin-bottom: 80px; }
+    .loop-header .section-desc { margin: 0 auto; text-align: center; }
+    .timeline {
+      position: relative; max-width: 780px; margin: 0 auto;
+    }
+    .timeline::before {
+      content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px;
+      background: linear-gradient(180deg, var(--teal), var(--navy), var(--teal));
+      transform: translateX(-50%); opacity: .5;
+    }
+    .tl-step {
+      display: flex; gap: 40px; align-items: flex-start; margin-bottom: 48px; position: relative;
+    }
+    .tl-step.right { flex-direction: row-reverse; }
+    .tl-step.right .tl-content { text-align: right; }
+    .tl-content {
+      flex: 1; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 24px; position: relative;
+      transition: border-color .3s, box-shadow .3s;
+    }
+    .tl-content:hover { border-color: rgba(0,200,200,.3); box-shadow: 0 4px 24px rgba(0,200,200,.08); }
+    .tl-step-num {
+      width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 800; z-index: 1;
+      border: 3px solid var(--bg);
+    }
+    .step-red    { background: var(--red);    color: #fff; box-shadow: 0 0 16px rgba(255,69,96,.4); }
+    .step-yellow { background: var(--yellow); color: #000; box-shadow: 0 0 16px rgba(255,176,32,.4); }
+    .step-teal   { background: var(--accent); color: #000; box-shadow: 0 0 16px rgba(0,200,200,.4); }
+    .step-blue   { background: var(--blue);   color: #000; box-shadow: 0 0 16px rgba(77,171,247,.4); }
+    .step-green  { background: var(--green);  color: #000; box-shadow: 0 0 16px rgba(0,230,118,.4); }
+    .step-purple { background: var(--purple); color: #fff; box-shadow: 0 0 16px rgba(167,139,250,.4); }
+    .tl-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .tl-desc  { font-size: 13px; color: var(--muted); line-height: 1.6; }
+    .tl-actor {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+      margin-top: 12px; padding: 4px 10px; border-radius: 999px;
+    }
+    .actor-copilot { background: rgba(167,139,250,.12); color: var(--purple); border: 1px solid rgba(167,139,250,.3); }
+    .actor-sre     { background: rgba(0,200,200,.12);   color: var(--accent); border: 1px solid rgba(0,200,200,.3); }
+    .actor-cicd    { background: rgba(77,171,247,.12);  color: var(--blue);   border: 1px solid rgba(77,171,247,.3); }
+    .actor-human   { background: rgba(255,176,32,.12);  color: var(--yellow); border: 1px solid rgba(255,176,32,.3); }
+    .actor-chaos   { background: rgba(255,69,96,.12);   color: var(--red);    border: 1px solid rgba(255,69,96,.3); }
+
+    /* ─── Section: Chaos Scenarios ──────────────────────────────────── */
+    .chaos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 48px; }
+    .chaos-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--r);
+      padding: 20px; transition: border-color .3s, transform .2s;
+    }
+    .chaos-card:hover { border-color: rgba(255,69,96,.3); transform: translateY(-2px); }
+    .chaos-num { font-size: 11px; font-weight: 700; color: var(--red); font-family: 'JetBrains Mono', monospace; margin-bottom: 8px; }
+    .chaos-name { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+    .chaos-target { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; margin-bottom: 8px; }
+    .chaos-symptoms { font-size: 12px; color: var(--muted); line-height: 1.55; }
+    .diff-badge { font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600; }
+    .diff-easy { background: rgba(0,230,118,.12); color: var(--green); }
+    .diff-med  { background: rgba(255,176,32,.12); color: var(--yellow); }
+    .diff-hard { background: rgba(255,69,96,.12);  color: var(--red); }
+
+    /* ─── Section: Agentic Workflow ─────────────────────────────────── */
+    .aw-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 48px; }
+    .aw-stat {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--r);
+      padding: 24px; text-align: center;
+    }
+    .aw-stat-val { font-size: 36px; font-weight: 800; color: var(--accent); }
+    .aw-stat-lbl { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+    .code-block {
+      background: #0d1117; border: 1px solid var(--border); border-radius: var(--r);
+      padding: 24px; margin-top: 32px; font-family: 'JetBrains Mono', monospace;
+      font-size: 13px; line-height: 1.7; overflow-x: auto; position: relative;
+    }
+    .code-block .comment  { color: #6e7681; }
+    .code-block .key      { color: #79c0ff; }
+    .code-block .string   { color: #a5d6ff; }
+    .code-block .value    { color: #ffa657; }
+    .code-block .keyword  { color: #ff7b72; }
+    .code-block .heading  { color: var(--accent); font-weight: 600; }
+    .code-header {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--surface2); padding: 10px 16px; margin: -24px -24px 20px;
+      border-bottom: 1px solid var(--border); border-radius: var(--r) var(--r) 0 0;
+    }
+    .code-dots { display: flex; gap: 6px; }
+    .code-dots span { width: 12px; height: 12px; border-radius: 50%; }
+    .code-filename { font-size: 12px; color: var(--muted); }
+
+    /* ─── Section: How It Works (flow diagram) ──────────────────────── */
+    .flow { display: flex; align-items: center; gap: 0; margin-top: 48px; overflow-x: auto; padding-bottom: 8px; }
+    .flow-box {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--r);
+      padding: 16px 20px; text-align: center; flex-shrink: 0; min-width: 140px;
+      transition: border-color .3s;
+    }
+    .flow-box:hover { border-color: rgba(0,200,200,.4); }
+    .flow-box-icon { font-size: 28px; margin-bottom: 8px; }
+    .flow-box-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+    .flow-box-sub { font-size: 11px; color: var(--muted); }
+    .flow-arrow { color: var(--muted); font-size: 20px; flex-shrink: 0; padding: 0 4px; }
+
+    /* ─── Demo CTA ──────────────────────────────────────────────────── */
+    #cta {
+      text-align: center;
+      background: radial-gradient(ellipse 80% 60% at 50% 100%, rgba(0,128,128,.15), transparent);
+      padding: 120px 0;
+    }
+    .cta-links { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-top: 48px; }
+    .cta-link {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--r);
+      padding: 20px 28px; text-decoration: none; color: var(--text); transition: border-color .3s, transform .2s;
+    }
+    .cta-link:hover { border-color: rgba(255,255,255,.2); transform: translateY(-2px); }
+    .cta-link-icon { font-size: 24px; }
+    .cta-link-title { font-size: 15px; font-weight: 700; }
+    .cta-link-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    /* ─── Footer ────────────────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border); padding: 40px 0;
+      text-align: center; color: var(--muted); font-size: 13px;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* ─── Responsive ────────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .sre-grid { grid-template-columns: 1fr; }
+      .aw-stats { grid-template-columns: repeat(2, 1fr); }
+      .timeline::before { left: 22px; }
+      .tl-step, .tl-step.right { flex-direction: row; }
+      .tl-step.right .tl-content { text-align: left; }
+      .tl-content { flex: 1; }
+      .nav-links { display: none; }
+      .hero-stats { flex-direction: column; }
+      .hero-stat { border-right: none; border-bottom: 1px solid var(--border); }
+      .hero-stat:last-child { border-bottom: none; }
+      .flow { flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+    }
+
+    /* ─── Scroll progress bar ───────────────────────────────────────── */
+    #progress {
+      position: fixed; top: 0; left: 0; height: 3px; z-index: 200;
+      background: var(--grad2); width: 0%; transition: width .1s linear;
+    }
+  </style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<!-- ──────────────────────── NAV ──────────────────────────────────── -->
+<nav>
+  <div class="container">
+    <a class="nav-brand" href="#">
+      <div class="nav-brand-icon">🏦</div>
+      Agentic DevOps
+    </a>
+    <ul class="nav-links">
+      <li><a href="#built">Built with Copilot</a></li>
+      <li><a href="#sre">SRE Agent</a></li>
+      <li><a href="#loop">The Loop</a></li>
+      <li><a href="#chaos">Chaos Scenarios</a></li>
+      <li><a href="#cta">Get Started</a></li>
+    </ul>
+    <a class="nav-cta" href="https://github.com/yortch/agentic-devops-demo" target="_blank">View on GitHub</a>
+  </div>
+</nav>
+
+<!-- ──────────────────────── HERO ─────────────────────────────────── -->
+<section id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">
+      <span class="badge badge-teal">🤖 Live Demo</span>
+      <span>Three Rivers Bank · Pittsburgh, PA</span>
+    </div>
+    <h1 class="hero-title">
+      <span class="highlight">Agentic</span><br />DevOps
+    </h1>
+    <p class="hero-subtitle">
+      A full-stack banking app built, deployed, and operated entirely by AI agents —
+      from first line of code to autonomous production incident response.
+    </p>
+    <div class="hero-ctas">
+      <a class="btn-primary" href="#loop">
+        🔄 See the Agentic Loop
+      </a>
+      <a class="btn-secondary" href="https://github.com/yortch/agentic-devops-demo" target="_blank">
+        ⭐ GitHub Repository
+      </a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-val">3</div>
+        <div class="hero-stat-lbl">Copilot Agents</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">7</div>
+        <div class="hero-stat-lbl">Chaos Runs</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">13</div>
+        <div class="hero-stat-lbl">Chaos Scenarios</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">57</div>
+        <div class="hero-stat-lbl">Agent Turns</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ──────────────────────── BUILT WITH COPILOT ───────────────────── -->
+<section id="built" class="section">
+  <div class="container">
+    <p class="section-label reveal">Development</p>
+    <h2 class="section-title reveal reveal-delay-1">Built <span class="highlight">entirely</span><br />with GitHub Copilot</h2>
+    <p class="section-desc reveal reveal-delay-2">
+      Three Rivers Bank was conceived, designed, coded, tested, and deployed
+      without a single line written by hand. Three complementary Copilot tools
+      handled every phase of development.
+    </p>
+
+    <div class="built-grid">
+      <div class="tool-card blue reveal reveal-delay-1">
+        <span class="tool-icon">✨</span>
+        <div class="tool-name">GitHub Copilot</div>
+        <div class="badge badge-blue" style="margin-bottom:12px">IDE Assistant</div>
+        <p class="tool-desc">
+          The foundation. Copilot's inline completions and chat suggestions powered
+          every file — from Spring Boot entities and React components to Terraform
+          modules and GitHub Actions workflows.
+        </p>
+        <ul class="tool-examples">
+          <li>Scaffolded all 5 business credit card JPA entities with relationships</li>
+          <li>Generated the Resilience4j circuit breaker configuration</li>
+          <li>Wrote all 10 JUnit tests (100% pass rate)</li>
+          <li>Produced the Material-UI Three Rivers Bank theme (Navy #003366 / Teal #008080)</li>
+          <li>Created all 5 Playwright E2E test specs across 3 viewport sizes</li>
+        </ul>
+      </div>
+
+      <div class="tool-card purple reveal reveal-delay-2">
+        <span class="tool-icon">🖥️</span>
+        <div class="tool-name">GitHub Copilot CLI</div>
+        <div class="badge badge-purple" style="margin-bottom:12px">Terminal Intelligence</div>
+        <p class="tool-desc">
+          The operational backbone. Used throughout the entire project lifecycle
+          to drive infrastructure, troubleshoot deployments, and orchestrate the
+          Azure SRE Agent setup — all from the terminal.
+        </p>
+        <ul class="tool-examples">
+          <li>Designed Terraform modules for Azure Container Apps, ACR, and Log Analytics</li>
+          <li>Authored the <code>azd</code> project configuration and preprovision hooks</li>
+          <li>Built the SRE Agent Bicep infrastructure (<code>Microsoft.App/agents</code>)</li>
+          <li>Authored the chaos engineering shell scripts and load generator</li>
+          <li>Created this GitHub Pages site</li>
+        </ul>
+      </div>
+
+      <div class="tool-card teal reveal reveal-delay-3">
+        <span class="tool-icon">🤖</span>
+        <div class="tool-name">Copilot Coding Agent</div>
+        <div class="badge badge-teal" style="margin-bottom:12px">Autonomous Developer</div>
+        <p class="tool-desc">
+          The closer. When Azure SRE Agent detects a production incident and files
+          a GitHub Issue with full root cause analysis, Copilot Coding Agent picks
+          it up autonomously — reads the issue, authors the fix, and opens a PR.
+        </p>
+        <ul class="tool-examples">
+          <li>Reads SRE Agent issues assigned to <code>@copilot</code></li>
+          <li>Performs independent code analysis to validate the root cause</li>
+          <li>Implements targeted, minimal fixes without human guidance</li>
+          <li>Creates a well-described PR referencing the incident issue</li>
+          <li>Human review + merge = production restored ✅</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ──────────────────────── ARCHITECTURE ────────────────────────── -->
+<section id="arch" class="section" style="padding-top:0">
+  <div class="container">
+    <p class="section-label reveal">The Application</p>
+    <h2 class="section-title reveal reveal-delay-1">Three Rivers Bank<br /><span class="highlight">Credit Card Portal</span></h2>
+    <p class="section-desc reveal reveal-delay-2">
+      A real-world, production-grade full-stack app with Spring Boot backend, React
+      frontend, and Azure Container Apps hosting — complete with CI/CD, health checks,
+      and BIAN API v13 integration.
+    </p>
+
+    <div class="arch-diagram reveal">
+      <div class="arch-row">
+        <div class="arch-label">User</div>
+        <div class="arch-boxes">
+          <div class="arch-box purple">🌐 Browser</div>
+        </div>
+        <div class="arch-arrow">↓</div>
+      </div>
+      <div class="arch-row">
+        <div class="arch-label">Frontend</div>
+        <div class="arch-boxes">
+          <div class="arch-box blue">⚛️ React 18 + Vite</div>
+          <div class="arch-box blue">🗺️ React Router v6</div>
+          <div class="arch-box blue">🔄 TanStack Query</div>
+          <div class="arch-box blue">🎨 Material-UI</div>
+        </div>
+      </div>
+      <div class="arch-row">
+        <div class="arch-label">Backend</div>
+        <div class="arch-boxes">
+          <div class="arch-box teal">☕ Spring Boot 3.2</div>
+          <div class="arch-box teal">🗄️ H2 In-Memory DB</div>
+          <div class="arch-box teal">🔌 Feign BIAN Client</div>
+          <div class="arch-box teal">⚡ Resilience4j</div>
+        </div>
+      </div>
+      <div class="arch-row">
+        <div class="arch-label">Infra</div>
+        <div class="arch-boxes">
+          <div class="arch-box yellow">📦 Azure Container Apps</div>
+          <div class="arch-box yellow">🐳 Azure Container Registry</div>
+          <div class="arch-box yellow">📊 Log Analytics</div>
+        </div>
+      </div>
+      <div class="arch-row">
+        <div class="arch-label">CI/CD</div>
+        <div class="arch-boxes">
+          <div class="arch-box green">🔧 GitHub Actions CI</div>
+          <div class="arch-box green">🚀 GitHub Actions CD</div>
+          <div class="arch-box green">🏗️ Terraform + azd</div>
+        </div>
+      </div>
+      <div class="arch-row">
+        <div class="arch-label">Observability</div>
+        <div class="arch-boxes">
+          <div class="arch-box purple">🤖 Azure SRE Agent</div>
+          <div class="arch-box purple">🔔 Azure Monitor Alerts</div>
+          <div class="arch-box purple">📈 KQL Log Queries</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ──────────────────────── SRE AGENT ───────────────────────────── -->
+<section id="sre" class="section">
+  <div class="container">
+    <p class="section-label reveal">Operations</p>
+    <h2 class="section-title reveal reveal-delay-1">Azure SRE Agent<br /><span class="highlight">Never Sleeps</span></h2>
+    <p class="section-desc reveal reveal-delay-2">
+      Azure SRE Agent is a production-grade AI that monitors your application 24/7,
+      correlates logs and metrics with source code, performs root cause analysis, and
+      proactively routes fixes to the right agent — all without human intervention.
+    </p>
+
+    <div class="sre-grid">
+      <div class="sre-features reveal">
+        <div class="sre-feature">
+          <div class="sre-feature-icon icon-teal">👁️</div>
+          <div>
+            <div class="sre-feature-title">Proactive Health Monitoring</div>
+            <div class="sre-feature-desc">
+              Three scheduled tasks run continuously: health checks every 30 minutes,
+              configuration drift detection every 6 hours, and a daily reliability
+              report at 8am UTC. No alert required — it checks proactively.
+            </div>
+          </div>
+        </div>
+        <div class="sre-feature">
+          <div class="sre-feature-icon icon-red">🚨</div>
+          <div>
+            <div class="sre-feature-title">Intelligent Alert Routing</div>
+            <div class="sre-feature-desc">
+              Three Azure Monitor alert rules fire into the SRE Agent: HTTP 5xx spike
+              (severity 2), container restarts / OOM kills (severity 1), and high
+              response time (severity 3). Each routes to the <code>incident-handler</code> subagent.
+            </div>
+          </div>
+        </div>
+        <div class="sre-feature">
+          <div class="sre-feature-icon icon-blue">🔍</div>
+          <div>
+            <div class="sre-feature-title">Code-Aware Root Cause Analysis</div>
+            <div class="sre-feature-desc">
+              Connected to the GitHub repository via OAuth, the <code>code-analyzer</code> subagent
+              queries KQL logs, reads container metrics, then cross-references the
+              source code to pinpoint the exact file and line that caused the incident.
+            </div>
+          </div>
+        </div>
+        <div class="sre-feature">
+          <div class="sre-feature-icon icon-purple">📋</div>
+          <div>
+            <div class="sre-feature-title">Automated Issue Creation</div>
+            <div class="sre-feature-desc">
+              After RCA is complete, the agent creates a structured GitHub Issue with
+              incident summary, affected metrics, error traces, root cause, and a fix
+              recommendation — then assigns it directly to <code>@copilot</code>.
+            </div>
+          </div>
+        </div>
+        <div class="sre-feature">
+          <div class="sre-feature-icon icon-green">⚙️</div>
+          <div>
+            <div class="sre-feature-title">Subagent Architecture</div>
+            <div class="sre-feature-desc">
+              Two specialized subagents with distinct responsibilities:
+              <strong>incident-handler</strong> (triage, issue creation, escalation) and
+              <strong>code-analyzer</strong> (deep code inspection, patch suggestions, PR review).
+            </div>
+          </div>
+        </div>
+        <div class="sre-feature">
+          <div class="sre-feature-icon icon-yellow">📚</div>
+          <div>
+            <div class="sre-feature-title">Knowledge-Grounded Decisions</div>
+            <div class="sre-feature-desc">
+              Two knowledge base documents ground every investigation: the HTTP error
+              runbook (incident response procedures) and the app architecture reference
+              (service topology, dependencies, expected behavior).
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sre-panel reveal reveal-delay-2">
+        <div class="sre-panel-header">
+          <div class="code-dots">
+            <span class="sre-panel-dot dot-red"></span>
+            <span class="sre-panel-dot dot-yellow"></span>
+            <span class="sre-panel-dot dot-green"></span>
+          </div>
+          <span>sre.azure.com — incident-handler log</span>
+        </div>
+        <div class="sre-panel-body" id="sre-log">
+          <div class="sre-log-line"><span class="sre-log-time">08:31:02 </span><span class="sre-log-level level-info">[INFO]  </span><span class="sre-log-msg">health-check task started</span></div>
+          <div class="sre-log-line"><span class="sre-log-time">08:31:04 </span><span class="sre-log-level level-info">[INFO]  </span><span class="sre-log-msg">querying backend: GET /actuator/health</span></div>
+          <div class="sre-log-line"><span class="sre-log-time">08:31:09 </span><span class="sre-log-level level-warn">[WARN]  </span><span class="sre-log-msg">response time: 7,842ms (threshold: 3,000ms)</span></div>
+          <div class="sre-log-line"><span class="sre-log-time">08:31:12 </span><span class="sre-log-level level-warn">[WARN]  </span><span class="sre-log-msg">error rate: 34% (last 10min)</span></div>
+          <div class="sre-log-line"><span class="sre-log-time">08:31:13 </span><span class="sre-log-level level-alert">[ALERT] </span><span class="sre-log-msg">escalating → code-analyzer subagent</span></div>
+          <div class="sre-log-line"><span class="sre-log-time">08:31:16 </span><span class="sre-log-level level-info">[INFO]  </span><span class="sre-log-msg">KQL: querying ContainerAppConsoleLogs...</span></div>
+          <div class="sre-log-line"><span class="sre-log-time">08:31:21 </span><span class="sre-log-level level-info">[INFO]  </span><span class="sre-log-msg">found: Thread.sleep in getAllCreditCards()</span></div>
+          <div class="sre-log-line"><span class="sre-log-time">08:31:22 </span><span class="sre-log-level level-info">[INFO]  </span><span class="sre-log-msg">reading: CreditCardService.java (GitHub)</span></div>
+          <div class="sre-log-line"><span class="sre-log-time">08:31:28 </span><span class="sre-log-level level-alert">[ALERT] </span><span class="sre-log-msg">ROOT CAUSE: artificial sleep(0-9000ms) line 47</span></div>
+          <div class="sre-log-line"><span class="sre-log-time">08:31:30 </span><span class="sre-log-level level-info">[INFO]  </span><span class="sre-log-msg">creating GitHub issue #42...</span></div>
+          <div class="sre-log-line"><span class="sre-log-time">08:31:31 </span><span class="sre-log-level level-fix">[FIX]   </span><span class="sre-log-msg">issue assigned to @copilot ✓</span></div>
+          <div class="sre-log-line"><span class="sre-log-time">08:31:32 </span><span class="sre-log-level level-fix">[FIX]   </span><span class="sre-log-msg">label: sre-agent-detected applied ✓</span></div>
+          <div class="sre-log-line" id="cursor-line"><span class="sre-log-time">08:31:33 </span><span class="sre-log-level level-info">[INFO]  </span><span class="sre-log-msg">awaiting Copilot fix PR...<span class="typed-cursor">▋</span></span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scheduled tasks table -->
+    <div class="reveal" style="margin-top: 60px;">
+      <h3 style="font-size:20px; font-weight:700; margin-bottom:4px;">Scheduled Proactive Tasks</h3>
+      <p style="color:var(--muted); font-size:14px; margin-bottom:20px;">Running continuously — no alert required to investigate.</p>
+      <table class="tasks-table">
+        <thead>
+          <tr>
+            <th>Task</th>
+            <th>Schedule</th>
+            <th>What it checks</th>
+            <th>On issue found</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>three-rivers-health-check</strong></td>
+            <td><span class="badge badge-teal">Every 30 min</span></td>
+            <td>Backend/frontend health, error rates, response time, container restarts</td>
+            <td>Escalates to <code>code-analyzer</code> + <code>incident-handler</code></td>
+            <td><span class="status-dot"></span>Active</td>
+          </tr>
+          <tr>
+            <td><strong>three-rivers-config-drift</strong></td>
+            <td><span class="badge badge-blue">Every 6 hours</span></td>
+            <td>Env vars, container resource limits, image versions vs. expected</td>
+            <td>Creates GitHub issue via <code>incident-handler</code></td>
+            <td><span class="status-dot"></span>Active</td>
+          </tr>
+          <tr>
+            <td><strong>daily-reliability-report</strong></td>
+            <td><span class="badge badge-purple">Daily 8am UTC</span></td>
+            <td>24h metrics summary, 7-day degradation trends, PR correlation</td>
+            <td>Reliability recommendations posted to GitHub</td>
+            <td><span class="status-dot"></span>Active</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ──────────────────────── THE AGENTIC LOOP ────────────────────── -->
+<section id="loop" class="section">
+  <div class="container">
+    <div class="loop-header">
+      <p class="section-label reveal">The Heart of Agentic DevOps</p>
+      <h2 class="section-title reveal reveal-delay-1">From Defect to Fix —<br /><span class="highlight">Zero Human Intervention</span></h2>
+      <p class="section-desc reveal reveal-delay-2">
+        Watch how a breaking change introduced in production triggers a fully automated
+        pipeline: chaos → detection → RCA → fix → recovery. Humans only review the PR.
+      </p>
+    </div>
+
+    <div class="timeline">
+
+      <div class="tl-step reveal">
+        <div class="tl-content">
+          <div class="tl-title">🔴 Breaking Change Reaches Production</div>
+          <div class="tl-desc">
+            A GitHub Agentic Workflow (<code>chaos-engineering.lock.yml</code>) autonomously
+            selects a chaos scenario, modifies the target file to introduce a realistic
+            bug (e.g., <code>Thread.sleep(random * 9000)</code> in the card service), and
+            opens a PR with a plausible commit message. Once merged, CI/CD deploys the
+            broken code to Azure Container Apps.
+          </div>
+          <div class="tl-actor actor-chaos">🌪️ GitHub Agentic Workflow</div>
+        </div>
+        <div class="tl-step-num step-red">1</div>
+        <div style="flex:1"></div>
+      </div>
+
+      <div class="tl-step right reveal">
+        <div style="flex:1"></div>
+        <div class="tl-step-num step-yellow">2</div>
+        <div class="tl-content">
+          <div class="tl-title">🟡 CI/CD Deploys the Defect</div>
+          <div class="tl-desc">
+            The GitHub Actions CD workflow triggers on merge to <code>main</code>.
+            <code>azd up</code> runs Terraform to apply infrastructure changes and deploy
+            updated container images to Azure Container Apps. The defect is now live.
+            Load continues arriving — errors begin accumulating.
+          </div>
+          <div class="tl-actor actor-cicd">⚙️ GitHub Actions CD</div>
+        </div>
+      </div>
+
+      <div class="tl-step reveal">
+        <div class="tl-content">
+          <div class="tl-title">🚨 Azure Monitor Alert Fires</div>
+          <div class="tl-desc">
+            Within minutes, Azure Monitor detects the anomaly and fires an alert.
+            For a slow-response scenario, the <em>High Response Time</em> alert triggers
+            (severity 3). For an OOM scenario, the <em>Container Restart</em> alert fires
+            (severity 1). The alert routes directly to the SRE Agent's response plan.
+          </div>
+          <div class="tl-actor actor-sre">🤖 Azure Monitor → SRE Agent</div>
+        </div>
+        <div class="tl-step-num step-red">3</div>
+        <div style="flex:1"></div>
+      </div>
+
+      <div class="tl-step right reveal">
+        <div style="flex:1"></div>
+        <div class="tl-step-num step-teal">4</div>
+        <div class="tl-content">
+          <div class="tl-title">🔍 SRE Agent Investigates</div>
+          <div class="tl-desc">
+            The <code>incident-handler</code> subagent wakes up and delegates deep analysis
+            to <code>code-analyzer</code>. It queries <code>ContainerAppConsoleLogs</code> via KQL,
+            reads container metrics, then cross-references the GitHub repository to find
+            the exact commit and code change that caused the degradation. Average time to
+            root cause: <strong>&lt; 2 minutes</strong>.
+          </div>
+          <div class="tl-actor actor-sre">🤖 SRE Agent — code-analyzer subagent</div>
+        </div>
+      </div>
+
+      <div class="tl-step reveal">
+        <div class="tl-content">
+          <div class="tl-title">📋 GitHub Issue Created with Full RCA</div>
+          <div class="tl-desc">
+            The agent creates a structured GitHub Issue containing: incident timeline,
+            affected metrics (response times, error rates), error log excerpts, root cause
+            (exact file + line), and a concrete fix recommendation. The issue is labeled
+            <code>sre-agent-detected</code> and <strong>assigned to <code>@copilot</code></strong>.
+          </div>
+          <div class="tl-actor actor-sre">🤖 SRE Agent — incident-handler subagent</div>
+        </div>
+        <div class="tl-step-num step-teal">5</div>
+        <div style="flex:1"></div>
+      </div>
+
+      <div class="tl-step right reveal">
+        <div style="flex:1"></div>
+        <div class="tl-step-num step-purple">6</div>
+        <div class="tl-content">
+          <div class="tl-title">🤖 Copilot Coding Agent Creates Fix PR</div>
+          <div class="tl-desc">
+            Copilot Coding Agent picks up the assigned issue, reads the RCA, performs
+            its own code inspection, and implements the minimal fix. It opens a PR
+            referencing the incident issue — ready for human review. No one had to
+            write the fix; Copilot authored it autonomously based on the SRE report.
+          </div>
+          <div class="tl-actor actor-copilot">✨ GitHub Copilot Coding Agent</div>
+        </div>
+      </div>
+
+      <div class="tl-step reveal">
+        <div class="tl-content">
+          <div class="tl-title">👁️ Human Reviews &amp; Approves</div>
+          <div class="tl-desc">
+            An engineer reviews the Copilot-authored PR. The PR links back to the SRE
+            Agent incident issue, making context immediately clear. CI runs, tests pass,
+            and the engineer merges. This is the <em>only</em> human step in the entire
+            incident response pipeline.
+          </div>
+          <div class="tl-actor actor-human">👤 Human Review</div>
+        </div>
+        <div class="tl-step-num step-blue">7</div>
+        <div style="flex:1"></div>
+      </div>
+
+      <div class="tl-step right reveal">
+        <div style="flex:1"></div>
+        <div class="tl-step-num step-green">8</div>
+        <div class="tl-content">
+          <div class="tl-title">✅ Production Restored</div>
+          <div class="tl-desc">
+            CD deploys the fix. The SRE Agent's next health check confirms all metrics
+            are normal: response times drop, error rates return to zero, container
+            restarts stop. The agent closes the incident and logs a recovery summary.
+            The load generator's output returns to all-green. 🟢
+          </div>
+          <div class="tl-actor actor-cicd">⚙️ GitHub Actions CD → SRE Agent confirms</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ──────────────────────── AGENTIC WORKFLOWS ───────────────────── -->
+<section id="aw" class="section" style="background: var(--surface);">
+  <div class="container">
+    <p class="section-label reveal">GitHub Agentic Workflows</p>
+    <h2 class="section-title reveal reveal-delay-1">The Chaos Engine —<br /><span class="highlight">AI That Breaks Things</span></h2>
+    <p class="section-desc reveal reveal-delay-2">
+      GitHub Agentic Workflows (<code>gh-aw</code>) compile natural-language
+      <code>.md</code> prompt files into locked workflows. The chaos engineering
+      workflow uses this to autonomously inject production-breaking changes via PR
+      — simulating how real defects slip through to production.
+    </p>
+
+    <div class="aw-stats reveal">
+      <div class="aw-stat">
+        <div class="aw-stat-val">7</div>
+        <div class="aw-stat-lbl">Successful chaos runs</div>
+      </div>
+      <div class="aw-stat">
+        <div class="aw-stat-val">57</div>
+        <div class="aw-stat-lbl">Total agent turns</div>
+      </div>
+      <div class="aw-stat">
+        <div class="aw-stat-val">35.5m</div>
+        <div class="aw-stat-lbl">Total runtime</div>
+      </div>
+      <div class="aw-stat">
+        <div class="aw-stat-val">0</div>
+        <div class="aw-stat-lbl">Errors across all runs</div>
+      </div>
+    </div>
+
+    <div class="reveal" style="margin-top:48px;">
+      <h3 style="font-size:18px; font-weight:700; margin-bottom:16px;">How it works</h3>
+      <div class="flow">
+        <div class="flow-box">
+          <div class="flow-box-icon">📝</div>
+          <div class="flow-box-title">Write Prompt</div>
+          <div class="flow-box-sub">chaos-engineering.md</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">
+          <div class="flow-box-icon">⚙️</div>
+          <div class="flow-box-title">Compile</div>
+          <div class="flow-box-sub">gh aw compile</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">
+          <div class="flow-box-icon">🔒</div>
+          <div class="flow-box-title">Lock File</div>
+          <div class="flow-box-sub">.lock.yml (signed)</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">
+          <div class="flow-box-icon">▶️</div>
+          <div class="flow-box-title">Trigger</div>
+          <div class="flow-box-sub">gh workflow run</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">
+          <div class="flow-box-icon">🤖</div>
+          <div class="flow-box-title">Agent Executes</div>
+          <div class="flow-box-sub">Sandboxed + firewalled</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">
+          <div class="flow-box-icon">🔀</div>
+          <div class="flow-box-title">Creates PR</div>
+          <div class="flow-box-sub">chaos/* branch</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="code-block reveal">
+      <div class="code-header">
+        <div class="code-dots">
+          <span style="background:#ff5f57"></span>
+          <span style="background:#febc2e"></span>
+          <span style="background:#28c840"></span>
+        </div>
+        <span class="code-filename">.github/workflows/chaos-engineering.md</span>
+      </div>
+      <div><span class="comment">---</span></div>
+      <div><span class="key">description</span><span class="comment">: ></span></div>
+      <div>&nbsp;&nbsp;<span class="string">Chaos engineering workflow — introduces breaking changes</span></div>
+      <div>&nbsp;&nbsp;<span class="string">for Azure SRE Agent demo. Creates a PR with a realistic fault.</span></div>
+      <div><span class="key">on</span><span class="comment">:</span></div>
+      <div>&nbsp;&nbsp;<span class="key">workflow_dispatch</span><span class="comment">: {}</span></div>
+      <div><span class="key">tools</span><span class="comment">:</span></div>
+      <div>&nbsp;&nbsp;<span class="key">github</span><span class="comment">:</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">toolsets</span><span class="comment">: [default]</span></div>
+      <div><span class="key">safe-outputs</span><span class="comment">:</span></div>
+      <div>&nbsp;&nbsp;<span class="key">create-pull-request</span><span class="comment">:</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">max</span><span class="comment">: 1</span></div>
+      <div><span class="comment">---</span></div>
+      <div>&nbsp;</div>
+      <div><span class="heading"># Chaos Engineering — SRE Agent Demo</span></div>
+      <div>&nbsp;</div>
+      <div><span class="comment"># 1. Search for open issues with chaos-engineering label</span></div>
+      <div><span class="comment"># 2. Extract scenario from issue title</span></div>
+      <div><span class="comment"># 3. Apply the breaking change to the target file</span></div>
+      <div><span class="comment"># 4. Create a PR on chaos/{scenario}-{date} branch</span></div>
+      <div><span class="comment">#    with chaos-engineering label</span></div>
+    </div>
+
+    <div style="margin-top:24px; background:rgba(0,200,200,.06); border:1px solid rgba(0,200,200,.2); border-radius:var(--r); padding:20px;" class="reveal">
+      <strong style="color:var(--accent)">🛡️ Security Model:</strong>
+      <span style="color:var(--muted); font-size:14px;">
+        Each agentic workflow run executes inside a sandboxed container with an
+        egress firewall. Only <code>api.github.com</code> and <code>api.githubcopilot.com</code>
+        are permitted. All other outbound traffic is blocked. Safe outputs (like
+        <code>create-pull-request</code>) are gated with a maximum of 1 PR per run.
+      </span>
+    </div>
+  </div>
+</section>
+
+<!-- ──────────────────────── CHAOS SCENARIOS ─────────────────────── -->
+<section id="chaos" class="section">
+  <div class="container">
+    <p class="section-label reveal">Chaos Engineering</p>
+    <h2 class="section-title reveal reveal-delay-1"><span class="highlight">13 Scenarios</span>,<br />All Survived</h2>
+    <p class="section-desc reveal reveal-delay-2">
+      Each scenario simulates a realistic production failure mode. The SRE Agent
+      was validated against all 13 scenarios across 7 chaos runs — detecting,
+      diagnosing, and routing every single one.
+    </p>
+
+    <div class="chaos-grid">
+      <div class="chaos-card reveal">
+        <div class="chaos-num">SCENARIO 01</div>
+        <div class="chaos-name">port-mismatch</div>
+        <div class="chaos-target">infra/terraform/main.tf</div>
+        <div class="chaos-symptoms">Target port changed to 8081. Backend fails health checks. All requests 503.</div>
+        <div style="margin-top:10px"><span class="diff-badge diff-med">Medium</span></div>
+      </div>
+      <div class="chaos-card reveal reveal-delay-1">
+        <div class="chaos-num">SCENARIO 02</div>
+        <div class="chaos-name">bad-api-url</div>
+        <div class="chaos-target">infra/terraform/main.tf</div>
+        <div class="chaos-symptoms">BIAN_API_BASE_URL set to invalid domain. Circuit breaker opens. Degraded card data.</div>
+        <div style="margin-top:10px"><span class="diff-badge diff-easy">Easy</span></div>
+      </div>
+      <div class="chaos-card reveal reveal-delay-2">
+        <div class="chaos-num">SCENARIO 03</div>
+        <div class="chaos-name">cors-broken</div>
+        <div class="chaos-target">infra/terraform/main.tf</div>
+        <div class="chaos-symptoms">CORS_ALLOWED_ORIGINS points to wrong origin. Browser blocks all API calls. Blank pages.</div>
+        <div style="margin-top:10px"><span class="diff-badge diff-med">Medium</span></div>
+      </div>
+      <div class="chaos-card reveal">
+        <div class="chaos-num">SCENARIO 04</div>
+        <div class="chaos-name">low-resources</div>
+        <div class="chaos-target">infra/terraform/main.tf</div>
+        <div class="chaos-symptoms">CPU→0.1 cores, RAM→0.2Gi. OOM kills, container restarts, intermittent 503s.</div>
+        <div style="margin-top:10px"><span class="diff-badge diff-easy">Easy</span></div>
+      </div>
+      <div class="chaos-card reveal reveal-delay-1">
+        <div class="chaos-num">SCENARIO 05</div>
+        <div class="chaos-name">health-check-disabled</div>
+        <div class="chaos-target">application.yml</div>
+        <div class="chaos-symptoms">Health endpoint removed from actuator. Container Apps marks app unhealthy. Restart loop.</div>
+        <div style="margin-top:10px"><span class="diff-badge diff-med">Medium</span></div>
+      </div>
+      <div class="chaos-card reveal reveal-delay-2">
+        <div class="chaos-num">SCENARIO 06</div>
+        <div class="chaos-name">bad-image-tag</div>
+        <div class="chaos-target">docker/backend.Dockerfile</div>
+        <div class="chaos-symptoms">Invalid base image tag. Docker build fails or image pull fails. Container never starts.</div>
+        <div style="margin-top:10px"><span class="diff-badge diff-easy">Easy</span></div>
+      </div>
+      <div class="chaos-card reveal">
+        <div class="chaos-num">SCENARIO 07</div>
+        <div class="chaos-name">db-corruption</div>
+        <div class="chaos-target">data.sql</div>
+        <div class="chaos-symptoms">SQL syntax error in seed data. Spring Boot fails to start. All API calls return 500.</div>
+        <div style="margin-top:10px"><span class="diff-badge diff-hard">Hard</span></div>
+      </div>
+      <div class="chaos-card reveal reveal-delay-1">
+        <div class="chaos-num">SCENARIO 08</div>
+        <div class="chaos-name">profile-wrong</div>
+        <div class="chaos-target">infra/terraform/main.tf</div>
+        <div class="chaos-symptoms">SPRING_PROFILES_ACTIVE set to nonexistent. Default profile used. Behavioral drift.</div>
+        <div style="margin-top:10px"><span class="diff-badge diff-med">Medium</span></div>
+      </div>
+      <div class="chaos-card reveal reveal-delay-2">
+        <div class="chaos-num">SCENARIO 09</div>
+        <div class="chaos-name">circuit-breaker-disabled</div>
+        <div class="chaos-target">application.yml</div>
+        <div class="chaos-symptoms">Failure threshold 100%, timeout 60s, retries 10×. Thread pool exhaustion under load.</div>
+        <div style="margin-top:10px"><span class="diff-badge diff-hard">Hard</span></div>
+      </div>
+      <div class="chaos-card reveal">
+        <div class="chaos-num">SCENARIO 10</div>
+        <div class="chaos-name">frontend-api-broken</div>
+        <div class="chaos-target">infra/terraform/main.tf</div>
+        <div class="chaos-symptoms">VITE_API_BASE_URL points to wrong host. Frontend loads but all API calls fail.</div>
+        <div style="margin-top:10px"><span class="diff-badge diff-easy">Easy</span></div>
+      </div>
+      <div class="chaos-card reveal reveal-delay-1">
+        <div class="chaos-num">SCENARIO 11</div>
+        <div class="chaos-name">backend-500</div>
+        <div class="chaos-target">CreditCardService.java</div>
+        <div class="chaos-symptoms">Forced NullPointerException in convertToDto(). Every GET /api/cards returns HTTP 500.</div>
+        <div style="margin-top:10px"><span class="diff-badge diff-easy">Easy</span></div>
+      </div>
+      <div class="chaos-card reveal reveal-delay-2">
+        <div class="chaos-num">SCENARIO 12</div>
+        <div class="chaos-name">backend-image-tag</div>
+        <div class="chaos-target">infra/terraform/main.tf</div>
+        <div class="chaos-symptoms">Image hardcoded to nonexistent tag. Revision fails to start. All requests return 503.</div>
+        <div style="margin-top:10px"><span class="diff-badge diff-easy">Easy</span></div>
+      </div>
+      <div class="chaos-card reveal">
+        <div class="chaos-num">SCENARIO 13</div>
+        <div class="chaos-name">backend-slow-response</div>
+        <div class="chaos-target">CreditCardService.java</div>
+        <div class="chaos-symptoms">Random Thread.sleep(0–9000ms) in getAllCreditCards(). Frontend hangs. High latency alerts fire.</div>
+        <div style="margin-top:10px"><span class="diff-badge diff-med">Medium</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ──────────────────────── CTA ─────────────────────────────────── -->
+<section id="cta" class="section">
+  <div class="container">
+    <p class="section-label reveal" style="text-align:center">Get Started</p>
+    <h2 class="section-title reveal reveal-delay-1" style="text-align:center">
+      Run the Demo<br /><span class="highlight">in 3 Steps</span>
+    </h2>
+
+    <div class="code-block reveal" style="max-width:680px; margin: 40px auto;">
+      <div class="code-header">
+        <div class="code-dots">
+          <span style="background:#ff5f57"></span>
+          <span style="background:#febc2e"></span>
+          <span style="background:#28c840"></span>
+        </div>
+        <span class="code-filename">terminal</span>
+      </div>
+      <div><span class="comment"># 1. Deploy the app to Azure</span></div>
+      <div><span class="keyword">az</span> login &amp;&amp; <span class="keyword">azd</span> auth login</div>
+      <div><span class="keyword">azd</span> up</div>
+      <div>&nbsp;</div>
+      <div><span class="comment"># 2. Deploy the SRE Agent</span></div>
+      <div><span class="keyword">cd</span> sre &amp;&amp; <span class="keyword">azd</span> up</div>
+      <div><span class="keyword">bash</span> scripts/post-provision.sh</div>
+      <div>&nbsp;</div>
+      <div><span class="comment"># 3. Trigger chaos and watch the loop</span></div>
+      <div><span class="keyword">gh</span> issue create <span class="value">--title</span> <span class="string">"chaos: backend-slow-response"</span> \</div>
+      <div>&nbsp;&nbsp;<span class="value">--label</span> <span class="string">"chaos-engineering"</span></div>
+      <div><span class="keyword">gh</span> workflow run chaos-engineering.lock.yml</div>
+    </div>
+
+    <div class="cta-links reveal">
+      <a class="cta-link" href="https://github.com/yortch/agentic-devops-demo" target="_blank">
+        <span class="cta-link-icon">⭐</span>
+        <div>
+          <div class="cta-link-title">GitHub Repository</div>
+          <div class="cta-link-sub">Full source code</div>
+        </div>
+      </a>
+      <a class="cta-link" href="https://github.com/yortch/agentic-devops-demo/blob/main/SRE-AGENT-SETUP.md" target="_blank">
+        <span class="cta-link-icon">📖</span>
+        <div>
+          <div class="cta-link-title">SRE Agent Setup Guide</div>
+          <div class="cta-link-sub">Step-by-step walkthrough</div>
+        </div>
+      </a>
+      <a class="cta-link" href="https://sre.azure.com" target="_blank">
+        <span class="cta-link-icon">🤖</span>
+        <div>
+          <div class="cta-link-title">Azure SRE Agent Portal</div>
+          <div class="cta-link-sub">sre.azure.com</div>
+        </div>
+      </a>
+      <a class="cta-link" href="https://github.com/github/gh-aw" target="_blank">
+        <span class="cta-link-icon">🌪️</span>
+        <div>
+          <div class="cta-link-title">GitHub Agentic Workflows</div>
+          <div class="cta-link-sub">github/gh-aw</div>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ──────────────────────── FOOTER ──────────────────────────────── -->
+<footer>
+  <div class="container">
+    <p>
+      Built with ❤️ using
+      <a href="https://github.com/features/copilot" target="_blank">GitHub Copilot</a>,
+      <a href="https://learn.microsoft.com/azure/sre-agent/" target="_blank">Azure SRE Agent</a>, and
+      <a href="https://github.com/github/gh-aw" target="_blank">GitHub Agentic Workflows</a>
+      &nbsp;·&nbsp;
+      <a href="https://github.com/yortch/agentic-devops-demo" target="_blank">View Source</a>
+    </p>
+    <p style="margin-top:8px; color:#4a5568;">
+      Three Rivers Bank · Pittsburgh, PA · 1-800-THREE-RB · business@threeriversbank.com
+    </p>
+  </div>
+</footer>
+
+<!-- ──────────────────────── SCRIPTS ─────────────────────────────── -->
+<script>
+  // Scroll progress bar
+  window.addEventListener('scroll', () => {
+    const scrolled = window.scrollY;
+    const total = document.documentElement.scrollHeight - window.innerHeight;
+    document.getElementById('progress').style.width = (scrolled / total * 100) + '%';
+  });
+
+  // Reveal on scroll
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -48px 0px' });
+
+  document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+  // Nav active state
+  const navLinks = document.querySelectorAll('.nav-links a');
+  const sections = document.querySelectorAll('section[id]');
+  const sectionObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(link => {
+          link.style.color = link.getAttribute('href') === '#' + entry.target.id
+            ? 'var(--text)' : '';
+        });
+      }
+    });
+  }, { threshold: 0.4 });
+  sections.forEach(s => sectionObserver.observe(s));
+
+  // Smooth scroll for nav links
+  document.querySelectorAll('a[href^="#"]').forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(link.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+</script>
+</body>
+</html>
