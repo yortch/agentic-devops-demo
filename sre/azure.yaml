@@ -1,0 +1,16 @@
+# Azure Developer CLI (azd) template for SRE Agent
+# Deploys ONLY the SRE Agent — the application must already be deployed.
+#
+# Usage:
+#   cd sre
+#   azd env new sre-three-rivers
+#   azd env set APP_RESOURCE_GROUP <your-app-resource-group>
+#   azd up
+#   bash scripts/post-provision.sh
+name: sre-three-rivers-bank
+metadata:
+  template: sre-three-rivers-bank@1.0.0
+
+infra:
+  provider: bicep
+  path: infra

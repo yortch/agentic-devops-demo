@@ -1,7 +1,7 @@
 name: "🤖 SRE Agent Incident Report"
 description: "Issue template for Azure SRE Agent to report detected incidents with root cause analysis"
 title: "[SRE Agent] "
-labels: ["sre-agent-detected", "copilot:fix-this"]
+labels: ["sre-agent-detected"]
 assignees:
   - copilot
 body:

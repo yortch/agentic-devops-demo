@@ -148,8 +148,6 @@ resource "azurerm_container_app" "backend" {
         path      = "/actuator/health"
         port      = 8080
 
-        initial_delay            = 10
-        period_seconds           = 10
         timeout                  = 5
         success_count_threshold  = 1
         failure_count_threshold  = 3
@@ -160,8 +158,6 @@ resource "azurerm_container_app" "backend" {
         path      = "/actuator/health"
         port      = 8080
 
-        initial_delay            = 10
-        period_seconds           = 10
         timeout                  = 5
         failure_count_threshold  = 10
       }
@@ -242,7 +238,7 @@ resource "azurerm_container_app" "frontend" {
 
       env {
         name  = "VITE_API_BASE_URL"
-        value = "https://${azurerm_container_app.backend.ingress[0].fqdn}/api"
+        value = "https://${replace(azurerm_container_app.backend.ingress[0].fqdn, "/--[^.]+/", "")}/api"
       }
     }
   }
