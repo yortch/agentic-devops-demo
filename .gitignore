@@ -1,7 +1,6 @@
 node_modules
 playwright-report
 test-results
-package-lock.json
 
 # Azure Developer CLI (local environment state)
 .azd/
