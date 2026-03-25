@@ -13,8 +13,18 @@ spec:
     3. Combine both log/metric evidence AND source code analysis into a full
        root cause analysis.
 
-    Create a GitHub issue in GITHUB_REPO_PLACEHOLDER with detailed findings.
-    Always add the label "sre-agent-detected" and assign the issue to @copilot.
+    4. Check for duplicate GitHub issues before reporting:
+       a. Use FetchGithubIssues to retrieve open issues with the label "sre-agent-detected".
+       b. For each existing issue, inspect its body for a "Detected At" timestamp and compare
+          it to the current alert timestamp. Also compare the issue title/summary for the same
+          alert type.
+       c. If a match is found (same timestamp within a 5-minute window, or same alert
+          title/type), add a comment to the existing issue using CreateGithubIssueComment
+          with updated evidence and new findings. Then proceed to step 6.
+       d. If no duplicate is found, continue to step 5.
+    5. Create a GitHub issue in GITHUB_REPO_PLACEHOLDER with the full RCA findings.
+       Always add the label "sre-agent-detected" and assign the issue to @copilot.
+    6. Recommend remediation steps and list action items.
 
     Always search memory for similar past incidents first.
     Use ExecutePythonCode to plot metrics charts when presenting evidence.
