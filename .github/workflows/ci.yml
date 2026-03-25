@@ -25,6 +25,14 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: Check for Thread.sleep in production code
+        run: |
+          if grep -rn "Thread\.sleep" backend/src/main/; then
+            echo "ERROR: Thread.sleep detected in production source code. Remove it before merging."
+            exit 1
+          fi
+          echo "No Thread.sleep found in production source code."
+
       - name: Build with Maven
         run: |
           cd backend
