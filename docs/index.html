@@ -138,17 +138,16 @@
     .btn-secondary:hover { border-color: rgba(255,255,255,.2); background: rgba(255,255,255,.05); }
 
     /* stats bar */
-    .hero-stats {
-      display: flex; gap: 0; justify-content: center;
+    .hero-blurb {
+      max-width: 720px; margin: 32px auto 0;
       background: var(--surface2); border: 1px solid var(--border);
-      border-radius: var(--r); overflow: hidden; max-width: 720px; margin: 0 auto;
+      border-radius: var(--r); padding: 24px 32px;
+      text-align: left; display: flex; flex-direction: column; gap: 12px;
     }
-    .hero-stat {
-      flex: 1; padding: 20px 24px; text-align: center; border-right: 1px solid var(--border);
-    }
-    .hero-stat:last-child { border-right: none; }
-    .hero-stat-val { font-size: 28px; font-weight: 800; color: var(--accent); line-height: 1; }
-    .hero-stat-lbl { font-size: 12px; color: var(--muted); margin-top: 4px; font-weight: 500; }
+    .hero-blurb p { font-size: 14px; line-height: 1.8; color: var(--muted); margin: 0; }
+    .hero-blurb strong { color: var(--text); }
+    .hero-blurb a { color: var(--accent); text-decoration: none; }
+    .hero-blurb a:hover { text-decoration: underline; }
 
     /* ─── Section: Built with Copilot ──────────────────────────────── */
     .built-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-top: 60px; }
@@ -395,9 +394,7 @@
       .tl-num-col { justify-content: flex-start; padding-top: 0; margin-bottom: 4px; }
       .tl-screenshot-img { aspect-ratio: unset; min-height: 100px; }
       .nav-links { display: none; }
-      .hero-stats { flex-direction: column; }
-      .hero-stat { border-right: none; border-bottom: 1px solid var(--border); }
-      .hero-stat:last-child { border-bottom: none; }
+      .hero-blurb { padding: 20px; }
       .flow { flex-direction: column; }
       .flow-arrow { transform: rotate(90deg); }
     }
@@ -455,24 +452,20 @@
         ⭐ GitHub Repository
       </a>
     </div>
-    <div class="hero-stats">
-      <div class="hero-stat">
-        <div class="hero-stat-val">3</div>
-        <div class="hero-stat-lbl">Copilot Agents</div>
+    <div class="hero-blurb">
+        <p>
+          The software industry has embraced AI-assisted development — but we often forget the <strong>Ops side</strong>.
+          This repo demonstrates <strong>Agentic workflows across the full SDLC</strong>: from writing code with
+          <a href="https://github.com/features/copilot" target="_blank">GitHub Copilot</a>, to deploying with
+          <a href="https://docs.github.com/en/copilot/using-github-copilot/using-github-copilot-in-the-command-line" target="_blank">Copilot CLI</a>,
+          to autonomous incident response with <a href="https://learn.microsoft.com/en-us/azure/sre-agent/" target="_blank">Azure SRE Agent</a>.
+        </p>
+        <p>
+          With Azure SRE Agent, you can fully automate incident detection, investigation, and remediation.
+          By the time you page your on-call SRE, the agent will already have a <strong>root cause analysis</strong>
+          and a <strong>Copilot Coding Agent working on a potential fix</strong> — ready for human review and merge.
+        </p>
       </div>
-      <div class="hero-stat">
-        <div class="hero-stat-val">7</div>
-        <div class="hero-stat-lbl">Chaos Runs</div>
-      </div>
-      <div class="hero-stat">
-        <div class="hero-stat-val">13</div>
-        <div class="hero-stat-lbl">Chaos Scenarios</div>
-      </div>
-      <div class="hero-stat">
-        <div class="hero-stat-val">57</div>
-        <div class="hero-stat-lbl">Agent Turns</div>
-      </div>
-    </div>
   </div>
 </section>
 
