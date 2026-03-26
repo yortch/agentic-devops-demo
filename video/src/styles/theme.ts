@@ -66,7 +66,7 @@ export const FONT = {
 };
 
 export const VIDEO = {
-  width: 1920,
+  width: 1080,
   height: 1080,
   fps: 30,
 };

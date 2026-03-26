@@ -101,13 +101,38 @@ export const CtaScene: React.FC = () => {
           From chaos to recovery — fully autonomous incident response
         </div>
 
-        {/* GitHub URL with shimmer */}
+        {/* GitHub Pages link */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
             gap: 12,
             marginTop: 16,
+            borderRadius: 12,
+            padding: "12px 28px",
+            background: "rgba(255,255,255,0.04)",
+            border: `1px solid ${COLORS.gray}`,
+          }}
+        >
+          <div style={{ fontSize: 34 }}>🌐</div>
+          <div
+            style={{
+              fontSize: 34,
+              fontFamily: FONT.mono,
+              fontWeight: 600,
+              color: COLORS.accent,
+            }}
+          >
+            yortch.github.io/agentic-devops-demo
+          </div>
+        </div>
+
+        {/* GitHub repo URL with shimmer */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
             position: "relative",
             overflow: "hidden",
             borderRadius: 12,

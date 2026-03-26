@@ -90,10 +90,11 @@ The following prompt was given to GitHub Copilot CLI to build this video:
 
 | Property | Value |
 |----------|-------|
-| Resolution | 1920 × 1080 (16:9) |
+| Resolution | 1080 × 1080 (1:1 square) |
 | Frame Rate | 30 fps |
 | Duration | ~71 seconds |
 | Format | MP4 (H.264) |
+| Optimized for | LinkedIn / smartphone viewing |
 
 ## Scene Breakdown
 

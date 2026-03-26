@@ -99,25 +99,24 @@ export const StepScene: React.FC<StepSceneProps> = ({
     <AbsoluteFill
       style={{
         opacity: fadeOut,
-        padding: "50px 60px",
+        padding: "40px 50px",
         display: "flex",
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 50,
+        flexDirection: "column",
+        gap: 20,
       }}
     >
-      {/* Left panel: step info */}
+      {/* Top panel: step info */}
       <div
         style={{
-          flex: "0 0 520px",
+          flex: "0 0 auto",
           display: "flex",
           flexDirection: "column",
-          gap: 16,
+          gap: 10,
           opacity: textOpacity,
           transform: `translateY(${textY}px)`,
         }}
       >
-        {/* Step badge */}
+        {/* Step badge + title row */}
         <div
           style={{
             display: "flex",
@@ -130,15 +129,15 @@ export const StepScene: React.FC<StepSceneProps> = ({
         >
           <div
             style={{
-              width: 64,
-              height: 64,
+              width: 52,
+              height: 52,
               borderRadius: "50%",
               backgroundColor: `${color}20`,
               border: `2px solid ${color}`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 30,
+              fontSize: 24,
               fontWeight: 700,
               fontFamily: FONT.sans,
               color,
@@ -146,56 +145,60 @@ export const StepScene: React.FC<StepSceneProps> = ({
           >
             {stepNum}
           </div>
-          <div style={{ fontSize: 36 }}>{emoji}</div>
+          <div style={{ fontSize: 28 }}>{emoji}</div>
+          <div
+            style={{
+              fontSize: 32,
+              fontWeight: 700,
+              fontFamily: FONT.sans,
+              color: COLORS.brightWhite,
+              lineHeight: 1.2,
+            }}
+          >
+            {title}
+          </div>
         </div>
 
-        {/* Title */}
+        {/* Description + actor row */}
         <div
           style={{
-            fontSize: 40,
-            fontWeight: 700,
-            fontFamily: FONT.sans,
-            color: COLORS.brightWhite,
-            lineHeight: 1.2,
+            display: "flex",
+            alignItems: "center",
+            gap: 16,
           }}
         >
-          {title}
-        </div>
-
-        {/* Description */}
-        <div
-          style={{
-            fontSize: 22,
-            fontFamily: FONT.sans,
-            color: COLORS.dimWhite,
-            lineHeight: 1.6,
-          }}
-        >
-          {desc}
-        </div>
-
-        {/* Actor badge */}
-        <div
-          style={{
-            fontSize: 18,
-            fontFamily: FONT.sans,
-            color,
-            backgroundColor: `${color}10`,
-            border: `1px solid ${color}30`,
-            borderRadius: 24,
-            padding: "8px 20px",
-            alignSelf: "flex-start",
-          }}
-        >
-          {actor}
+          <div
+            style={{
+              flex: 1,
+              fontSize: 18,
+              fontFamily: FONT.sans,
+              color: COLORS.dimWhite,
+              lineHeight: 1.5,
+            }}
+          >
+            {desc}
+          </div>
+          <div
+            style={{
+              fontSize: 14,
+              fontFamily: FONT.sans,
+              color,
+              backgroundColor: `${color}10`,
+              border: `1px solid ${color}30`,
+              borderRadius: 20,
+              padding: "6px 16px",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {actor}
+          </div>
         </div>
       </div>
 
-      {/* Right panel: screenshot */}
+      {/* Bottom panel: screenshot */}
       <div
         style={{
           flex: 1,
-          height: panScroll ? 850 : "auto",
           overflow: "hidden",
           borderRadius: 12,
           border: `1px solid ${COLORS.gray}`,
@@ -216,10 +219,11 @@ export const StepScene: React.FC<StepSceneProps> = ({
                   borderRadius: 0,
                 }
               : {
-                  maxWidth: "100%",
-                  maxHeight: 820,
+                  width: "100%",
+                  height: "100%",
                   borderRadius: 0,
-                  objectFit: "contain",
+                  objectFit: "cover",
+                  objectPosition: "left top",
                 }
           }
         />
