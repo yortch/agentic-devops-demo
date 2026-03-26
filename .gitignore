@@ -9,3 +9,4 @@ test-results
 **/.terraform/
 **/terraform.tfstate*
 **/crash.log
+video/out/
