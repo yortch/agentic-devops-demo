@@ -259,7 +259,7 @@
       transform: translateX(-50%); opacity: .5;
     }
     .tl-step {
-      display: grid; grid-template-columns: 1fr 56px 1fr;
+      display: grid; grid-template-columns: 1fr 56px 1.4fr;
       gap: 24px; align-items: flex-start; margin-bottom: 56px; position: relative;
     }
     .tl-num-col {
@@ -274,9 +274,10 @@
     .tl-screenshot-img {
       width: 100%; aspect-ratio: 16/9; border-radius: var(--r);
       object-fit: cover; border: 1px solid var(--border);
-      transition: border-color .3s, box-shadow .3s; display: block;
+      transition: border-color .3s, box-shadow .3s, transform .2s; display: block;
+      cursor: zoom-in;
     }
-    .tl-screenshot-img:hover { border-color: rgba(0,200,200,.3); box-shadow: 0 4px 24px rgba(0,200,200,.08); }
+    .tl-screenshot-img:hover { border-color: rgba(0,200,200,.3); box-shadow: 0 4px 24px rgba(0,200,200,.08); transform: scale(1.02); }
 
     /* ─── Slide Carousel ──────────────────────────────────────────── */
     .tl-carousel {
@@ -450,6 +451,27 @@
     #progress {
       position: fixed; top: 0; left: 0; height: 3px; z-index: 200;
       background: var(--grad2); width: 0%; transition: width .1s linear;
+    }
+
+    /* ─── Lightbox ──────────────────────────────────────────────────── */
+    .lightbox-overlay {
+      position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,.88); backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity .25s ease;
+      cursor: zoom-out; padding: 24px;
+    }
+    .lightbox-overlay.active { opacity: 1; pointer-events: auto; }
+    .lightbox-overlay img {
+      max-width: 95vw; max-height: 92vh; border-radius: 8px;
+      border: 1px solid rgba(0,200,200,.3);
+      box-shadow: 0 8px 48px rgba(0,0,0,.5);
+      transform: scale(.92); transition: transform .25s ease;
+    }
+    .lightbox-overlay.active img { transform: scale(1); }
+    .lightbox-hint {
+      position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+      color: rgba(255,255,255,.5); font-size: 12px; letter-spacing: .04em;
     }
   </style>
 </head>
@@ -1196,6 +1218,28 @@
       const target = document.querySelector(link.getAttribute('href'));
       if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
+  });
+</script>
+<!-- Lightbox overlay -->
+<div class="lightbox-overlay" id="lightbox">
+  <img src="" alt="Expanded screenshot" id="lightbox-img" />
+  <div class="lightbox-hint">Click or press Esc to close</div>
+</div>
+
+<script>
+  // Lightbox
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightbox-img');
+  document.querySelectorAll('.tl-screenshot-img').forEach(img => {
+    img.addEventListener('click', () => {
+      lightboxImg.src = img.src;
+      lightboxImg.alt = img.alt;
+      lightbox.classList.add('active');
+    });
+  });
+  lightbox.addEventListener('click', () => lightbox.classList.remove('active'));
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') lightbox.classList.remove('active');
   });
 </script>
 </body>
