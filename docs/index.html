@@ -277,6 +277,65 @@
       transition: border-color .3s, box-shadow .3s; display: block;
     }
     .tl-screenshot-img:hover { border-color: rgba(0,200,200,.3); box-shadow: 0 4px 24px rgba(0,200,200,.08); }
+
+    /* ─── Slide Carousel ──────────────────────────────────────────── */
+    .tl-carousel {
+      position: relative; width: 100%; aspect-ratio: 16/10; border-radius: var(--r);
+      overflow: hidden; border: 1px solid var(--border);
+      background: var(--surface2);
+    }
+    .tl-carousel:hover { border-color: rgba(0,200,200,.3); box-shadow: 0 4px 24px rgba(0,200,200,.08); }
+    .carousel-track {
+      display: flex; width: 300%; height: 100%;
+      animation: carousel-slide 12s ease-in-out infinite;
+    }
+    .carousel-slide {
+      width: 33.333%; height: 100%; flex-shrink: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 24px 20px; gap: 10px; position: relative;
+    }
+    .carousel-slide-num {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 800; color: #fff;
+      background: rgba(255,69,96,.6); border: 2px solid rgba(255,69,96,.3);
+    }
+    .carousel-slide-icon { font-size: 32px; line-height: 1; }
+    .carousel-slide-title {
+      font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.4;
+    }
+    .carousel-slide-desc {
+      font-size: 11px; color: var(--muted); line-height: 1.6; max-width: 280px;
+    }
+    .carousel-slide-link {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; font-weight: 600; color: var(--accent);
+      text-decoration: none; padding: 4px 10px; border-radius: 999px;
+      border: 1px solid rgba(0,200,200,.25); margin-top: 4px;
+      transition: background .2s, border-color .2s;
+    }
+    .carousel-slide-link:hover { background: rgba(0,200,200,.1); border-color: var(--accent); }
+    .carousel-dots {
+      position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 6px; z-index: 2;
+    }
+    .carousel-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: rgba(255,255,255,.2);
+    }
+    .carousel-dot.active { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+    @keyframes carousel-slide {
+      0%, 28%   { transform: translateX(0); }
+      33%, 61%  { transform: translateX(-33.333%); }
+      66%, 94%  { transform: translateX(-66.666%); }
+      100%      { transform: translateX(0); }
+    }
+    @keyframes dot1 { 0%,28%{background:var(--accent);box-shadow:0 0 6px var(--accent)} 33%,100%{background:rgba(255,255,255,.2);box-shadow:none} }
+    @keyframes dot2 { 0%,28%{background:rgba(255,255,255,.2);box-shadow:none} 33%,61%{background:var(--accent);box-shadow:0 0 6px var(--accent)} 66%,100%{background:rgba(255,255,255,.2);box-shadow:none} }
+    @keyframes dot3 { 0%,61%{background:rgba(255,255,255,.2);box-shadow:none} 66%,94%{background:var(--accent);box-shadow:0 0 6px var(--accent)} 100%{background:rgba(255,255,255,.2);box-shadow:none} }
+    .carousel-dot:nth-child(1) { animation: dot1 12s ease-in-out infinite; }
+    .carousel-dot:nth-child(2) { animation: dot2 12s ease-in-out infinite; }
+    .carousel-dot:nth-child(3) { animation: dot3 12s ease-in-out infinite; }
     .tl-step-num {
       width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
@@ -781,7 +840,36 @@
           <div class="tl-actor actor-chaos">🌪️ <a href="https://github.com/github/gh-aw" target="_blank" style="color:inherit">GitHub Agentic Workflow</a></div>
         </div>
         <div class="tl-num-col"><div class="tl-step-num step-red">1</div></div>
-        <img src="images/step-1.png" alt="Step 1 screenshot" class="tl-screenshot-img" data-screenshot="step-1">
+        <div class="tl-carousel" data-screenshot="step-1">
+          <div class="carousel-track">
+            <div class="carousel-slide">
+              <div class="carousel-slide-num">1</div>
+              <div class="carousel-slide-icon">📋</div>
+              <div class="carousel-slide-title">Chaos Scenario Selected</div>
+              <div class="carousel-slide-desc">A GitHub Issue specifies the chaos scenario to inject — e.g., <code>backend-slow-response</code></div>
+              <a class="carousel-slide-link" href="https://github.com/yortch/agentic-devops-demo/issues/56" target="_blank">View Issue #56 →</a>
+            </div>
+            <div class="carousel-slide">
+              <div class="carousel-slide-num">2</div>
+              <div class="carousel-slide-icon">🤖</div>
+              <div class="carousel-slide-title">Agentic Workflow Runs</div>
+              <div class="carousel-slide-desc">The chaos workflow triggers, and the AI agent conversation shows how it selects &amp; injects the breaking change</div>
+              <a class="carousel-slide-link" href="https://github.com/yortch/agentic-devops-demo/actions/runs/23541767871" target="_blank">View Workflow Run →</a>
+            </div>
+            <div class="carousel-slide">
+              <div class="carousel-slide-num">3</div>
+              <div class="carousel-slide-icon">🔀</div>
+              <div class="carousel-slide-title">Chaos PR Created</div>
+              <div class="carousel-slide-desc">The agent opens a PR with the injected code change — ready to merge and deploy the breaking change</div>
+              <a class="carousel-slide-link" href="https://github.com/yortch/agentic-devops-demo/pull/70/files" target="_blank">View PR #70 Changes →</a>
+            </div>
+          </div>
+          <div class="carousel-dots">
+            <div class="carousel-dot"></div>
+            <div class="carousel-dot"></div>
+            <div class="carousel-dot"></div>
+          </div>
+        </div>
       </div>
 
       <!-- Step 2 -->
