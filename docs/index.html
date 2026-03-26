@@ -252,7 +252,7 @@
     .loop-header { text-align: center; margin-bottom: 80px; }
     .loop-header .section-desc { margin: 0 auto; text-align: center; }
     .timeline {
-      position: relative; max-width: 780px; margin: 0 auto;
+      position: relative; max-width: 1100px; margin: 0 auto;
     }
     .timeline::before {
       content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px;
@@ -260,16 +260,28 @@
       transform: translateX(-50%); opacity: .5;
     }
     .tl-step {
-      display: flex; gap: 40px; align-items: flex-start; margin-bottom: 48px; position: relative;
+      display: grid; grid-template-columns: 1fr 56px 1fr;
+      gap: 24px; align-items: flex-start; margin-bottom: 56px; position: relative;
     }
-    .tl-step.right { flex-direction: row-reverse; }
-    .tl-step.right .tl-content { text-align: right; }
+    .tl-num-col {
+      display: flex; justify-content: center; padding-top: 20px;
+    }
     .tl-content {
-      flex: 1; background: var(--surface); border: 1px solid var(--border);
+      background: var(--surface); border: 1px solid var(--border);
       border-radius: var(--r); padding: 24px; position: relative;
       transition: border-color .3s, box-shadow .3s;
     }
     .tl-content:hover { border-color: rgba(0,200,200,.3); box-shadow: 0 4px 24px rgba(0,200,200,.08); }
+    .tl-screenshot {
+      background: var(--surface2); border: 2px dashed rgba(255,255,255,.12);
+      border-radius: var(--r); aspect-ratio: 16/9; min-height: 140px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 20px; gap: 6px; transition: border-color .3s;
+    }
+    .tl-screenshot:hover { border-color: rgba(0,200,200,.25); }
+    .tl-screenshot-icon  { font-size: 28px; opacity: .4; line-height: 1; }
+    .tl-screenshot-title { font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--muted); opacity: .7; margin-top: 4px; }
+    .tl-screenshot-desc  { font-size: 11px; color: var(--muted); opacity: .5; line-height: 1.5; }
     .tl-step-num {
       width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
@@ -382,10 +394,10 @@
     @media (max-width: 768px) {
       .sre-grid { grid-template-columns: 1fr; }
       .aw-stats { grid-template-columns: repeat(2, 1fr); }
-      .timeline::before { left: 22px; }
-      .tl-step, .tl-step.right { flex-direction: row; }
-      .tl-step.right .tl-content { text-align: left; }
-      .tl-content { flex: 1; }
+      .timeline::before { display: none; }
+      .tl-step { grid-template-columns: 1fr; }
+      .tl-num-col { justify-content: flex-start; padding-top: 0; margin-bottom: 4px; }
+      .tl-screenshot { aspect-ratio: unset; min-height: 100px; }
       .nav-links { display: none; }
       .hero-stats { flex-direction: column; }
       .hero-stat { border-right: none; border-bottom: 1px solid var(--border); }
@@ -511,7 +523,7 @@
           <li>Designed <a href="https://github.com/yortch/agentic-devops-demo/tree/main/infra/terraform" target="_blank">Terraform modules</a> for Azure Container Apps, ACR, and Log Analytics</li>
           <li>Authored the <a href="https://github.com/yortch/agentic-devops-demo/blob/main/azure.yaml" target="_blank"><code>azd</code> project configuration</a> and preprovision hooks</li>
           <li>Built the <a href="https://github.com/yortch/agentic-devops-demo/tree/main/sre/infra" target="_blank">SRE Agent Bicep infrastructure</a> (<code>Microsoft.App/agents</code>)</li>
-          <li>Authored the <a href="https://github.com/yortch/agentic-devops-demo/blob/main/sre/scripts/chaos-engineering.sh" target="_blank">chaos engineering shell scripts</a> and load generator</li>
+          <li>Designed the <a href="https://github.com/yortch/agentic-devops-demo/blob/main/.github/workflows/chaos-engineering.md" target="_blank">chaos engineering agentic workflow</a> — 13 scenarios that inject realistic breaking changes via PR</li>
           <li>Created this GitHub Pages site</li>
         </ul>
       </div>
@@ -766,6 +778,7 @@
 
     <div class="timeline">
 
+      <!-- Step 1 -->
       <div class="tl-step reveal">
         <div class="tl-content">
           <div class="tl-title">🔴 Breaking Change Reaches the Demo App</div>
@@ -778,13 +791,16 @@
           </div>
           <div class="tl-actor actor-chaos">🌪️ <a href="https://github.com/github/gh-aw" target="_blank" style="color:inherit">GitHub Agentic Workflow</a></div>
         </div>
-        <div class="tl-step-num step-red">1</div>
-        <div style="flex:1"></div>
+        <div class="tl-num-col"><div class="tl-step-num step-red">1</div></div>
+        <div class="tl-screenshot" data-screenshot="step-1">
+          <div class="tl-screenshot-icon">📷</div>
+          <div class="tl-screenshot-title">Screenshot placeholder</div>
+          <div class="tl-screenshot-desc">Chaos engineering PR in GitHub<br>with injected breaking change</div>
+        </div>
       </div>
 
-      <div class="tl-step right reveal">
-        <div style="flex:1"></div>
-        <div class="tl-step-num step-yellow">2</div>
+      <!-- Step 2 -->
+      <div class="tl-step reveal">
         <div class="tl-content">
           <div class="tl-title">🟡 CI/CD Deploys the Defect</div>
           <div class="tl-desc">
@@ -795,8 +811,15 @@
           </div>
           <div class="tl-actor actor-cicd">⚙️ GitHub Actions CD</div>
         </div>
+        <div class="tl-num-col"><div class="tl-step-num step-yellow">2</div></div>
+        <div class="tl-screenshot" data-screenshot="step-2">
+          <div class="tl-screenshot-icon">📷</div>
+          <div class="tl-screenshot-title">Screenshot placeholder</div>
+          <div class="tl-screenshot-desc">GitHub Actions CD workflow run<br>deploying broken container image</div>
+        </div>
       </div>
 
+      <!-- Step 3 -->
       <div class="tl-step reveal">
         <div class="tl-content">
           <div class="tl-title">🚨 Azure Monitor Alert Fires</div>
@@ -808,13 +831,16 @@
           </div>
           <div class="tl-actor actor-sre">🤖 Azure Monitor → SRE Agent</div>
         </div>
-        <div class="tl-step-num step-red">3</div>
-        <div style="flex:1"></div>
+        <div class="tl-num-col"><div class="tl-step-num step-red">3</div></div>
+        <div class="tl-screenshot" data-screenshot="step-3">
+          <div class="tl-screenshot-icon">📷</div>
+          <div class="tl-screenshot-title">Screenshot placeholder</div>
+          <div class="tl-screenshot-desc">Azure Monitor alert fired<br>High Response Time · severity 3</div>
+        </div>
       </div>
 
-      <div class="tl-step right reveal">
-        <div style="flex:1"></div>
-        <div class="tl-step-num step-teal">4</div>
+      <!-- Step 4 -->
+      <div class="tl-step reveal">
         <div class="tl-content">
           <div class="tl-title">🔍 SRE Agent Investigates</div>
           <div class="tl-desc">
@@ -826,8 +852,15 @@
           </div>
           <div class="tl-actor actor-sre">🤖 SRE Agent — code-analyzer subagent</div>
         </div>
+        <div class="tl-num-col"><div class="tl-step-num step-teal">4</div></div>
+        <div class="tl-screenshot" data-screenshot="step-4">
+          <div class="tl-screenshot-icon">📷</div>
+          <div class="tl-screenshot-title">Screenshot placeholder</div>
+          <div class="tl-screenshot-desc">Azure SRE Agent investigation<br>KQL log query + code analysis</div>
+        </div>
       </div>
 
+      <!-- Step 5 -->
       <div class="tl-step reveal">
         <div class="tl-content">
           <div class="tl-title">📋 GitHub Issue Created with Full RCA</div>
@@ -839,13 +872,16 @@
           </div>
           <div class="tl-actor actor-sre">🤖 SRE Agent — incident-handler subagent</div>
         </div>
-        <div class="tl-step-num step-teal">5</div>
-        <div style="flex:1"></div>
+        <div class="tl-num-col"><div class="tl-step-num step-teal">5</div></div>
+        <div class="tl-screenshot" data-screenshot="step-5">
+          <div class="tl-screenshot-icon">📷</div>
+          <div class="tl-screenshot-title">Screenshot placeholder</div>
+          <div class="tl-screenshot-desc">GitHub Issue with full RCA<br>labeled <code>sre-agent-detected</code> · assigned to @copilot</div>
+        </div>
       </div>
 
-      <div class="tl-step right reveal">
-        <div style="flex:1"></div>
-        <div class="tl-step-num step-purple">6</div>
+      <!-- Step 6 -->
+      <div class="tl-step reveal">
         <div class="tl-content">
           <div class="tl-title">🤖 Copilot Coding Agent Creates Fix PR</div>
           <div class="tl-desc">
@@ -856,8 +892,15 @@
           </div>
           <div class="tl-actor actor-copilot">✨ GitHub Copilot Coding Agent</div>
         </div>
+        <div class="tl-num-col"><div class="tl-step-num step-purple">6</div></div>
+        <div class="tl-screenshot" data-screenshot="step-6">
+          <div class="tl-screenshot-icon">📷</div>
+          <div class="tl-screenshot-title">Screenshot placeholder</div>
+          <div class="tl-screenshot-desc">Copilot Coding Agent PR<br>fix referencing incident issue</div>
+        </div>
       </div>
 
+      <!-- Step 7 -->
       <div class="tl-step reveal">
         <div class="tl-content">
           <div class="tl-title">👁️ Human Reviews &amp; Approves</div>
@@ -869,13 +912,16 @@
           </div>
           <div class="tl-actor actor-human">👤 Human Review</div>
         </div>
-        <div class="tl-step-num step-blue">7</div>
-        <div style="flex:1"></div>
+        <div class="tl-num-col"><div class="tl-step-num step-blue">7</div></div>
+        <div class="tl-screenshot" data-screenshot="step-7">
+          <div class="tl-screenshot-icon">📷</div>
+          <div class="tl-screenshot-title">Screenshot placeholder</div>
+          <div class="tl-screenshot-desc">PR review · CI passing<br>ready for human approval &amp; merge</div>
+        </div>
       </div>
 
-      <div class="tl-step right reveal">
-        <div style="flex:1"></div>
-        <div class="tl-step-num step-green">8</div>
+      <!-- Step 8 -->
+      <div class="tl-step reveal">
         <div class="tl-content">
           <div class="tl-title">✅ Production Restored</div>
           <div class="tl-desc">
@@ -885,6 +931,12 @@
             The load generator's output returns to all-green. 🟢
           </div>
           <div class="tl-actor actor-cicd">⚙️ GitHub Actions CD → SRE Agent confirms</div>
+        </div>
+        <div class="tl-num-col"><div class="tl-step-num step-green">8</div></div>
+        <div class="tl-screenshot" data-screenshot="step-8">
+          <div class="tl-screenshot-icon">📷</div>
+          <div class="tl-screenshot-title">Screenshot placeholder</div>
+          <div class="tl-screenshot-desc">SRE Agent health check<br>all metrics green · incident closed 🟢</div>
         </div>
       </div>
 
