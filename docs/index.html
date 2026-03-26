@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Agentic DevOps — Three Rivers Bank</title>
-  <meta name="description" content="A live demo of Agentic DevOps: building and operating a full-stack banking app with GitHub Copilot, Copilot CLI, Copilot Coding Agent, and Azure SRE Agent." />
+  <title>Agentic DevOps using GitHub Copilot and Azure SRE Agent</title>
+  <meta name="description" content="A live demo of Agentic DevOps: building and operating a full-stack Credit Cards demo app with GitHub Copilot, Copilot CLI, Copilot Coding Agent, and Azure SRE Agent." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -416,7 +416,7 @@
       <li><a href="#built">Built with Copilot</a></li>
       <li><a href="#sre">SRE Agent</a></li>
       <li><a href="#loop">The Loop</a></li>
-      <li><a href="#chaos">Chaos Scenarios</a></li>
+      <li><a href="#aw">Agentic Workflows</a></li>
       <li><a href="#cta">Get Started</a></li>
     </ul>
     <a class="nav-cta" href="https://github.com/yortch/agentic-devops-demo" target="_blank">View on GitHub</a>
@@ -436,8 +436,8 @@
       <span class="highlight">Agentic</span><br />DevOps
     </h1>
     <p class="hero-subtitle">
-      A full-stack banking app built, deployed, and operated entirely by AI agents —
-      from first line of code to autonomous production incident response.
+      A full-stack Credit Cards demo app built, deployed, and operated entirely by AI agents —
+      from first line of code to autonomous incident response.
     </p>
     <div class="hero-ctas">
       <a class="btn-primary" href="#loop">
@@ -482,7 +482,7 @@
     <div class="built-grid">
       <div class="tool-card blue reveal reveal-delay-1">
         <span class="tool-icon">✨</span>
-        <div class="tool-name">GitHub Copilot</div>
+        <div class="tool-name"><a href="https://github.com/features/copilot" target="_blank" style="color:inherit;text-decoration:none">GitHub Copilot</a></div>
         <div class="badge badge-blue" style="margin-bottom:12px">IDE Assistant</div>
         <p class="tool-desc">
           The foundation. Copilot's inline completions and chat suggestions powered
@@ -500,7 +500,7 @@
 
       <div class="tool-card purple reveal reveal-delay-2">
         <span class="tool-icon">🖥️</span>
-        <div class="tool-name">GitHub Copilot CLI</div>
+        <div class="tool-name"><a href="https://docs.github.com/en/copilot/using-github-copilot/using-github-copilot-in-the-command-line" target="_blank" style="color:inherit;text-decoration:none">GitHub Copilot CLI</a></div>
         <div class="badge badge-purple" style="margin-bottom:12px">Terminal Intelligence</div>
         <p class="tool-desc">
           The operational backbone. Used throughout the entire project lifecycle
@@ -508,20 +508,20 @@
           Azure SRE Agent setup — all from the terminal.
         </p>
         <ul class="tool-examples">
-          <li>Designed Terraform modules for Azure Container Apps, ACR, and Log Analytics</li>
-          <li>Authored the <code>azd</code> project configuration and preprovision hooks</li>
-          <li>Built the SRE Agent Bicep infrastructure (<code>Microsoft.App/agents</code>)</li>
-          <li>Authored the chaos engineering shell scripts and load generator</li>
+          <li>Designed <a href="https://github.com/yortch/agentic-devops-demo/tree/main/infra/terraform" target="_blank">Terraform modules</a> for Azure Container Apps, ACR, and Log Analytics</li>
+          <li>Authored the <a href="https://github.com/yortch/agentic-devops-demo/blob/main/azure.yaml" target="_blank"><code>azd</code> project configuration</a> and preprovision hooks</li>
+          <li>Built the <a href="https://github.com/yortch/agentic-devops-demo/tree/main/sre/infra" target="_blank">SRE Agent Bicep infrastructure</a> (<code>Microsoft.App/agents</code>)</li>
+          <li>Authored the <a href="https://github.com/yortch/agentic-devops-demo/blob/main/sre/scripts/chaos-engineering.sh" target="_blank">chaos engineering shell scripts</a> and load generator</li>
           <li>Created this GitHub Pages site</li>
         </ul>
       </div>
 
       <div class="tool-card teal reveal reveal-delay-3">
         <span class="tool-icon">🤖</span>
-        <div class="tool-name">Copilot Coding Agent</div>
+        <div class="tool-name"><a href="https://docs.github.com/en/copilot/using-github-copilot/using-copilot-coding-agent" target="_blank" style="color:inherit;text-decoration:none">Copilot Coding Agent</a></div>
         <div class="badge badge-teal" style="margin-bottom:12px">Autonomous Developer</div>
         <p class="tool-desc">
-          The closer. When Azure SRE Agent detects a production incident and files
+          The closer. When Azure SRE Agent detects an incident and files
           a GitHub Issue with full root cause analysis, Copilot Coding Agent picks
           it up autonomously — reads the issue, authors the fix, and opens a PR.
         </p>
@@ -530,7 +530,7 @@
           <li>Performs independent code analysis to validate the root cause</li>
           <li>Implements targeted, minimal fixes without human guidance</li>
           <li>Creates a well-described PR referencing the incident issue</li>
-          <li>Human review + merge = production restored ✅</li>
+          <li>Human review + merge = app restored ✅</li>
         </ul>
       </div>
     </div>
@@ -543,7 +543,7 @@
     <p class="section-label reveal">The Application</p>
     <h2 class="section-title reveal reveal-delay-1">Three Rivers Bank<br /><span class="highlight">Credit Card Portal</span></h2>
     <p class="section-desc reveal reveal-delay-2">
-      A real-world, production-grade full-stack app with Spring Boot backend, React
+      A real-world full-stack Credit Cards demo app with Spring Boot backend, React
       frontend, and Azure Container Apps hosting — complete with CI/CD, health checks,
       and BIAN API v13 integration.
     </p>
@@ -606,9 +606,9 @@
 <section id="sre" class="section">
   <div class="container">
     <p class="section-label reveal">Operations</p>
-    <h2 class="section-title reveal reveal-delay-1">Azure SRE Agent<br /><span class="highlight">Never Sleeps</span></h2>
+    <h2 class="section-title reveal reveal-delay-1"><a href="https://learn.microsoft.com/en-us/azure/sre-agent/overview" target="_blank" style="color:inherit;text-decoration:none">Azure SRE Agent</a><br /><span class="highlight">Never Sleeps</span></h2>
     <p class="section-desc reveal reveal-delay-2">
-      Azure SRE Agent is a production-grade AI that monitors your application 24/7,
+      <a href="https://learn.microsoft.com/en-us/azure/sre-agent/overview" target="_blank" style="color:var(--accent)">Azure SRE Agent</a> is an AI agent that monitors your application 24/7,
       correlates logs and metrics with source code, performs root cause analysis, and
       proactively routes fixes to the right agent — all without human intervention.
     </p>
@@ -620,7 +620,7 @@
           <div>
             <div class="sre-feature-title">Proactive Health Monitoring</div>
             <div class="sre-feature-desc">
-              Three scheduled tasks run continuously: health checks every 30 minutes,
+              Three <a href="https://github.com/yortch/agentic-devops-demo/tree/main/sre/sre-config/tasks" target="_blank" style="color:var(--accent)">scheduled tasks</a> run continuously: health checks every 30 minutes,
               configuration drift detection every 6 hours, and a daily reliability
               report at 8am UTC. No alert required — it checks proactively.
             </div>
@@ -631,7 +631,7 @@
           <div>
             <div class="sre-feature-title">Intelligent Alert Routing</div>
             <div class="sre-feature-desc">
-              Three Azure Monitor alert rules fire into the SRE Agent: HTTP 5xx spike
+              Three <a href="https://github.com/yortch/agentic-devops-demo/blob/main/sre/infra/modules/alert-rules.bicep" target="_blank" style="color:var(--accent)">Azure Monitor alert rules</a> fire into the SRE Agent: HTTP 5xx spike
               (severity 2), container restarts / OOM kills (severity 1), and high
               response time (severity 3). Each routes to the <code>incident-handler</code> subagent.
             </div>
@@ -642,7 +642,7 @@
           <div>
             <div class="sre-feature-title">Code-Aware Root Cause Analysis</div>
             <div class="sre-feature-desc">
-              Connected to the GitHub repository via OAuth, the <code>code-analyzer</code> subagent
+              Connected to the GitHub repository via OAuth, the <a href="https://github.com/yortch/agentic-devops-demo/blob/main/sre/sre-config/agents/code-analyzer.yaml" target="_blank" style="color:var(--accent)"><code>code-analyzer</code> subagent</a>
               queries KQL logs, reads container metrics, then cross-references the
               source code to pinpoint the exact file and line that caused the incident.
             </div>
@@ -653,7 +653,7 @@
           <div>
             <div class="sre-feature-title">Automated Issue Creation</div>
             <div class="sre-feature-desc">
-              After RCA is complete, the agent creates a structured GitHub Issue with
+              After RCA is complete, the <a href="https://github.com/yortch/agentic-devops-demo/blob/main/sre/sre-config/agents/incident-handler.yaml" target="_blank" style="color:var(--accent)"><code>incident-handler</code> subagent</a> creates a structured GitHub Issue with
               incident summary, affected metrics, error traces, root cause, and a fix
               recommendation — then assigns it directly to <code>@copilot</code>.
             </div>
@@ -675,7 +675,7 @@
           <div>
             <div class="sre-feature-title">Knowledge-Grounded Decisions</div>
             <div class="sre-feature-desc">
-              Two knowledge base documents ground every investigation: the HTTP error
+              Two <a href="https://github.com/yortch/agentic-devops-demo/tree/main/sre/knowledge-base" target="_blank" style="color:var(--accent)">knowledge base documents</a> ground every investigation: the HTTP error
               runbook (incident response procedures) and the app architecture reference
               (service topology, dependencies, expected behavior).
             </div>
@@ -757,7 +757,7 @@
   <div class="container">
     <div class="loop-header">
       <p class="section-label reveal">The Heart of Agentic DevOps</p>
-      <h2 class="section-title reveal reveal-delay-1">From Defect to Fix —<br /><span class="highlight">Zero Human Intervention</span></h2>
+      <h2 class="section-title reveal reveal-delay-1">From Defect to Fix —<br /><span class="highlight">(Almost) Zero Human Intervention</span></h2>
       <p class="section-desc reveal reveal-delay-2">
         Watch how a breaking change introduced in production triggers a fully automated
         pipeline: chaos → detection → RCA → fix → recovery. Humans only review the PR.
@@ -768,15 +768,15 @@
 
       <div class="tl-step reveal">
         <div class="tl-content">
-          <div class="tl-title">🔴 Breaking Change Reaches Production</div>
+          <div class="tl-title">🔴 Breaking Change Reaches the Demo App</div>
           <div class="tl-desc">
-            A GitHub Agentic Workflow (<code>chaos-engineering.lock.yml</code>) autonomously
+            A <a href="https://github.com/yortch/agentic-devops-demo/blob/main/.github/workflows/chaos-engineering.md" target="_blank" style="color:var(--accent)">GitHub Agentic Workflow</a> (<a href="https://github.com/yortch/agentic-devops-demo/blob/main/.github/workflows/chaos-engineering.lock.yml" target="_blank" style="color:var(--accent)"><code>chaos-engineering.lock.yml</code></a>) autonomously
             selects a chaos scenario, modifies the target file to introduce a realistic
             bug (e.g., <code>Thread.sleep(random * 9000)</code> in the card service), and
             opens a PR with a plausible commit message. Once merged, CI/CD deploys the
             broken code to Azure Container Apps.
           </div>
-          <div class="tl-actor actor-chaos">🌪️ GitHub Agentic Workflow</div>
+          <div class="tl-actor actor-chaos">🌪️ <a href="https://github.com/github/gh-aw" target="_blank" style="color:inherit">GitHub Agentic Workflow</a></div>
         </div>
         <div class="tl-step-num step-red">1</div>
         <div style="flex:1"></div>
@@ -898,10 +898,10 @@
     <p class="section-label reveal">GitHub Agentic Workflows</p>
     <h2 class="section-title reveal reveal-delay-1">The Chaos Engine —<br /><span class="highlight">AI That Breaks Things</span></h2>
     <p class="section-desc reveal reveal-delay-2">
-      GitHub Agentic Workflows (<code>gh-aw</code>) compile natural-language
-      <code>.md</code> prompt files into locked workflows. The chaos engineering
-      workflow uses this to autonomously inject production-breaking changes via PR
-      — simulating how real defects slip through to production.
+      <a href="https://github.com/github/gh-aw" target="_blank" style="color:var(--accent)">GitHub Agentic Workflows</a> (<code>gh-aw</code>) compile natural-language
+      <code>.md</code> prompt files into locked workflows. The <a href="https://github.com/yortch/agentic-devops-demo/blob/main/.github/workflows/chaos-engineering.md" target="_blank" style="color:var(--accent)">chaos engineering
+      workflow</a> uses this to autonomously inject app-breaking changes via PR
+      — simulating how real defects slip through to an environment.
     </p>
 
     <div class="aw-stats reveal">
@@ -929,7 +929,7 @@
         <div class="flow-box">
           <div class="flow-box-icon">📝</div>
           <div class="flow-box-title">Write Prompt</div>
-          <div class="flow-box-sub">chaos-engineering.md</div>
+          <div class="flow-box-sub"><a href="https://github.com/yortch/agentic-devops-demo/blob/main/.github/workflows/chaos-engineering.md" target="_blank" style="color:var(--accent)">chaos-engineering.md</a></div>
         </div>
         <div class="flow-arrow">→</div>
         <div class="flow-box">
@@ -971,7 +971,7 @@
           <span style="background:#febc2e"></span>
           <span style="background:#28c840"></span>
         </div>
-        <span class="code-filename">.github/workflows/chaos-engineering.md</span>
+        <span class="code-filename"><a href="https://github.com/yortch/agentic-devops-demo/blob/main/.github/workflows/chaos-engineering.md" target="_blank" style="color:var(--accent)">.github/workflows/chaos-engineering.md</a></span>
       </div>
       <div><span class="comment">---</span></div>
       <div><span class="key">description</span><span class="comment">: ></span></div>
@@ -1004,113 +1004,6 @@
         are permitted. All other outbound traffic is blocked. Safe outputs (like
         <code>create-pull-request</code>) are gated with a maximum of 1 PR per run.
       </span>
-    </div>
-  </div>
-</section>
-
-<!-- ──────────────────────── CHAOS SCENARIOS ─────────────────────── -->
-<section id="chaos" class="section">
-  <div class="container">
-    <p class="section-label reveal">Chaos Engineering</p>
-    <h2 class="section-title reveal reveal-delay-1"><span class="highlight">13 Scenarios</span>,<br />All Survived</h2>
-    <p class="section-desc reveal reveal-delay-2">
-      Each scenario simulates a realistic production failure mode. The SRE Agent
-      was validated against all 13 scenarios across 7 chaos runs — detecting,
-      diagnosing, and routing every single one.
-    </p>
-
-    <div class="chaos-grid">
-      <div class="chaos-card reveal">
-        <div class="chaos-num">SCENARIO 01</div>
-        <div class="chaos-name">port-mismatch</div>
-        <div class="chaos-target">infra/terraform/main.tf</div>
-        <div class="chaos-symptoms">Target port changed to 8081. Backend fails health checks. All requests 503.</div>
-        <div style="margin-top:10px"><span class="diff-badge diff-med">Medium</span></div>
-      </div>
-      <div class="chaos-card reveal reveal-delay-1">
-        <div class="chaos-num">SCENARIO 02</div>
-        <div class="chaos-name">bad-api-url</div>
-        <div class="chaos-target">infra/terraform/main.tf</div>
-        <div class="chaos-symptoms">BIAN_API_BASE_URL set to invalid domain. Circuit breaker opens. Degraded card data.</div>
-        <div style="margin-top:10px"><span class="diff-badge diff-easy">Easy</span></div>
-      </div>
-      <div class="chaos-card reveal reveal-delay-2">
-        <div class="chaos-num">SCENARIO 03</div>
-        <div class="chaos-name">cors-broken</div>
-        <div class="chaos-target">infra/terraform/main.tf</div>
-        <div class="chaos-symptoms">CORS_ALLOWED_ORIGINS points to wrong origin. Browser blocks all API calls. Blank pages.</div>
-        <div style="margin-top:10px"><span class="diff-badge diff-med">Medium</span></div>
-      </div>
-      <div class="chaos-card reveal">
-        <div class="chaos-num">SCENARIO 04</div>
-        <div class="chaos-name">low-resources</div>
-        <div class="chaos-target">infra/terraform/main.tf</div>
-        <div class="chaos-symptoms">CPU→0.1 cores, RAM→0.2Gi. OOM kills, container restarts, intermittent 503s.</div>
-        <div style="margin-top:10px"><span class="diff-badge diff-easy">Easy</span></div>
-      </div>
-      <div class="chaos-card reveal reveal-delay-1">
-        <div class="chaos-num">SCENARIO 05</div>
-        <div class="chaos-name">health-check-disabled</div>
-        <div class="chaos-target">application.yml</div>
-        <div class="chaos-symptoms">Health endpoint removed from actuator. Container Apps marks app unhealthy. Restart loop.</div>
-        <div style="margin-top:10px"><span class="diff-badge diff-med">Medium</span></div>
-      </div>
-      <div class="chaos-card reveal reveal-delay-2">
-        <div class="chaos-num">SCENARIO 06</div>
-        <div class="chaos-name">bad-image-tag</div>
-        <div class="chaos-target">docker/backend.Dockerfile</div>
-        <div class="chaos-symptoms">Invalid base image tag. Docker build fails or image pull fails. Container never starts.</div>
-        <div style="margin-top:10px"><span class="diff-badge diff-easy">Easy</span></div>
-      </div>
-      <div class="chaos-card reveal">
-        <div class="chaos-num">SCENARIO 07</div>
-        <div class="chaos-name">db-corruption</div>
-        <div class="chaos-target">data.sql</div>
-        <div class="chaos-symptoms">SQL syntax error in seed data. Spring Boot fails to start. All API calls return 500.</div>
-        <div style="margin-top:10px"><span class="diff-badge diff-hard">Hard</span></div>
-      </div>
-      <div class="chaos-card reveal reveal-delay-1">
-        <div class="chaos-num">SCENARIO 08</div>
-        <div class="chaos-name">profile-wrong</div>
-        <div class="chaos-target">infra/terraform/main.tf</div>
-        <div class="chaos-symptoms">SPRING_PROFILES_ACTIVE set to nonexistent. Default profile used. Behavioral drift.</div>
-        <div style="margin-top:10px"><span class="diff-badge diff-med">Medium</span></div>
-      </div>
-      <div class="chaos-card reveal reveal-delay-2">
-        <div class="chaos-num">SCENARIO 09</div>
-        <div class="chaos-name">circuit-breaker-disabled</div>
-        <div class="chaos-target">application.yml</div>
-        <div class="chaos-symptoms">Failure threshold 100%, timeout 60s, retries 10×. Thread pool exhaustion under load.</div>
-        <div style="margin-top:10px"><span class="diff-badge diff-hard">Hard</span></div>
-      </div>
-      <div class="chaos-card reveal">
-        <div class="chaos-num">SCENARIO 10</div>
-        <div class="chaos-name">frontend-api-broken</div>
-        <div class="chaos-target">infra/terraform/main.tf</div>
-        <div class="chaos-symptoms">VITE_API_BASE_URL points to wrong host. Frontend loads but all API calls fail.</div>
-        <div style="margin-top:10px"><span class="diff-badge diff-easy">Easy</span></div>
-      </div>
-      <div class="chaos-card reveal reveal-delay-1">
-        <div class="chaos-num">SCENARIO 11</div>
-        <div class="chaos-name">backend-500</div>
-        <div class="chaos-target">CreditCardService.java</div>
-        <div class="chaos-symptoms">Forced NullPointerException in convertToDto(). Every GET /api/cards returns HTTP 500.</div>
-        <div style="margin-top:10px"><span class="diff-badge diff-easy">Easy</span></div>
-      </div>
-      <div class="chaos-card reveal reveal-delay-2">
-        <div class="chaos-num">SCENARIO 12</div>
-        <div class="chaos-name">backend-image-tag</div>
-        <div class="chaos-target">infra/terraform/main.tf</div>
-        <div class="chaos-symptoms">Image hardcoded to nonexistent tag. Revision fails to start. All requests return 503.</div>
-        <div style="margin-top:10px"><span class="diff-badge diff-easy">Easy</span></div>
-      </div>
-      <div class="chaos-card reveal">
-        <div class="chaos-num">SCENARIO 13</div>
-        <div class="chaos-name">backend-slow-response</div>
-        <div class="chaos-target">CreditCardService.java</div>
-        <div class="chaos-symptoms">Random Thread.sleep(0–9000ms) in getAllCreditCards(). Frontend hangs. High latency alerts fire.</div>
-        <div style="margin-top:10px"><span class="diff-badge diff-med">Medium</span></div>
-      </div>
     </div>
   </div>
 </section>
@@ -1161,10 +1054,17 @@
           <div class="cta-link-sub">Step-by-step walkthrough</div>
         </div>
       </a>
-      <a class="cta-link" href="https://sre.azure.com" target="_blank">
+      <a class="cta-link" href="https://learn.microsoft.com/en-us/azure/sre-agent/overview" target="_blank">
         <span class="cta-link-icon">🤖</span>
         <div>
-          <div class="cta-link-title">Azure SRE Agent Portal</div>
+          <div class="cta-link-title">Azure SRE Agent Docs</div>
+          <div class="cta-link-sub">learn.microsoft.com</div>
+        </div>
+      </a>
+      <a class="cta-link" href="https://sre.azure.com" target="_blank">
+        <span class="cta-link-icon">🖥️</span>
+        <div>
+          <div class="cta-link-title">SRE Agent Portal</div>
           <div class="cta-link-sub">sre.azure.com</div>
         </div>
       </a>
@@ -1184,9 +1084,11 @@
   <div class="container">
     <p>
       Built with ❤️ using
-      <a href="https://github.com/features/copilot" target="_blank">GitHub Copilot</a>,
-      <a href="https://learn.microsoft.com/azure/sre-agent/" target="_blank">Azure SRE Agent</a>, and
-      <a href="https://github.com/github/gh-aw" target="_blank">GitHub Agentic Workflows</a>
+      <a href="https://github.com/features/copilot" target="_blank">GitHub Copilot</a>
+      · <a href="https://docs.github.com/en/copilot/using-github-copilot/using-github-copilot-in-the-command-line" target="_blank">Copilot CLI</a>
+      · <a href="https://docs.github.com/en/copilot/using-github-copilot/using-copilot-coding-agent" target="_blank">Copilot Coding Agent</a>
+      · <a href="https://learn.microsoft.com/en-us/azure/sre-agent/overview" target="_blank">Azure SRE Agent</a>
+      · <a href="https://github.com/github/gh-aw" target="_blank">GitHub Agentic Workflows</a>
       &nbsp;·&nbsp;
       <a href="https://github.com/yortch/agentic-devops-demo" target="_blank">View Source</a>
     </p>
