@@ -1,6 +1,6 @@
 # Three Rivers Bank Business Credit Cards
 
-> 🌐 **[Live Demo Site](https://yortch.github.io/agentic-devops-demo/)** — See the full Agentic DevOps walkthrough
+> 🌐 **[Walkthrough Site](https://yortch.github.io/agentic-devops-demo/)** — See the full Agentic DevOps walkthrough
 >
 > 🤖 **[Azure SRE Agent Setup Guide](SRE-AGENT-SETUP.md)** — Step-by-step instructions for configuring Azure SRE Agent
 
