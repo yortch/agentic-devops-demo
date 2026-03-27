@@ -7,6 +7,10 @@ spring:
     driver-class-name: org.h2.Driver
     username: sa
     password: 
+    hikari:
+      connection-test-query: SELECT 1
+      keepalive-time: 300000ms
+      idle-timeout: 600000ms
   
   h2:
     console:
@@ -17,7 +21,7 @@ spring:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: create
-    show-sql: true
+    show-sql: false
     defer-datasource-initialization: true
   
   sql:
@@ -80,3 +84,8 @@ springdoc:
     path: /api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+# Warmup scheduler configuration
+warmup:
+  fixed-delay: 300000
+  initial-delay: 60000
