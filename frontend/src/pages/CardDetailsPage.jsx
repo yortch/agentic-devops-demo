@@ -284,11 +284,16 @@ const CardDetailsPage = () => {
 
       {/* Apply CTA */}
       <Box sx={{ textAlign: 'center', mb: 4 }}>
-        <Button variant="contained" size="large" sx={{ minWidth: 200 }}>
+        <Button 
+          variant="contained" 
+          size="large" 
+          sx={{ minWidth: 200 }}
+          onClick={() => navigate(`/cards/${id}/apply`)}
+        >
           Apply Now
         </Button>
         <Typography variant="caption" display="block" sx={{ mt: 2 }} color="text.secondary">
-          This will redirect to a secure application page
+          Start your application in just a few minutes
         </Typography>
       </Box>
     </Container>
