@@ -183,13 +183,21 @@ const CardComparisonPage = () => {
                   )}
                 </CardContent>
 
-                <CardActions sx={{ p: 2, pt: 0 }}>
+                <CardActions sx={{ p: 2, pt: 0, display: 'flex', gap: 1 }}>
                   <Button
                     fullWidth
-                    variant="contained"
+                    variant="outlined"
                     onClick={() => handleViewCard(card.id)}
                   >
                     View Details
+                  </Button>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    onClick={() => navigate(`/apply/${card.id}`)}
+                    data-testid={`apply-now-${card.id}`}
+                  >
+                    Apply Now
                   </Button>
                 </CardActions>
               </Card>
@@ -228,13 +236,23 @@ const CardComparisonPage = () => {
                     {card.rewardsRate > 0 ? `${card.rewardsRate}%` : 'N/A'}
                   </TableCell>
                   <TableCell>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      onClick={() => handleViewCard(card.id)}
-                    >
-                      Details
-                    </Button>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => handleViewCard(card.id)}
+                      >
+                        Details
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        onClick={() => navigate(`/apply/${card.id}`)}
+                        data-testid={`apply-now-table-${card.id}`}
+                      >
+                        Apply Now
+                      </Button>
+                    </Box>
                   </TableCell>
                 </TableRow>
               ))}
