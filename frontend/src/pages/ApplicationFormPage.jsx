@@ -412,7 +412,21 @@ const ApplicationFormPage = () => {
         </Grid>
       </Grid>
       {renderTextField('businessPhone', 'Business Phone')}
-      {renderTextField('businessWebsite', 'Business Website (optional)', 'text', false)}
+      <Controller
+        name="businessWebsite"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            label="Business Website (optional)"
+            type="text"
+            fullWidth
+            error={!!errors.businessWebsite}
+            helperText={errors.businessWebsite?.message || 'Include http:// or https://'}
+            sx={{ mb: 2 }}
+          />
+        )}
+      />
     </Box>
   );
 
@@ -576,7 +590,7 @@ const ApplicationFormPage = () => {
             <Grid size={{ xs: 6 }}><Typography variant="body2" color="text.secondary">Structure</Typography></Grid>
             <Grid size={{ xs: 6 }}><Typography variant="body2">{formValues.businessStructure}</Typography></Grid>
             <Grid size={{ xs: 6 }}><Typography variant="body2" color="text.secondary">Tax ID</Typography></Grid>
-            <Grid size={{ xs: 6 }}><Typography variant="body2">***{formValues.taxId?.slice(-4)}</Typography></Grid>
+            <Grid size={{ xs: 6 }}><Typography variant="body2">{formValues.taxId ? `***-**-${formValues.taxId.slice(-4)}` : 'Not entered'}</Typography></Grid>
             <Grid size={{ xs: 6 }}><Typography variant="body2" color="text.secondary">Industry</Typography></Grid>
             <Grid size={{ xs: 6 }}><Typography variant="body2">{formValues.industry}</Typography></Grid>
             <Grid size={{ xs: 6 }}><Typography variant="body2" color="text.secondary">Annual Revenue</Typography></Grid>
@@ -600,7 +614,7 @@ const ApplicationFormPage = () => {
             <Grid size={{ xs: 6 }}><Typography variant="body2" color="text.secondary">Email</Typography></Grid>
             <Grid size={{ xs: 6 }}><Typography variant="body2">{formValues.ownerEmail}</Typography></Grid>
             <Grid size={{ xs: 6 }}><Typography variant="body2" color="text.secondary">SSN</Typography></Grid>
-            <Grid size={{ xs: 6 }}><Typography variant="body2">***-**-{formValues.ssn?.slice(-4)}</Typography></Grid>
+            <Grid size={{ xs: 6 }}><Typography variant="body2">{formValues.ssn ? `***-**-${formValues.ssn.slice(-4)}` : 'Not entered'}</Typography></Grid>
             <Grid size={{ xs: 6 }}><Typography variant="body2" color="text.secondary">Title</Typography></Grid>
             <Grid size={{ xs: 6 }}><Typography variant="body2">{formValues.ownerTitle}</Typography></Grid>
             <Grid size={{ xs: 6 }}><Typography variant="body2" color="text.secondary">Ownership</Typography></Grid>

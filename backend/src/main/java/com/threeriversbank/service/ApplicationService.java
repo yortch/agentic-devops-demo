@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -136,14 +137,17 @@ public class ApplicationService {
 
     private String encrypt(String data) {
         try {
-            byte[] keyBytes = encryptionKey.getBytes();
-            SecretKeySpec keySpec = new SecretKeySpec(keyBytes, "AES");
+            byte[] keyBytes = encryptionKey.getBytes(StandardCharsets.UTF_8);
+            // Ensure exactly 16 bytes for AES-128
+            byte[] paddedKey = new byte[16];
+            System.arraycopy(keyBytes, 0, paddedKey, 0, Math.min(keyBytes.length, 16));
+            SecretKeySpec keySpec = new SecretKeySpec(paddedKey, "AES");
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             byte[] iv = new byte[16];
             new SecureRandom().nextBytes(iv);
             IvParameterSpec ivSpec = new IvParameterSpec(iv);
             cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
-            byte[] encrypted = cipher.doFinal(data.getBytes());
+            byte[] encrypted = cipher.doFinal(data.getBytes(StandardCharsets.UTF_8));
             // Prepend IV to ciphertext for storage
             byte[] ivAndCiphertext = new byte[16 + encrypted.length];
             System.arraycopy(iv, 0, ivAndCiphertext, 0, 16);
