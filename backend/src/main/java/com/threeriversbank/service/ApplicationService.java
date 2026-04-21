@@ -26,7 +26,7 @@ import java.util.UUID;
 @Slf4j
 public class ApplicationService {
 
-    private static final String ENCRYPTION_KEY = "ThreeRiversBank"; // 16-char AES-128 key
+    private static final String ENCRYPTION_KEY = "ThreeRiversBank!"; // 16-char AES-128 key
     private static final int MAX_APPLICATIONS_PER_DAY = 3;
 
     private final ApplicationRepository applicationRepository;

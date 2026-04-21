@@ -37,7 +37,7 @@ public class BusinessCreditCardApplication {
     @Column(nullable = false, length = 50)
     private String businessStructure;
 
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, length = 100)
     private String taxId; // stored encrypted
 
     @Column(nullable = false, length = 100)
@@ -80,7 +80,7 @@ public class BusinessCreditCardApplication {
     @Column(nullable = false)
     private LocalDate dateOfBirth;
 
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, length = 100)
     private String ssn; // stored encrypted
 
     @Column(nullable = false, length = 255)
