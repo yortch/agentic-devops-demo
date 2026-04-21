@@ -51,6 +51,7 @@ const CardComparisonPage = () => {
   };
 
   const filteredCards = cards?.filter((card) => {
+    if (cardTypeFilter && card.cardType !== cardTypeFilter) return false;
     if (annualFeeFilter === 'free' && card.annualFee > 0) return false;
     if (annualFeeFilter === 'paid' && card.annualFee === 0) return false;
     return true;

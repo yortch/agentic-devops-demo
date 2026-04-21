@@ -127,7 +127,7 @@ const businessSchema = yup.object({
     .string()
     .required('Business phone is required')
     .matches(/^[\d\-\+\(\)\s]{7,20}$/, 'Enter a valid phone number'),
-  businessWebsite: yup.string().url('Enter a valid URL (include http:// or https://)').nullable().transform(v => v === '' ? null : v),
+  businessWebsite: yup.string().nullable().transform(v => v === '' ? null : v).url('Enter a valid URL (include http:// or https://)'),
 });
 
 const personalSchema = yup.object({
@@ -140,8 +140,9 @@ const personalSchema = yup.object({
       if (!value) return false;
       const dob = new Date(value);
       const today = new Date();
+      const birthdayThisYear = new Date(today.getFullYear(), dob.getMonth(), dob.getDate());
       const age = today.getFullYear() - dob.getFullYear()
-        - (today < new Date(today.getFullYear(), dob.getMonth(), dob.getDate()) ? 1 : 0);
+        - (today < birthdayThisYear ? 1 : 0);
       return age >= 18;
     }),
   ssn: yup
@@ -182,7 +183,7 @@ const preferencesSchema = yup.object({
     .nullable()
     .min(0, 'Must be non-negative')
     .max(50, 'Must not exceed 50')
-    .transform(v => (isNaN(v) ? null : v)),
+    .transform(v => (v === '' || isNaN(v) ? null : v)),
 });
 
 const termsSchema = yup.object({
@@ -251,7 +252,7 @@ const ApplicationFormPage = () => {
       businessLegalName: savedDraft.businessLegalName || '',
       dbaName: savedDraft.dbaName || '',
       businessStructure: savedDraft.businessStructure || '',
-      taxId: savedDraft.taxId || '',
+      taxId: '',
       industry: savedDraft.industry || '',
       yearsInBusiness: savedDraft.yearsInBusiness || '',
       numberOfEmployees: savedDraft.numberOfEmployees || '',
@@ -264,8 +265,8 @@ const ApplicationFormPage = () => {
       businessWebsite: savedDraft.businessWebsite || '',
       ownerFirstName: savedDraft.ownerFirstName || '',
       ownerLastName: savedDraft.ownerLastName || '',
-      dateOfBirth: savedDraft.dateOfBirth || '',
-      ssn: savedDraft.ssn || '',
+      dateOfBirth: '',
+      ssn: '',
       ownerEmail: savedDraft.ownerEmail || '',
       ownerStreet: savedDraft.ownerStreet || '',
       ownerCity: savedDraft.ownerCity || '',
@@ -284,11 +285,13 @@ const ApplicationFormPage = () => {
     mode: 'onChange',
   });
 
-  // Auto-save to localStorage every 30 seconds
+  // Auto-save to localStorage every 30 seconds (exclude sensitive fields)
   useEffect(() => {
     autoSaveRef.current = setInterval(() => {
       const values = getValues();
-      localStorage.setItem(STORAGE_KEY + '_' + cardId, JSON.stringify(values));
+      // Exclude sensitive PII from localStorage
+      const { ssn, taxId, dateOfBirth, ...safeToPersist } = values;
+      localStorage.setItem(STORAGE_KEY + '_' + cardId, JSON.stringify(safeToPersist));
     }, AUTO_SAVE_INTERVAL);
     return () => clearInterval(autoSaveRef.current);
   }, [cardId, getValues]);
@@ -425,7 +428,7 @@ const ApplicationFormPage = () => {
         </Grid>
       </Grid>
       {renderTextField('dateOfBirth', 'Date of Birth', 'date')}
-      {renderTextField('ssn', 'SSN (9 digits, no dashes)', 'password', true, false, { maxLength: 9 })}
+      {renderTextField('ssn', 'SSN (9 digits, no dashes)', 'text', true, false, { maxLength: 9, inputMode: 'numeric', autoComplete: 'off' })}
       {renderTextField('ownerEmail', 'Email Address', 'email')}
       <Divider sx={{ my: 2 }} />
       <Typography variant="subtitle1" fontWeight={600} gutterBottom>Home Address</Typography>

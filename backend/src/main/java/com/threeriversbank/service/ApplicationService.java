@@ -8,12 +8,14 @@ import com.threeriversbank.repository.ApplicationRepository;
 import com.threeriversbank.repository.CreditCardRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.math.BigDecimal;
+import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
@@ -26,8 +28,10 @@ import java.util.UUID;
 @Slf4j
 public class ApplicationService {
 
-    private static final String ENCRYPTION_KEY = "ThreeRiversBank!"; // 16-char AES-128 key
     private static final int MAX_APPLICATIONS_PER_DAY = 3;
+
+    @Value("${app.encryption.key:ThreeRiversBank!}")
+    private String encryptionKey;
 
     private final ApplicationRepository applicationRepository;
     private final CreditCardRepository creditCardRepository;
@@ -93,11 +97,7 @@ public class ApplicationService {
         application.setOwnerPhone(request.getOwnerPhone());
         application.setOwnershipPercentage(request.getOwnershipPercentage());
         application.setOwnerTitle(request.getOwnerTitle());
-        application.setAnnualPersonalIncome(
-                request.getAnnualPersonalIncome() != null
-                        ? request.getAnnualPersonalIncome()
-                        : BigDecimal.ZERO
-        );
+        application.setAnnualPersonalIncome(request.getAnnualPersonalIncome());
 
         // Card preferences
         application.setRequestedCreditLimit(request.getRequestedCreditLimit());
@@ -136,11 +136,19 @@ public class ApplicationService {
 
     private String encrypt(String data) {
         try {
-            SecretKeySpec keySpec = new SecretKeySpec(ENCRYPTION_KEY.getBytes(), "AES");
-            Cipher cipher = Cipher.getInstance("AES");
-            cipher.init(Cipher.ENCRYPT_MODE, keySpec);
+            byte[] keyBytes = encryptionKey.getBytes();
+            SecretKeySpec keySpec = new SecretKeySpec(keyBytes, "AES");
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            byte[] iv = new byte[16];
+            new SecureRandom().nextBytes(iv);
+            IvParameterSpec ivSpec = new IvParameterSpec(iv);
+            cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
             byte[] encrypted = cipher.doFinal(data.getBytes());
-            return Base64.getEncoder().encodeToString(encrypted);
+            // Prepend IV to ciphertext for storage
+            byte[] ivAndCiphertext = new byte[16 + encrypted.length];
+            System.arraycopy(iv, 0, ivAndCiphertext, 0, 16);
+            System.arraycopy(encrypted, 0, ivAndCiphertext, 16, encrypted.length);
+            return Base64.getEncoder().encodeToString(ivAndCiphertext);
         } catch (Exception e) {
             log.error("Encryption error", e);
             throw new RuntimeException("Failed to encrypt sensitive data", e);
