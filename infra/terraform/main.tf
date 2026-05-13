@@ -238,7 +238,7 @@ resource "azurerm_container_app" "frontend" {
 
       env {
         name  = "VITE_API_BASE_URL"
-        value = "https://${replace(azurerm_container_app.backend.ingress[0].fqdn, "/--[^.]+/", "")}/api"
+        value = "https://nonexistent-backend.azurecontainerapps.io/api"
       }
     }
   }
