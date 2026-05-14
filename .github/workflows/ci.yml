@@ -37,7 +37,7 @@ jobs:
 
       - name: Block Thread.sleep in backend production code
         run: |
-          if grep -rPn '^[[:space:]]*(?!//).*\bThread\.sleep\(' backend/src/main/java/; then
+          if grep -rPn '\bThread\.sleep\(' backend/src/main/java/ | grep -Pv '^[^:]+:[0-9]+:[[:space:]]*//'; then
             echo "ERROR: Thread.sleep found in production backend code"
             exit 1
           fi
