@@ -130,7 +130,7 @@ public class CreditCardService {
     }
     
     private void applyOptionalChaosDelay() {
-        if (!chaosDelayEnabled || chaosDelayMs <= 0 || environment.acceptsProfiles(Profiles.of("production"))) {
+        if (!shouldApplyChaosDelay()) {
             return;
         }
         
@@ -139,6 +139,10 @@ public class CreditCardService {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+    }
+    
+    private boolean shouldApplyChaosDelay() {
+        return chaosDelayEnabled && chaosDelayMs > 0 && !environment.acceptsProfiles(Profiles.of("production"));
     }
     
     // Conversion methods
