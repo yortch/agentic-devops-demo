@@ -42,7 +42,7 @@ resource http5xxAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
       backendResourceId
     ]
     evaluationFrequency: 'PT1M'
-    windowSize: 'PT5M'
+    windowSize: 'PT1M'
     criteria: {
       'odata.type': 'Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria'
       allOf: [
@@ -111,7 +111,7 @@ resource restartAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
 
 // Alert: High response time
 resource latencyAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
-  name: 'alert-latency-${environmentName}'
+  name: 'alert-backend-latency-${environmentName}'
   location: 'global'
   properties: {
     description: 'Backend average response time elevated — may indicate resource starvation or slow dependencies'
@@ -121,7 +121,7 @@ resource latencyAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
       backendResourceId
     ]
     evaluationFrequency: 'PT1M'
-    windowSize: 'PT5M'
+    windowSize: 'PT1M'
     criteria: {
       'odata.type': 'Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria'
       allOf: [
@@ -130,7 +130,7 @@ resource latencyAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
           metricName: 'ResponseTime'
           metricNamespace: 'microsoft.app/containerapps'
           operator: 'GreaterThan'
-          threshold: 3000
+          threshold: 1500
           timeAggregation: 'Average'
           criterionType: 'StaticThresholdCriterion'
         }

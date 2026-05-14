@@ -99,7 +99,7 @@ The SRE Agent is deployed from the `sre/` directory using its own `azd` project 
 | Action Group | `Microsoft.Insights/actionGroups` | Alert notification target |
 | Alert: HTTP 5xx Spike | `Microsoft.Insights/metricAlerts` | Severity 2 — backend error rate |
 | Alert: Container Restart | `Microsoft.Insights/metricAlerts` | Severity 1 — OOM/crash detection |
-| Alert: High Response Time (Backend) | `Microsoft.Insights/metricAlerts` | Severity 3 — backend latency monitoring |
+| Alert: High Response Time (Backend) | `Microsoft.Insights/metricAlerts` | Severity 3 — backend average latency > 1.5s, 1-minute window |
 | Alert: High Response Time (Frontend) | `Microsoft.Insights/metricAlerts` | Severity 3 — frontend latency monitoring |
 
 ### RBAC Roles Assigned (Subscription Scope)

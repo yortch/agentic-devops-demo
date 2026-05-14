@@ -16,6 +16,10 @@ spec:
     Create a GitHub issue in GITHUB_REPO_PLACEHOLDER with detailed findings
     including log evidence, metrics, code snippets, suggested fixes, and
     remediation actions. Always add the label "sre-agent-detected" and assign the issue to @copilot.
+    In the issue created, instruct copilot to implement the minimum changes required
+    to fix the issue, do not apply other code/configuration improvements,
+    only include as recommended enhancements if any were identified.
+    Include "Fixes #<issue_number>" referencing the issue number
 
     IMPORTANT — code changes hand-off:
     You do NOT have git push, branch, or pull request tools. Do NOT attempt

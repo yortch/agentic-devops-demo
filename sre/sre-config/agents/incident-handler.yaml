@@ -24,6 +24,10 @@ spec:
        d. If no duplicate is found, continue to step 5.
     5. Create a GitHub issue in GITHUB_REPO_PLACEHOLDER with the full RCA findings.
        Always add the label "sre-agent-detected" and assign the issue to @copilot.
+       a. In the issue created, instruct copilot to implement the minimum changes required
+          to fix the issue, do not apply other code/configuration improvements,
+          only include as recommended enhancements if any were identified.
+       b. Include "Fixes #<issue_number>" referencing the issue number
     6. Recommend remediation steps and list action items.
 
     Always search memory for similar past incidents first.
