@@ -35,6 +35,13 @@ jobs:
           cd backend
           mvn test
 
+      - name: Block Thread.sleep in backend production code
+        run: |
+          if grep -rn "Thread.sleep" backend/src/main/java/; then
+            echo "ERROR: Thread.sleep found in production backend code"
+            exit 1
+          fi
+
       - name: Upload backend artifact
         uses: actions/upload-artifact@v4
         with:
