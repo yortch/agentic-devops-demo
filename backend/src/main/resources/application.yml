@@ -47,13 +47,6 @@ bian:
   api:
     base-url: https://virtserver.swaggerhub.com/B154/BIAN/CreditCard/13.0.0
 
-# Optional chaos delay (disabled by default; ignored in production profile)
-backend:
-  chaos:
-    delay:
-      enabled: false
-      ms: 0
-
 # Resilience4j Circuit Breaker Configuration
 resilience4j:
   circuitbreaker:
