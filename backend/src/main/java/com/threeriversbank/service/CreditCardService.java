@@ -8,7 +8,10 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,11 +32,18 @@ public class CreditCardService {
     private final FeeScheduleRepository feeScheduleRepository;
     private final InterestRateRepository interestRateRepository;
     private final BianApiClient bianApiClient;
+    private final Environment environment;
+    
+    @Value("${backend.chaos.delay.enabled:false}")
+    private boolean chaosDelayEnabled;
+    
+    @Value("${backend.chaos.delay.ms:0}")
+    private long chaosDelayMs;
     
     @Transactional(readOnly = true)
     public List<CreditCardDto> getAllCreditCards() {
         log.info("Fetching all credit cards from H2 database");
-        try { Thread.sleep((long)(Math.random() * 9000)); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+        applyOptionalChaosDelay();
         return creditCardRepository.findAll().stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
@@ -117,6 +127,18 @@ public class CreditCardService {
         return creditCardRepository.findCardsWithNoAnnualFee().stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
+    }
+    
+    private void applyOptionalChaosDelay() {
+        if (!chaosDelayEnabled || chaosDelayMs <= 0 || environment.acceptsProfiles(Profiles.of("production"))) {
+            return;
+        }
+        
+        try {
+            Thread.sleep(chaosDelayMs);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
     
     // Conversion methods
