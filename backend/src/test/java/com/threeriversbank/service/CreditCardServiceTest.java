@@ -75,4 +75,27 @@ class CreditCardServiceTest {
 
         verify(creditCardService, times(1)).sleepForChaosLatency(anyLong());
     }
+
+    @Test
+    void getAllCreditCards_ShouldInterruptCurrentThread_WhenChaosSleepIsInterrupted() throws InterruptedException {
+        CreditCard card = new CreditCard();
+        card.setId(1L);
+        card.setName("Business Cash Rewards");
+        card.setCardType("Cash Back");
+        when(creditCardRepository.findAll()).thenReturn(List.of(card));
+        ReflectionTestUtils.setField(creditCardService, "creditCardLatencyChaosEnabled", true);
+        ReflectionTestUtils.setField(creditCardService, "creditCardLatencyMaxMs", 1L);
+        doThrow(new InterruptedException("simulated interruption"))
+                .when(creditCardService).sleepForChaosLatency(anyLong());
+
+        Thread.interrupted();
+        try {
+            creditCardService.getAllCreditCards();
+            verify(creditCardService, times(1)).sleepForChaosLatency(anyLong());
+            verify(creditCardRepository, times(1)).findAll();
+            org.junit.jupiter.api.Assertions.assertTrue(Thread.currentThread().isInterrupted());
+        } finally {
+            Thread.interrupted();
+        }
+    }
 }
