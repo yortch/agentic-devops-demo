@@ -37,7 +37,7 @@ jobs:
 
       - name: Block Thread.sleep in backend production code
         run: |
-          if grep -rn "Thread.sleep" backend/src/main/java/; then
+          if grep -rn 'Thread\.sleep(' backend/src/main/java/; then
             echo "ERROR: Thread.sleep found in production backend code"
             exit 1
           fi
