@@ -8,7 +8,6 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,7 +17,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,32 +29,13 @@ public class CreditCardService {
     private final FeeScheduleRepository feeScheduleRepository;
     private final InterestRateRepository interestRateRepository;
     private final BianApiClient bianApiClient;
-
-    @Value("${app.chaos.credit-card-latency-enabled:false}")
-    private boolean creditCardLatencyChaosEnabled;
-
-    @Value("${app.chaos.credit-card-latency-max-ms:9000}")
-    private long creditCardLatencyMaxMs;
     
     @Transactional(readOnly = true)
     public List<CreditCardDto> getAllCreditCards() {
         log.info("Fetching all credit cards from H2 database");
-        if (creditCardLatencyChaosEnabled && creditCardLatencyMaxMs > 0) {
-            long delayMs = ThreadLocalRandom.current().nextLong(creditCardLatencyMaxMs + 1);
-            log.warn("Chaos latency injection enabled for getAllCreditCards, delaying {} ms", delayMs);
-            try {
-                sleepForChaosLatency(delayMs);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
         return creditCardRepository.findAll().stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
-    }
-
-    void sleepForChaosLatency(long delayMs) throws InterruptedException {
-        Thread.sleep(delayMs);
     }
     
     @Transactional(readOnly = true)

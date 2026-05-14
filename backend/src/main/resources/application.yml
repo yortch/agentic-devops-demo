@@ -80,8 +80,3 @@ springdoc:
     path: /api-docs
   swagger-ui:
     path: /swagger-ui.html
-
-app:
-  chaos:
-    credit-card-latency-enabled: false
-    credit-card-latency-max-ms: 9000
