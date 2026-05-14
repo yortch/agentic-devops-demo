@@ -1,0 +1,3 @@
+app:
+  chaos:
+    credit-card-latency-enabled: true
