@@ -11,7 +11,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DataJpaTest(properties = "spring.main.lazy-initialization=false")
+@DataJpaTest
 class CreditCardRepositoryTest {
 
     @Autowired
