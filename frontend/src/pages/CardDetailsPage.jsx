@@ -284,7 +284,13 @@ const CardDetailsPage = () => {
 
       {/* Apply CTA */}
       <Box sx={{ textAlign: 'center', mb: 4 }}>
-        <Button variant="contained" size="large" sx={{ minWidth: 200 }}>
+        <Button 
+          variant="contained" 
+          size="large" 
+          sx={{ minWidth: 200 }}
+          onClick={() => navigate(`/apply/${card.id}`)}
+          data-testid="apply-now-button"
+        >
           Apply Now
         </Button>
         <Typography variant="caption" display="block" sx={{ mt: 2 }} color="text.secondary">
