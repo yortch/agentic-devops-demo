@@ -153,6 +153,17 @@ resource "azurerm_container_app" "backend" {
         failure_count_threshold  = 3
       }
 
+      liveness_probe {
+        transport = "HTTP"
+        path      = "/actuator/health/liveness"
+        port      = 8080
+
+        initial_delay           = 45
+        interval_seconds        = 10
+        timeout                 = 5
+        failure_count_threshold = 3
+      }
+
       startup_probe {
         transport = "HTTP"
         path      = "/actuator/health"
