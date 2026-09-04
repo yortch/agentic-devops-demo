@@ -14,6 +14,9 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * CreditCard entity representing a credit card in the system.
+ */
 public class CreditCard {
     
     @Id

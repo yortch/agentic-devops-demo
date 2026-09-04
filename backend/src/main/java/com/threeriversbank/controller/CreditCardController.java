@@ -16,6 +16,9 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Credit Cards", description = "Three Rivers Bank Business Credit Card API")
+/**
+ * CreditCardController handling HTTP requests for business credit cards.
+ */
 public class CreditCardController {
     
     private final CreditCardService creditCardService;
