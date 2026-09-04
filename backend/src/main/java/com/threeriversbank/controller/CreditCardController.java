@@ -1,11 +1,14 @@
 package com.threeriversbank.controller;
 
 import com.threeriversbank.model.dto.*;
+import com.threeriversbank.service.CardApplicationService;
 import com.threeriversbank.service.CreditCardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,6 +22,7 @@ import java.util.List;
 public class CreditCardController {
     
     private final CreditCardService creditCardService;
+    private final CardApplicationService cardApplicationService;
     
     @GetMapping
     @Operation(summary = "Get all credit cards", description = "Returns list of all available business credit cards")
@@ -77,5 +81,23 @@ public class CreditCardController {
         log.info("GET /api/cards/{}/billing", id);
         BillingDto billing = creditCardService.getCardBilling(id);
         return ResponseEntity.ok(billing);
+    }
+    
+    @PostMapping("/{id}/apply")
+    @Operation(summary = "Submit credit card application", description = "Submit a new business credit card application")
+    public ResponseEntity<CardApplicationDto> submitApplication(
+            @PathVariable Long id,
+            @Valid @RequestBody CardApplicationRequest request) {
+        log.info("POST /api/cards/{}/apply - applicant: {}", id, request.getApplicantName());
+        CardApplicationDto application = cardApplicationService.submitApplication(id, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(application);
+    }
+    
+    @GetMapping("/applications/{id}")
+    @Operation(summary = "Get application status", description = "Get the status of a credit card application")
+    public ResponseEntity<CardApplicationDto> getApplicationStatus(@PathVariable Long id) {
+        log.info("GET /api/cards/applications/{}", id);
+        CardApplicationDto application = cardApplicationService.getApplicationById(id);
+        return ResponseEntity.ok(application);
     }
 }
