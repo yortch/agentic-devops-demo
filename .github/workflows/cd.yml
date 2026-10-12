@@ -20,7 +20,7 @@ on:
 jobs:
   deploy-azure:
     name: Deploy to Azure with azd CLI
-    runs-on: ubuntu-latest-4-cores
+    runs-on: ubuntu-latest
     if: >
       (github.event_name == 'workflow_dispatch') ||
       (github.event.workflow_run.conclusion == 'success' &&
