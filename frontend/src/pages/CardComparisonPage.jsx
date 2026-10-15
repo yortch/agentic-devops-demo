@@ -46,6 +46,10 @@ const CardComparisonPage = () => {
     navigate(`/cards/${cardId}`);
   };
 
+  const handleApplyCard = (cardId) => {
+    navigate(`/apply/${cardId}`);
+  };
+
   const filteredCards = cards?.filter((card) => {
     if (cardTypeFilter && card.cardType !== cardTypeFilter) return false;
     if (annualFeeFilter === 'free' && card.annualFee > 0) return false;
@@ -183,10 +187,18 @@ const CardComparisonPage = () => {
                   )}
                 </CardContent>
 
-                <CardActions sx={{ p: 2, pt: 0 }}>
+                <CardActions sx={{ p: 2, pt: 0, flexDirection: 'column', gap: 1 }}>
                   <Button
                     fullWidth
                     variant="contained"
+                    onClick={() => handleApplyCard(card.id)}
+                    color="secondary"
+                  >
+                    Apply Now
+                  </Button>
+                  <Button
+                    fullWidth
+                    variant="outlined"
                     onClick={() => handleViewCard(card.id)}
                   >
                     View Details
@@ -228,13 +240,23 @@ const CardComparisonPage = () => {
                     {card.rewardsRate > 0 ? `${card.rewardsRate}%` : 'N/A'}
                   </TableCell>
                   <TableCell>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      onClick={() => handleViewCard(card.id)}
-                    >
-                      Details
-                    </Button>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        color="secondary"
+                        onClick={() => handleApplyCard(card.id)}
+                      >
+                        Apply Now
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => handleViewCard(card.id)}
+                      >
+                        Details
+                      </Button>
+                    </Box>
                   </TableCell>
                 </TableRow>
               ))}
