@@ -1,5 +1,7 @@
 # Zero to Agents (Part 2): QA/Testers
 
+Continuation from [Part 1](https://github.com/yortch/GitHubCopilot_Customized/blob/main/docs/z2a-qa-part-1.md).
+
 **Audience:** QA engineers and testers  
 **Focus:** Agentic testing workflows, reusable QA standards, and Playwright MCP  
 **Demo repository:** [yortch/agentic-devops-demo](https://github.com/yortch/agentic-devops-demo)
