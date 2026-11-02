@@ -36,15 +36,12 @@ import java.util.stream.Collectors;
 public class CreditCardService {
     
     private final CreditCardRepository creditCardRepository;
-    private final CardFeatureRepository cardFeatureRepository;
     private final FeeScheduleRepository feeScheduleRepository;
     private final InterestRateRepository interestRateRepository;
-    private final BianApiClient bianApiClient;
     
     @Transactional(readOnly = true)
     public List<CreditCardDto> getAllCreditCards() {
         log.info("Fetching all credit cards from H2 database");
-        try { Thread.sleep((long)(Math.random() * 9000)); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
         return creditCardRepository.findAll().stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
