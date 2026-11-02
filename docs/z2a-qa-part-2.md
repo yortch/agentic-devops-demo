@@ -42,7 +42,7 @@ For the live demos, ensure Java 17, Maven, Node.js, and npm are installed. Insta
 
    Then prompt:
 
-   > Review existing application tests, provide existing test coverage (add coverage tool jacoco to measure test coverage).
+   > Review existing backend application tests, provide existing test coverage (add coverage tool jacoco to measure test coverage).
 
    Ask Copilot to show the report location and distinguish line coverage from branch coverage. Review the existing tests and coverage report before planning additional tests.
 
