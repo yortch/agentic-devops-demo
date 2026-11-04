@@ -74,7 +74,10 @@ logging:
     org.springframework.web: INFO
     org.hibernate: INFO
 
-# Springdoc OpenAPI
+# Application encryption configuration
+app:
+  encryption:
+    key: ${APPLICATION_ENCRYPTION_KEY:ThreeRiversBank!}
 springdoc:
   api-docs:
     path: /api-docs
