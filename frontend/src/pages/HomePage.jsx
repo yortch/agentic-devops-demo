@@ -25,6 +25,9 @@ import FlightIcon from '@mui/icons-material/Flight';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import StarIcon from '@mui/icons-material/Star';
+import HandshakeIcon from '@mui/icons-material/Handshake';
+import GroupsIcon from '@mui/icons-material/Groups';
 import { creditCardService } from '../services/api';
 
 const HomePage = () => {
@@ -113,6 +116,9 @@ const HomePage = () => {
         <Container maxWidth="lg">
           <Grid container spacing={{ xs: 5, md: 8 }} alignItems="center">
             <Grid size={{ xs: 12, md: 6 }}>
+              <Typography variant="overline" sx={{ opacity: 0.85, letterSpacing: 2, mb: 1 }}>
+                Pittsburgh-Based. Locally Focused. Built for You.
+              </Typography>
               <Typography
                 variant="h2"
                 component="h1"
@@ -120,10 +126,10 @@ const HomePage = () => {
                 fontWeight={700}
                 sx={{ fontSize: { xs: '2.5rem', sm: '3.5rem', md: '4.5rem' }, lineHeight: 1 }}
               >
-                Business Credit Cards for Every Need
+                Your Neighborhood Bank, Right in Your Pocket
               </Typography>
               <Typography variant="h5" sx={{ mb: 4, opacity: 0.9, maxWidth: 560 }}>
-                Earn rewards, build credit, and manage expenses with Three Rivers Bank
+                For over 20 years, Three Rivers Bank has been supporting Pittsburgh-area businesses. Our credit cards are designed with local entrepreneurs in mind—no corporate jargon, just real rewards and real support.
               </Typography>
               <Button
                 variant="contained"
@@ -333,11 +339,14 @@ const HomePage = () => {
         </Box>
       </Container>
 
-      {/* Benefits Section */}
+      {/* Why Three Rivers Bank Section */}
       <Box sx={{ backgroundColor: 'grey.100', py: 8 }}>
         <Container maxWidth="lg">
           <Typography variant="h3" component="h2" gutterBottom sx={{ mb: 4, textAlign: 'center' }}>
-            Why Choose Three Rivers Bank?
+            Why Small Business Owners Love Us
+          </Typography>
+          <Typography variant="h6" color="text.secondary" sx={{ textAlign: 'center', mb: 6, maxWidth: 700, mx: 'auto' }}>
+            We're not a faceless corporate bank. We're your neighbors who understand what it takes to run a business in Pittsburgh.
           </Typography>
 
           <Grid container spacing={4}>
@@ -359,10 +368,10 @@ const HomePage = () => {
                   <AccountBalanceWalletIcon sx={{ fontSize: 40 }} />
                 </Box>
                 <Typography variant="h5" gutterBottom fontWeight={600}>
-                  Competitive Rewards
+                  Rewards That Actually Matter
                 </Typography>
                 <Typography variant="body1" color="text.secondary">
-                  Earn cash back or points on every purchase with our flexible rewards programs
+                  Earn real cash back or travel points on every business purchase. No fine print, no complicated tiers—just straightforward rewards.
                 </Typography>
               </Box>
             </Grid>
@@ -382,13 +391,13 @@ const HomePage = () => {
                     margin: '0 auto 16px',
                   }}
                 >
-                  <TrendingUpIcon sx={{ fontSize: 40 }} />
+                  <HandshakeIcon sx={{ fontSize: 40 }} />
                 </Box>
                 <Typography variant="h5" gutterBottom fontWeight={600}>
-                  Expense Management
+                  Built by Local Business People
                 </Typography>
                 <Typography variant="body1" color="text.secondary">
-                  Track spending, set employee limits, and integrate with QuickBooks seamlessly
+                  Our team has been in your shoes. We've run businesses, juggled payroll, and managed cash flow. We get it.
                 </Typography>
               </Box>
             </Grid>
@@ -411,16 +420,121 @@ const HomePage = () => {
                   <CreditCardIcon sx={{ fontSize: 40 }} />
                 </Box>
                 <Typography variant="h5" gutterBottom fontWeight={600}>
-                  No Hidden Fees
+                  Transparent & Honest Pricing
                 </Typography>
                 <Typography variant="body1" color="text.secondary">
-                  Transparent pricing with no surprises. Many cards with $0 annual fee
+                  Many of our cards charge $0 annual fee. No hidden fees, no surprise charges. Ever.
                 </Typography>
               </Box>
             </Grid>
           </Grid>
         </Container>
       </Box>
+
+      {/* Customer Stories Section */}
+      <Container maxWidth="lg" sx={{ py: 8 }}>
+        <Typography variant="h3" component="h2" gutterBottom sx={{ mb: 2, textAlign: 'center' }}>
+          Real Stories from Real Businesses
+        </Typography>
+        <Typography variant="h6" color="text.secondary" sx={{ textAlign: 'center', mb: 6, maxWidth: 700, mx: 'auto' }}>
+          Join hundreds of Pittsburgh-area business owners who've made Three Rivers Bank their financial partner.
+        </Typography>
+
+        <Grid container spacing={4}>
+          {/* Testimonial 1 */}
+          <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+            <Card
+              sx={{
+                height: '100%',
+                p: 3,
+                display: 'flex',
+                flexDirection: 'column',
+                borderTop: '4px solid',
+                borderTopColor: 'secondary.main',
+              }}
+            >
+              <Box sx={{ display: 'flex', gap: 0.5, mb: 2 }}>
+                {[...Array(5)].map((_, i) => (
+                  <StarIcon key={i} sx={{ color: 'secondary.main', fontSize: 20 }} />
+                ))}
+              </Box>
+              <Typography variant="body1" sx={{ mb: 3, flexGrow: 1, fontStyle: 'italic' }}>
+                &quot;We switched to Three Rivers Bank because they actually know our industry. Our account manager has been a huge help managing cash flow, and the rewards have helped us save thousands on team travel.&quot;
+              </Typography>
+              <Box sx={{ borderTop: '1px solid', borderTopColor: 'divider', pt: 2 }}>
+                <Typography variant="body2" fontWeight={600}>
+                  Jamie Martinez
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Owner, Martinez Construction LLC (Lawrenceville)
+                </Typography>
+              </Box>
+            </Card>
+          </Grid>
+
+          {/* Testimonial 2 */}
+          <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+            <Card
+              sx={{
+                height: '100%',
+                p: 3,
+                display: 'flex',
+                flexDirection: 'column',
+                borderTop: '4px solid',
+                borderTopColor: 'primary.main',
+              }}
+            >
+              <Box sx={{ display: 'flex', gap: 0.5, mb: 2 }}>
+                {[...Array(5)].map((_, i) => (
+                  <StarIcon key={i} sx={{ color: 'primary.main', fontSize: 20 }} />
+                ))}
+              </Box>
+              <Typography variant="body1" sx={{ mb: 3, flexGrow: 1, fontStyle: 'italic' }}>
+                &quot;No annual fees, no nonsense. That's Three Rivers Bank. We use their cards for our retail locations and the cash back rewards alone have offset our processing costs. Best decision we made.&quot;
+              </Typography>
+              <Box sx={{ borderTop: '1px solid', borderTopColor: 'divider', pt: 2 }}>
+                <Typography variant="body2" fontWeight={600}>
+                  Sarah Chen
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Owner, North Shore Goods (East Liberty)
+                </Typography>
+              </Box>
+            </Card>
+          </Grid>
+
+          {/* Testimonial 3 */}
+          <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+            <Card
+              sx={{
+                height: '100%',
+                p: 3,
+                display: 'flex',
+                flexDirection: 'column',
+                borderTop: '4px solid',
+                borderTopColor: 'secondary.main',
+              }}
+            >
+              <Box sx={{ display: 'flex', gap: 0.5, mb: 2 }}>
+                {[...Array(5)].map((_, i) => (
+                  <StarIcon key={i} sx={{ color: 'secondary.main', fontSize: 20 }} />
+                ))}
+              </Box>
+              <Typography variant="body1" sx={{ mb: 3, flexGrow: 1, fontStyle: 'italic' }}>
+                &quot;When I started my tech firm, I was drowning in paperwork. Three Rivers Bank made it simple. Their support team was patient and their cards integrated smoothly with my accounting software. Highly recommend.&quot;
+              </Typography>
+              <Box sx={{ borderTop: '1px solid', borderTopColor: 'divider', pt: 2 }}>
+                <Typography variant="body2" fontWeight={600}>
+                  Marcus Williams
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Founder, Williams Digital Solutions (Pittsburgh)
+                </Typography>
+              </Box>
+            </Card>
+          </Grid>
+        </Grid>
+      </Container>
     </Box>
   );
 };
