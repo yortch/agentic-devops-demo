@@ -11,7 +11,7 @@ var resolvedAcrName = !empty(acrName)
 var logName = 'log-${environmentName}'
 var caeName = 'cae-${environmentName}'
 // Reserve prefix/suffix space within 32 characters and avoid a double hyphen at the truncation boundary.
-var backendName = replace('ca-${take(environmentName, 21)}-backend', '--', '-')
+var backendName = replace('ca-${take(environmentName, 20)}-backend', '--', '-')
 var frontendName = replace('ca-${take(environmentName, 20)}-frontend', '--', '-')
 var placeholderImage = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
 

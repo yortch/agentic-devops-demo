@@ -61,7 +61,7 @@ Review the preview before applying. Stop if it proposes creating a duplicate res
 
 ### Managing Environments
 
-Container App names use `ca-<environment>-backend` and `ca-<environment>-frontend`. To stay within Azure's 32-character limit, only the environment portion is truncated to 21 characters for the backend and 20 for the frontend; a hyphen at the cutoff is collapsed with the suffix separator. Existing valid names that fit, including `ca-banking-demo-backend` and `ca-banking-demo-frontend`, remain unchanged. Other resource names continue to use the full environment name.
+Container App names use `ca-<environment>-backend` and `ca-<environment>-frontend`. To stay within Azure's 32-character limit, the environment portion is truncated to 20 characters for both apps; a hyphen at the cutoff is collapsed with the suffix separator. Existing valid names that fit, including `ca-banking-demo-backend` and `ca-banking-demo-frontend`, remain unchanged. Other resource names continue to use the full environment name.
 
 ```bash
 # Create a new environment
