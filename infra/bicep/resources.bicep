@@ -10,8 +10,9 @@ var resolvedAcrName = !empty(acrName)
   : 'cr${replace(environmentName, '-', '')}${take(uniqueString(subscription().id, environmentName), 5)}'
 var logName = 'log-${environmentName}'
 var caeName = 'cae-${environmentName}'
-var backendName = 'ca-${environmentName}-backend'
-var frontendName = 'ca-${environmentName}-frontend'
+// Reserve prefix/suffix space within 32 characters and avoid a double hyphen at the truncation boundary.
+var backendName = replace('ca-${take(environmentName, 21)}-backend', '--', '-')
+var frontendName = replace('ca-${take(environmentName, 20)}-frontend', '--', '-')
 var placeholderImage = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
 
 resource law 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
