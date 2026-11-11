@@ -19,12 +19,10 @@ services:
     project: ./frontend
     language: js
     host: containerapp
+    docker:
+      buildArgs:
+        - NPM_REGISTRY=${NPM_REGISTRY}
 
 infra:
-  provider: terraform
-  path: ./infra/terraform
-
-hooks:
-  preprovision:
-    shell: sh
-    run: ./setup-tfstate.sh
+  provider: bicep
+  path: ./infra/bicep

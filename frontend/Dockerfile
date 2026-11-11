@@ -2,9 +2,12 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
+# Optional npm registry override (e.g. a corporate feed proxy); empty uses the public registry
+ARG NPM_REGISTRY=""
+
 # Copy package files and install dependencies (cached layer)
 COPY package*.json ./
-RUN npm ci
+RUN if [ -n "$NPM_REGISTRY" ]; then npm config set registry "$NPM_REGISTRY"; fi && npm ci
 
 # Copy source code and build
 COPY . ./
