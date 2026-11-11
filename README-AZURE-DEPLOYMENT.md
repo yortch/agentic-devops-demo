@@ -85,7 +85,7 @@ Configure these repository variables for the identity and subscription used by `
 - `AZURE_SUBSCRIPTION_ID`
 - `AZURE_LOCATION` (short Azure region name, such as `eastus`)
 
-The app registration must have a federated credential matching the repository and GitHub Actions environment, and Contributor access to the target subscription. The workflow does not use a client secret.
+The app registration must have federated credentials matching the repository and branch refs used to run `.github/workflows/cd.yml` (see the branch-based examples in `README.md`), and Contributor access to the target subscription. The workflow does not select a GitHub Actions environment and does not use a client secret.
 
 ### Active Workflow
 The repository includes [cd.yml](.github/workflows/cd.yml), which deploys with `azd up` after a successful CI run or by manual `workflow_dispatch`. It uses Azure OIDC login and discovers the existing registry in the selected environment's resource group before provisioning.
