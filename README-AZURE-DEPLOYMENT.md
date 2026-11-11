@@ -1,13 +1,12 @@
 # Azure Deployment Guide for Three Rivers Bank
 
-This guide covers deploying the Three Rivers Bank Credit Card application to Azure using Azure Developer CLI (azd) with Terraform.
+This guide covers deploying the Three Rivers Bank Credit Card application to Azure using Azure Developer CLI (azd) with Bicep. The Terraform files and state are retained as a fallback and are not used by the active azd configuration.
 
 ## Prerequisites
 
 ### Required Tools
 - [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
 - [Azure Developer CLI (azd)](https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/install-azd)
-- [Terraform](https://www.terraform.io/downloads.html) (>= 1.0)
 - [Docker](https://www.docker.com/get-started)
 
 ### Azure Setup
@@ -31,7 +30,7 @@ azd init
 ```
 
 ### Setup Infrastructure Files
-Terraform IaC is already located under `infra/terraform/` (the standard azd layout for Terraform). If you want azd to pick up the default environment setting, copy the azd config:
+The active infrastructure is under `infra/bicep/` and is selected in `azure.yaml`. The previous Terraform files remain under `infra/terraform/` for rollback. If you want azd to pick up the default environment setting, copy the azd config:
 ```bash
 mkdir -p .azd
 cp azd-config.json .azd/config.json
@@ -47,7 +46,23 @@ azd provision  # Deploy infrastructure only
 azd deploy     # Deploy applications only
 ```
 
+### Adopt an existing Terraform deployment
+
+Select the existing azd environment and set the exact Azure region and container registry name already in use:
+
+```bash
+azd env select <environment-name>
+azd env set AZURE_LOCATION <existing-resource-group-region>
+azd env set AZURE_CONTAINER_REGISTRY_NAME <existing-registry-name>
+azd provision --preview
+```
+
+Review the preview before applying. Stop if it proposes creating a duplicate resource, deleting a resource, changing the resource group location, or changing immutable Container Apps environment settings. The Bicep template preserves the current app images during adoption. After the preview is clean, run `azd up` to provision and deploy.
+
 ### Managing Environments
+
+Container App names use `ca-<environment>-backend` and `ca-<environment>-frontend`. To stay within Azure's 32-character limit, the environment portion is truncated to 20 characters for both apps; a hyphen at the cutoff is collapsed with the suffix separator. Existing valid names that fit, including `ca-banking-demo-backend` and `ca-banking-demo-frontend`, remain unchanged. Other resource names continue to use the full environment name.
+
 ```bash
 # Create a new environment
 azd env new <environment-name>
@@ -64,41 +79,23 @@ azd env get-values
 
 ## GitHub Actions CI/CD Pipeline
 
-### Setup Repository Secrets
+### Configure GitHub Actions OIDC
 
-1. **Create Service Principal**:
-```bash
-az ad sp create-for-rbac --name "three-rivers-bank-github" \
-  --role contributor \
-  --scopes /subscriptions/{subscription-id} \
-  --sdk-auth
-```
+Configure these repository variables for the identity and subscription used by `.github/workflows/cd.yml`:
 
-2. **Add Repository Secrets** in GitHub:
-   - `AZURE_CLIENT_ID`: From service principal output
-   - `AZURE_CLIENT_SECRET`: From service principal output  
-   - `AZURE_TENANT_ID`: Your Azure tenant ID
-   - `AZURE_SUBSCRIPTION_ID`: Your Azure subscription ID
-   - `AZURE_CREDENTIALS`: Full JSON output from service principal creation
+- `AZURE_CLIENT_ID`
+- `AZURE_TENANT_ID`
+- `AZURE_SUBSCRIPTION_ID`
+- `AZURE_LOCATION` (short Azure region name, such as `eastus`)
 
-3. **Add Repository Variables**:
-   - `AZURE_CLIENT_ID`: Same as secret (for OIDC)
-   - `AZURE_TENANT_ID`: Same as secret (for OIDC)  
-   - `AZURE_SUBSCRIPTION_ID`: Same as secret (for OIDC)
+The app registration must have federated credentials matching the repository and branch refs used to run `.github/workflows/cd.yml` (see the branch-based examples in `README.md`), and Contributor access to the target subscription. The workflow does not select a GitHub Actions environment and does not use a client secret.
 
 ### Active Workflow
-The repository includes [azure-azd-deploy.yml](.github/workflows/azure-azd-deploy.yml) which provides:
-- **Environment Selection**: Deploy to dev/staging/production via workflow_dispatch
-- **Path Filtering**: Only runs when relevant code changes (backend/, frontend/, docker/, infra/)
-- **Validation**: Terraform fmt and validate checks before deployment
-- **Smoke Tests**: Automated health checks after deployment
+The repository includes [cd.yml](.github/workflows/cd.yml), which deploys with `azd up` after a successful CI run or by manual `workflow_dispatch`. It uses Azure OIDC login and discovers the existing registry in the selected environment's resource group before provisioning.
 
 ### Pipeline Stages
-1. **Validate**: Terraform format check and validation
-2. **Build and Test**: Compiles backend (Maven) and frontend (npm), runs unit tests and E2E tests with Playwright
-3. **Deploy**: Uses `azd provision` and `azd deploy` for infrastructure and application deployment
-4. **Smoke Tests**: Verifies backend health and API endpoints
-5. **Cleanup**: Optional cleanup on failure for dev environment
+1. **Build and Test**: Compiles backend (Maven) and frontend (npm), runs unit tests and E2E tests with Playwright
+2. **Deploy**: Uses `azd up` for infrastructure and application deployment
 
 ## Infrastructure Components
 
@@ -154,8 +151,12 @@ az containerapp update --name <app-name> --resource-group <rg-name> --min-replic
 3. **Container image build failures**:
    - Ensure Docker is running
    - Check Dockerfile paths in azure.yaml
+   - If `npm ci` fails inside Docker (for example, TLS errors reaching `registry.npmjs.org` on a corporate network), point the frontend build at an approved npm feed; leave it unset to use the public registry:
+     ```bash
+     azd env set NPM_REGISTRY https://packagefeedproxy.microsoft.io/npm/
+     ```
 
-4. **Terraform state issues**:
+4. **Terraform fallback state issues** (only when switching back to Terraform):
    ```bash
    # Reset Terraform state (use cautiously)
    cd infra/terraform
@@ -221,4 +222,4 @@ az group delete --name <resource-group-name> --yes --no-wait
 
 - **Azure Developer CLI**: [Documentation](https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/)
 - **Azure Container Apps**: [Documentation](https://learn.microsoft.com/en-us/azure/container-apps/)
-- **Terraform Azure Provider**: [Documentation](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs)
+- **Terraform Azure Provider fallback**: [Documentation](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs)

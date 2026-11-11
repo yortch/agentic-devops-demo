@@ -36,11 +36,6 @@ jobs:
       - name: Install azd CLI
         uses: Azure/setup-azd@v2
 
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_wrapper: false
-
       - name: Azure Login (OIDC)
         uses: azure/login@v2
         with:
@@ -58,23 +53,30 @@ jobs:
       - name: Configure azd environment
         run: |
           ENV_NAME="${{ inputs.environment || 'banking-demo' }}"
-          SUB_CLEAN=$(echo "${{ vars.AZURE_SUBSCRIPTION_ID }}" | tr -d '-' | cut -c1-12)
-          azd env new "$ENV_NAME" --no-prompt 2>/dev/null || true
-          azd env set RS_STORAGE_ACCOUNT "sttf${SUB_CLEAN}" --environment "$ENV_NAME"
-          azd env set RS_CONTAINER_NAME "tfstate" --environment "$ENV_NAME"
-          azd env set RS_RESOURCE_GROUP "rg-tfstate" --environment "$ENV_NAME"
+          azd env new "$ENV_NAME" --no-prompt
           azd env set AZURE_LOCATION "${{ vars.AZURE_LOCATION }}" --environment "$ENV_NAME"
           azd env set AZURE_SUBSCRIPTION_ID "${{ vars.AZURE_SUBSCRIPTION_ID }}" --environment "$ENV_NAME"
-          azd env set USE_OIDC true --environment "$ENV_NAME"
 
-      - name: Map OIDC credentials for Terraform backend
+      - name: Adopt existing container registry
         run: |
-          # Terraform azurerm backend needs ARM_OIDC_* but GitHub Actions
-          # only sets ACTIONS_ID_TOKEN_*. Write to GITHUB_ENV so they persist
-          # through azd's subprocess chain into terraform init.
-          echo "::add-mask::${ACTIONS_ID_TOKEN_REQUEST_TOKEN}"
-          echo "ARM_OIDC_REQUEST_TOKEN=${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" >> $GITHUB_ENV
-          echo "ARM_OIDC_REQUEST_URL=${ACTIONS_ID_TOKEN_REQUEST_URL}" >> $GITHUB_ENV
+          ENV_NAME="${{ inputs.environment || 'banking-demo' }}"
+          RESOURCE_GROUP="rg-${ENV_NAME}"
+          RESOURCE_GROUP_EXISTS=$(az group exists --name "$RESOURCE_GROUP")
+          if [ "$RESOURCE_GROUP_EXISTS" = "true" ]; then
+            ACR_NAMES=$(az acr list --resource-group "$RESOURCE_GROUP" --query '[].name' --output tsv)
+            if [ -z "$ACR_NAMES" ]; then
+              echo "::error::Resource group $RESOURCE_GROUP exists but has no container registry to adopt."
+              exit 1
+            fi
+            if [ "$(printf '%s\n' "$ACR_NAMES" | wc -l)" -ne 1 ]; then
+              echo "::error::Expected exactly one container registry in $RESOURCE_GROUP; found multiple."
+              exit 1
+            fi
+            azd env set AZURE_CONTAINER_REGISTRY_NAME "$ACR_NAMES" --environment "$ENV_NAME"
+          elif [ "$RESOURCE_GROUP_EXISTS" != "false" ]; then
+            echo "::error::Unable to determine whether resource group $RESOURCE_GROUP exists."
+            exit 1
+          fi
 
       - name: Provision and Deploy
         run: |
@@ -83,10 +85,6 @@ jobs:
           AZURE_ENV_NAME: ${{ inputs.environment || 'banking-demo' }}
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
           AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
-          ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
-          ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
-          ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-          ARM_USE_OIDC: "true"
 
       - name: Get Application URLs
         id: get-urls

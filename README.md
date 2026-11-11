@@ -187,7 +187,7 @@ Integrates with BIAN Credit Card API v13.0.0 via Swagger Hub mock server:
 - **Backend**: Java 17+, Maven 3.8+
 - **Frontend**: Node.js 18+, npm 9+
 - **Testing**: Playwright (installed via npm)
-- **Azure Deployment**: Azure CLI (`az`), Azure Developer CLI (`azd`), Terraform 1.1+
+- **Azure Deployment**: Azure CLI (`az`) and Azure Developer CLI (`azd`); the main app uses Bicep. Terraform files are retained as a fallback.
 
 ### Local Development
 
@@ -271,7 +271,7 @@ docker run -p 80:80 threeriversbank/frontend:latest
 
 ## ☁️ Azure Deployment
 
-This project uses **Azure Developer CLI (azd)** with **Terraform** for deploying to Azure Container Apps. CI/CD is handled by two separate GitHub Actions workflows.
+The main app uses **Azure Developer CLI (azd)** with **Bicep** to deploy to Azure Container Apps. The previous Terraform files remain under `infra/terraform/` as a fallback; they are not the active azd provider. CI/CD is handled by two separate GitHub Actions workflows.
 
 ### Infrastructure Components
 - **Resource Group**: Contains all Azure resources
@@ -293,13 +293,11 @@ This project uses **Azure Developer CLI (azd)** with **Terraform** for deploying
 az login
 azd auth login
 
-# Deploy everything to Azure (state backend is bootstrapped automatically)
+# Deploy everything to Azure
 azd up
 ```
 
-> **Note:** The `preprovision` hook in `azure.yaml` automatically runs `setup-tfstate.sh`
-> before each provision, creating the Terraform state storage account and configuring
-> the azd environment. No manual setup is needed.
+> **Existing deployment:** Select its azd environment, set `AZURE_CONTAINER_REGISTRY_NAME` to the current registry name, and run `azd provision --preview`. Review the preview for unexpected resource creation, deletion, or immutable-property changes before running `azd up`. The original registry suffix is stored in Terraform state, so Bicep cannot infer the existing registry name.
 
 ### CI/CD Pipeline
 
@@ -346,11 +344,9 @@ az role assignment create \
   --scope "/subscriptions/<subscription-id>"
 ```
 
-#### 4. Bootstrap Terraform State Storage and Assign Storage Role
+#### 4. Terraform fallback state storage (not used by the active Bicep deployment)
 
-The Terraform remote state backend uses an Azure Storage account with Azure AD auth.
-Run `setup-tfstate.sh` once locally to create the storage resources, then assign the
-**Storage Blob Data Contributor** role to the CI service principal:
+The active Bicep deployment does not use Terraform state storage. Keep the existing backend intact while Terraform remains a rollback option. Only if you switch azd back to Terraform, the remote state backend uses an Azure Storage account with Azure AD auth. The following setup is for that fallback:
 
 ```bash
 # Create the state storage account (idempotent)
