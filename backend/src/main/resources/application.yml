@@ -29,6 +29,10 @@ spring:
     cache-names:
       - transactions
       - billing
+      - userStories
+      - allWorkItems
+      - workItem
+      - projectBacklog
 
 server:
   port: 8080
@@ -47,6 +51,14 @@ bian:
   api:
     base-url: https://virtserver.swaggerhub.com/B154/BIAN/CreditCard/13.0.0
 
+# Azure DevOps Configuration
+azure:
+  devops:
+    base-url: https://dev.azure.com
+    organization: msft-common-demos
+    default-project: msft-common-demos-adogh-crispy-carnival
+    pat: ${AZURE_DEVOPS_PAT:}
+
 # Resilience4j Circuit Breaker Configuration
 resilience4j:
   circuitbreaker:
@@ -57,14 +69,25 @@ resilience4j:
         wait-duration-in-open-state: 10000
         permitted-number-of-calls-in-half-open-state: 3
         automatic-transition-from-open-to-half-open-enabled: true
+      azureDevOpsApi:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10000
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
   retry:
     instances:
       bianApi:
         max-attempts: 3
         wait-duration: 1000
+      azureDevOpsApi:
+        max-attempts: 3
+        wait-duration: 1000
   timelimiter:
     instances:
       bianApi:
+        timeout-duration: 5s
+      azureDevOpsApi:
         timeout-duration: 5s
 
 # Logging
